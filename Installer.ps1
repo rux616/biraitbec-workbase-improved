@@ -59,6 +59,10 @@ function Exit-Script {
         [int] $ExitCode = 0,
         [switch] $Immediate
     )
+
+    $script:scriptTimer.Stop()
+    Write-Custom "","Elapsed time: $(Write-TimeSpan $script:scriptTimer.Elapsed)"
+
     if (-not $Immediate) {
         Write-Custom "" -BypassLog
         Wait-KeyPress
@@ -199,6 +203,23 @@ function Write-Success {
     Write-Custom @hashArguments
 }
 
+function Write-TimeSpan {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [System.TimeSpan]
+        $TimeSpan
+    )
+
+    $formatString = @(
+        "$(if ($TimeSpan.TotalDays -ge 1) {"d\d"})"
+        "$(if ($TimeSpan.TotalHours -ge 1) {"h\h"})"
+        "$(if ($TimeSpan.TotalMinutes -ge 1) {"m\m"})"
+        "$(if ($TimeSpan.TotalSeconds) {"s\.f\s"})"
+    ).Where{$_} -join "\ "
+    [System.TimeSpan]::FromSeconds([Math]::Round($TimeSpan.TotalSeconds, 1)).ToString($formatString)
+}
+
 function Write-Warning {
     [CmdletBinding()]
     param (
@@ -221,7 +242,6 @@ function Write-Warning {
 # -----------------------
 
 Set-Variable "FileHashAlgorithm" -Value "SHA256" -Option Constant
-Set-Variable "Indent" -Value "       " -Option Constant
 Set-Variable "RunTimestamp" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
 Set-Variable "LineWidth" -Value 80 -Option Constant
 Set-Variable "TagJoiner" -Value "+" -Option Constant
@@ -269,6 +289,10 @@ $ba2Files.fallout4Textures6 = "Fallout4 - Textures6.ba2"
 $ba2Files.fallout4Textures7 = "Fallout4 - Textures7.ba2"
 $ba2Files.fallout4Textures8 = "Fallout4 - Textures8.ba2"
 $ba2Files.fallout4Textures9 = "Fallout4 - Textures9.ba2"
+
+$scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
+$sectionTimer = New-Object System.Diagnostics.Stopwatch
+$toolTimer = New-Object System.Diagnostics.Stopwatch
 
 
 # tools
@@ -662,6 +686,8 @@ if (
 # check for repack archives
 # -------------------------
 
+$sectionTimer.Restart()
+
 $repackFlags = [ordered]@{}
 $repackFlags.Performance = $true
 $repackFlags.Main = $true
@@ -731,6 +757,7 @@ foreach ($object in $repackFlags.GetEnumerator()) {
 }
 
 Write-Log "","Repack Tag: $repackTag"
+Write-Log "","Section Duration: $($sectionTimer.Elapsed.ToString())"
 
 if ($repackFlags.Custom) {
     Write-Warning "","No repack sets found, but custom assets exist." -NoJustifyRight
@@ -743,6 +770,8 @@ elseif (-not $repackTag) {
 
 # validate any existing patched archives
 # --------------------------------------
+
+$sectionTimer.Restart()
 
 Write-Custom ""
 Write-Custom "Validating existing patched archives:" -NoNewLine
@@ -789,6 +818,8 @@ else {
     }
 }
 
+Write-Log "","Section Duration: $($sectionTimer.Elapsed.ToString())"
+
 if (-not $ba2Filenames.Count) {
     Write-Success "","Existing patched archives validated successfully; nothing to do!" -NoJustifyRight
     Exit-Script 0
@@ -797,6 +828,8 @@ if (-not $ba2Filenames.Count) {
 
 # extract repack archives
 # -----------------------
+
+$sectionTimer.Restart()
 
 Write-Custom ""
 Write-Custom "Extracting repack archives:" -NoNewLine
@@ -857,7 +890,9 @@ else {
 
                 # do the actual extraction and save the command line used to the tool log
                 Write-Log "`"$tool7za`" x -y -bb2 -bse1 -bsp2 -o`"$outDir`" `"$relFile`" `"$(if ($extra) {$extra -join '" "'})`"" -Log "tool"
+                $toolTimer.Restart()
                 $stdout = (& "$tool7za" x -y -bb2 -bse1 -bsp2 -o"$outDir" "$relFile" "$(if ($extra) {$extra -join '" "'})")
+                Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
                 Write-Log $stdout,"" -Log "tool" -NoTimestamp
                 Write-Log "$("-" * $LineWidth)" -Log "tool"
                 Write-Log "" -Log "tool" -NoTimestamp
@@ -896,7 +931,7 @@ else {
                 $stdout = $null
             }
             Write-Error $_ -Prefix "ERROR: " -SnippetLength 3 -NoJustifyRight
-            Exit-Script 1
+            $extractRepackFailed = $true
         }
         finally {
             if (Test-Path $dir.temp) {
@@ -906,9 +941,17 @@ else {
     }
 }
 
+Write-Log "","Section Duration: $($sectionTimer.Elapsed.ToString())"
+
+if ($extractRepackFailed) {
+    Exit-Script 1
+}
+
 
 # process archives
 # ----------------
+
+$sectionTimer.Restart()
 
 Write-Custom "","Archives to build:"
 foreach ($file in $ba2Files.GetEnumerator()) {
@@ -934,9 +977,12 @@ catch {
     Exit-Script 1
 }
 
+$archiveTimer = New-Object System.Diagnostics.Stopwatch
 Write-Custom "","Processing archives:"
 for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
     try {
+        $archiveTimer.Restart()
+
         $stdout, $stderr = $null
         $ba2File = $ba2Filenames[$index]
         Write-Custom "  Archive $($index + 1) of $($ba2Filenames.Count) ($ba2File):"
@@ -956,8 +1002,10 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         # extract original archive
         Write-Custom "    Extracting original archive..." -NoNewline
         Write-Log "`"$toolArchive2`" `"$originalBa2File`" -extract=`"$($dir.workingFiles)`"" -Log "tool"
+        $toolTimer.Restart()
         $stdout, $stderr = (& "$toolArchive2" "$originalBa2File" -extract="$($dir.workingFiles)" 2>&1).`
             Where({$_ -is [string] -and $_ -ne ""}, 'Split')
+        Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
         Write-Log $stdout,"",$stderr,"" -Log "tool" -NoTimestamp
         Write-Log "$("-" * $LineWidth)" -Log "tool"
         Write-Log "" -Log "tool" -NoTimestamp
@@ -968,8 +1016,10 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
 
         # correctly extract cubemaps
         Write-Log "`"$toolBsab`" -e -o -f `"Textures\Shared\Cubemaps\*`" `"$originalBa2File`" `"$($dir.workingFiles)`"" -Log "tool"
+        $toolTimer.Restart()
         $stdout, $stderr = (& "$toolBsab" -e -o -f "Textures\Shared\Cubemaps\*" "$originalBa2File" "$($dir.workingFiles)" 2>&1).`
             Where({$_ -is [string] -and $_ -ne ""}, 'Split')
+        Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
         Write-Log $stdout,"",$stderr,"" -Log "tool" -NoTimestamp
         Write-Log "$("-" * $LineWidth)" -Log "tool"
         Write-Log "" -Log "tool" -NoTimestamp
@@ -986,8 +1036,10 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         # copy patched files
         Write-Custom "    Copying patched files..." -NoNewline
         Write-Log "`"$toolRobocopy`" `"$($dir.patchedFiles)`" `"$($dir.workingFiles)`" /s /xl /np /njh" -Log "tool"
+        $toolTimer.Restart()
         $stdout, $stderr = (& "$toolRobocopy" "$($dir.patchedFiles)" "$($dir.workingFiles)" /s /xl /np /njh 2>&1).`
             Where({$_ -is [string] -and $_ -ne ""}, 'Split')
+        Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
         Write-Log $stdout,"",$stderr,"" -Log "tool" -NoTimestamp
         Write-Log "$("-" * $LineWidth)" -Log "tool"
         Write-Log "" -Log "tool" -NoTimestamp
@@ -1004,8 +1056,10 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         # create patched archive
         Write-Custom "    Creating patched archive..." -NoNewline
         Write-Log "`"$toolArchive2`" `"$($dir.workingFiles)`" -format=`"DDS`" -create=`"$patchedBa2File`" -root=`"$(Resolve-Path $dir.workingFiles)`"" -Log "tool"
+        $toolTimer.Restart()
         $stdout, $stderr = (& "$toolArchive2" "$($dir.workingFiles)" -format="DDS" -create="$patchedBa2File" -root="$(Resolve-Path $dir.workingFiles)" 2>&1).`
             Where({$_ -is [string] -and $_ -ne ""}, 'Split')
+        Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
         Write-Log $stdout,"",$stderr,"" -Log "tool" -NoTimestamp
         Write-Log "$("-" * $LineWidth)" -Log "tool"
         Write-Log "" -Log "tool" -NoTimestamp
@@ -1046,11 +1100,14 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         if (Test-Path $dir.workingFiles) {
             Remove-Item $dir.workingFiles -Recurse -Force
         }
+        Write-Log "  $($archiveTimer.Elapsed.ToString())"
         if ($index -lt $ba2Filenames.Length - 1) {
             Write-Custom "  $("-" * ($LineWidth - 2))" -JustifyRight
         }
     }
 }
+
+Write-Log "","Section Duration: $($sectionTimer.Elapsed.ToString())"
 
 Write-Custom ""
 

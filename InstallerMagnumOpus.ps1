@@ -67,31 +67,6 @@ function Exit-Script {
     exit $ExitCode
 }
 
-# function ParseObjectLevel {
-#     param(
-#         [string[]]$lines,
-#         [ref]$currentLine=([ref]0),
-#         [string]$RegExCompare = '\A\s*((?<key>"[^"]+")|(?<brace>[\{\}]))\s*(?<lineValue>"[^"]*")?\Z'
-#     )
-
-#     $currTable = [ordered]@{}
-#     While ($currentLine.Value -lt $lines.count) {
-#         If ($lines[$currentLine.Value] -match $RegExCompare) {
-#             if ($matches.key) { $currKey = $matches.key }
-#             if ($matches.lineValue) { $currTable.$currKey = $matches.lineValue }
-#             elseif ($matches.brace -eq '{') {
-#                 $currentLine.Value++
-#                 $currTable.$currKey = ParseObjectLevel -lines $lines `
-#                     -currentLine $currentLine -RegExCompare $RegExCompare
-#             } elseif ($matches.brace -eq '}') {
-#                 break
-#             }
-#         }
-#         $currentLine.Value++
-#     }
-#     return $currTable
-# }
-
 function Wait-KeyPress {
     [CmdletBinding()]
     param (
@@ -104,21 +79,6 @@ function Wait-KeyPress {
         Write-Custom "","" -BypassLog
     }
 }
-
-# function WalkHashtable {
-#     [CmdletBinding()]
-#     param (
-#         [Parameter(Mandatory)]
-#         [PSObject]
-#         $Table
-#     )
-#     if (@("System.Collections.Hashtable", "System.Collections.Specialized.OrderedDictionary") -contains $Table.GetType().FullName) {
-#         Write-Output $Table
-#         foreach ($object in $Table.GetEnumerator()) {
-#             WalkHashtable $object.Value
-#         }
-#     }
-# }
 
 function Write-Error {
     [CmdletBinding()]
@@ -646,105 +606,6 @@ Add-Hash -VariableName "patchedBa2Hashes" -Hash "D422789209B67839D479DEA076D386A
 [string[]] $ba2Filenames = @($originalBa2Hashes.Keys | ForEach-Object { $originalBa2Hashes[$_].FileName.Split('\')[-1] }) | Sort-Object -Unique
 
 
-# check for existing patched archives
-#   if all hashes validate, end
-# check for existing patched files directory (with files)
-#   if exists, continue
-#   else check for repack archives
-#       if exists, unpack
-#       else, end
-# validate original archives
-#   if any invalid or nonexistent, get them from fallout 4 data folder
-# extract original archives
-# re-extract (correctly) original cubemaps
-# copy patched files
-# build patched archive
-# validate patched archive
-
-
-# TODO remove test code -->
-# try {
-#     $fallout4InstallPath = Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Bethesda Softworks\Fallout4" -ErrorAction Stop
-# }
-# catch [System.Management.Automation.ItemNotFoundException] {
-#     "not installed"
-# }
-# catch {
-#     $_
-#     Exit-Script 1
-# }
-# if ($fallout4InstallPath."installed path") {
-#     write-host $fallout4InstallPath."installed path"
-# }
-# else {
-#     "not installed"
-# }
-# $steamInstallPath = Get-ItemPropertyValue HKLM:\SOFTWARE\WOW6432Node\Valve\Steam -Name InstallPath
-# $steamInstallPath
-# $vdfFile = "$steamInstallPath\config\libraryfolders.vdf"
-# # $vdfContent = Get-Content $vdfFile
-# # $vdfObject = ParseObjectLevel -lines $vdfContent
-# # $vdfObject | Select-Object ($_.Key -ne "contentstatsid")
-# Exit-Script 0
-
-# $first = $true
-# # for ($index = 0; $index -lt $repackFiles.Keys.Count; $index++) {
-# foreach ($object in $repackFiles.GetEnumerator()) {
-#     $numBadHashes = 0
-#     $numMissingFiles = 0
-#     if ($first) {$first = $false} else {Write-Custom "$("-" * 30)"}
-#     Write-Custom "$($object.Key) ($($object.Value.Count) file$(if ($object.Value.Count -ne 1) {"s"})):"
-#     foreach ($file in $object.Value) {
-#         $relFile = "$($dir.repack7z)\$file"
-#         Write-Custom "  $file" -NoNewLine
-#         if (Test-Path -Path $relFile) {
-#             $hash = (Get-FileHash -Path $relFile -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
-#             if ($repack7zHashes[$hash].FileName -ne $relFile) {
-#                 Write-Warning "[UNRECOGNIZED]"
-#                 $numBadHashes++
-#             }
-#             else {
-#                 Write-Success "[VALIDATED]"
-#             }
-#         }
-#         else {
-#             Write-Warning "[NOT FOUND]"
-
-#         }
-#     }
-# }
-# Exit-Script 0
-
-# Write-Success "foo" "bar" -NoJustifyRight
-# Exit-Script 1
-
-# $snip = 1
-# Write-Custom (1..2) -SnippetLength $snip
-# Write-Custom (1..4) -SnippetLength $snip
-# Write-Custom (1..5) -SnippetLength $snip
-# Exit-Script
-
-# [System.ConsoleColor]:: $foo
-# $foo
-# Exit-Script
-
-# Write-Custom "FOO"
-# Write-Custom "FOO" -JustifyRight
-# Write-Custom "FOO" -NoNewLine
-# Write-Custom "FOO" -JustifyRight
-# Write-Custom "FOO" -JustifyRight -NoNewLine
-# Write-Custom "FOO" -JustifyRight
-# Exit-Script 0
-
-# $bar = @{}
-# Add-Hash -Hash "foo" -FileName "somefile" -Tag "somedesc" -VariableName "bar"
-# write-host "result 1: $($bar.foo.FileName)"
-# Add-Hash -Hash "foo","bar" -FileName "file2" -Tag "somedesc" -VariableName "bar"
-# write-host "result 2: $($bar.foo.FileName)"
-# Exit-Script 0
-# TODO remove test code <--
-
-
 # begin script
 # ------------
 
@@ -909,6 +770,7 @@ else {
             }
             Write-Log "  Hash: $hash"
             if ($patchedBa2Hashes[$hash].FileName -eq $relFile) {
+                Write-Log "  Tags: $($patchedBa2Hashes[$hash].Tags -join ", ")"
                 if ($patchedBa2Hashes[$hash].Tags -contains $repackTag) {
                     Write-Success "  [VALID]"
                     $ba2Filenames = $ba2Filenames.Where({$_ -ne $file})
@@ -916,7 +778,6 @@ else {
                 else {
                     Write-Warning "  [REPACK SET MISMATCH]"
                 }
-                Write-Log "  Tags: $($patchedBa2Hashes[$hash].Tags -join ", ")"
             }
             else {
                 Write-Warning "  [UNRECOGNIZED]"
@@ -1014,7 +875,7 @@ else {
                 $stdout = $null
             }
 
-            # special cases # TODO define special cases
+            # special case: if on main and using performance, copy previously-saved texture, otherwise delete corrupted texture
             if ($object.Key -eq "Main") {
                 if ($repackFlags.Performance){
                     Copy-Item "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
@@ -1023,6 +884,7 @@ else {
                     Remove-Item "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds"
                 }
             }
+            # special case: if on restyle, copy items to PatchedFiles folder
             elseif ($object.Key -eq "Restyle") {
                 Copy-Item $($extra | ForEach-Object {"$($dir.temp)\$_"}) -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
             }
@@ -1050,7 +912,7 @@ else {
 
 Write-Custom "","Archives to build:"
 foreach ($file in $ba2Files.GetEnumerator()) {
-    Write-Custom -NoNewLine "  $($file.Value)"
+    Write-Custom "  $($file.Value)" -NoNewLine
     if ($ba2Filenames -contains $file.Value) {
         Write-Success "  [YES]"
     }
@@ -1082,17 +944,17 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         $patchedBa2File = "$($dir.patchedBa2)\$ba2File"
 
         # validate original archive
-        Write-Custom -NoNewline "    Validating original archive..."
+        Write-Custom "    Validating original archive..." -NoNewline
         if ($originalBa2Hashes[$(Get-FileHash -Path $originalBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash].FileName -ne $originalBa2File) {
             throw "Hash mismatch."
         }
         Write-Success "    [VALID]"
 
         # create working files directory
-        New-Item -ItemType "directory" -Path $dir.workingFiles -ErrorAction Stop | Out-Null
+        New-Item $dir.workingFiles -ItemType "directory" -ErrorAction Stop | Out-Null
 
         # extract original archive
-        Write-Custom -NoNewline "    Extracting original archive..."
+        Write-Custom "    Extracting original archive..." -NoNewline
         Write-Log "`"$toolArchive2`" `"$originalBa2File`" -extract=`"$($dir.workingFiles)`"" -Log "tool"
         $stdout, $stderr = (& "$toolArchive2" "$originalBa2File" -extract="$($dir.workingFiles)" 2>&1).`
             Where({$_ -is [string] -and $_ -ne ""}, 'Split')
@@ -1122,7 +984,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-Success "    [DONE]"
 
         # copy patched files
-        Write-Custom -NoNewline "    Copying patched files..."
+        Write-Custom "    Copying patched files..." -NoNewline
         Write-Log "`"$toolRobocopy`" `"$($dir.patchedFiles)`" `"$($dir.workingFiles)`" /s /xl /np /njh" -Log "tool"
         $stdout, $stderr = (& "$toolRobocopy" "$($dir.patchedFiles)" "$($dir.workingFiles)" /s /xl /np /njh 2>&1).`
             Where({$_ -is [string] -and $_ -ne ""}, 'Split')
@@ -1140,7 +1002,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-Success "    [DONE]"
 
         # create patched archive
-        Write-Custom -NoNewline "    Creating patched archive..."
+        Write-Custom "    Creating patched archive..." -NoNewline
         Write-Log "`"$toolArchive2`" `"$($dir.workingFiles)`" -format=`"DDS`" -create=`"$patchedBa2File`" -root=`"$(Resolve-Path $dir.workingFiles)`"" -Log "tool"
         $stdout, $stderr = (& "$toolArchive2" "$($dir.workingFiles)" -format="DDS" -create="$patchedBa2File" -root="$(Resolve-Path $dir.workingFiles)" 2>&1).`
             Where({$_ -is [string] -and $_ -ne ""}, 'Split')
@@ -1154,22 +1016,21 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-Success "    [DONE]"
 
         # validate patched archive
-        Write-Custom -NoNewline "    Validating patched archive..."
-        $hash = $(Get-FileHash -Path $patchedBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
+        Write-Custom "    Validating patched archive..." -NoNewline
+        $hash = $(Get-FileHash $patchedBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
         Write-Log "    Hash is `"$hash`" for `"$patchedBa2File`"."
         if ($repackFlags.Custom) {
             Write-Warning "    [CUSTOM]"
         }
         elseif ($patchedBa2Hashes[$hash].FileName -ne $patchedBa2File) {
-            if ($repackFlags.Custom) {
-            }
-            else {
-                throw "Unknown hash `"$hash`"."
-            }
+            throw "Unknown hash `"$hash`"."
+        }
+        Write-Log "    Tags: $($patchedBa2Hashes[$hash].Tags -join ", ")"
+        if ($patchedBa2Hashes[$hash].Tags -contains $repackTag) {
+            Write-Success "    [VALID]"
         }
         else {
-            Write-Success "    [VALID]"
-            Write-Log "    Tags: $($patchedBa2Hashes[$hash].Tags -join ", ")"
+            throw "Archive hash does not have tag `"$repackTag`"."
         }
     }
     catch {
@@ -1182,8 +1043,8 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         $processingFailed = $true
     }
     finally {
-        if (Test-Path -Path $dir.workingFiles) {
-            Remove-Item -Path $dir.workingFiles -Recurse -Force
+        if (Test-Path $dir.workingFiles) {
+            Remove-Item $dir.workingFiles -Recurse -Force
         }
         if ($index -lt $ba2Filenames.Length - 1) {
             Write-Custom "  $("-" * ($LineWidth - 2))" -JustifyRight

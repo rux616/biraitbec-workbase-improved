@@ -30,11 +30,12 @@ function Exit-Script {
     [CmdletBinding()]
     param (
         [int] $ExitCode = 0,
-        [switch] $Immediate
+        [switch] $Immediate,
+        [System.Diagnostics.Stopwatch] $ScriptTimer = $scriptTimer
     )
 
-    $script:scriptTimer.Stop()
-    Write-Custom "","Elapsed time: $(Write-TimeSpan $script:scriptTimer.Elapsed)"
+    $ScriptTimer.Stop()
+    Write-Custom "","Elapsed time: $(Write-TimeSpan $ScriptTimer.Elapsed)"
 
     if (-not $Immediate) {
         Write-Custom "" -BypassLog
@@ -76,7 +77,6 @@ function Write-Error {
     Write-Custom @hashArguments
 }
 
-[int] $writeCustomPrevNoNewLineLength = 0
 function Write-Custom {
     [CmdletBinding()]
     param (
@@ -88,7 +88,8 @@ function Write-Custom {
         [int] $LineWidth = $LineWidth,
         [switch] $UseErrorStream,
         [int] $SnippetLength = 0,
-        [PSObject] $Color = $null
+        [PSObject] $Color = $null,
+        [ref] $PreviousLineLength = [ref] $writeCustomPrevNoNewLineLength
     )
 
     if ($UseErrorStream) {
@@ -113,21 +114,21 @@ function Write-Custom {
         if ($NoNewLine) {
             if ($JustifyRight) {
                 $stream.Write("{0,$LineWidth}", $Prefix + $line)
-                $script:writeCustomPrevNoNewLineLength = $LineWidth
+                $PreviousLineLength.Value = $LineWidth
             }
             else {
                 $stream.Write("{0}", $Prefix + $line)
-                $script:writeCustomPrevNoNewLineLength = $Prefix.Length + $line.Length
+                $PreviousLineLength.Value = $Prefix.Length + $line.Length
             }
         }
         else {
             if ($JustifyRight) {
-                $stream.WriteLine("{0,$($LineWidth - $script:writeCustomPrevNoNewLineLength)}", $Prefix + $line)
+                $stream.WriteLine("{0,$($LineWidth - $PreviousLineLength.Value)}", $Prefix + $line)
             }
             else {
                 $stream.WriteLine("{0}", $Prefix + $line)
             }
-            $script:writeCustomPrevNoNewLineLength = 0
+            $PreviousLineLength.Value = 0
         }
     }
 
@@ -145,6 +146,7 @@ function Write-Log {
     param (
         [Parameter(Mandatory)] [AllowEmptyString()] [PSObject] $Message,
         [string] $Log = "install",
+        [string] $LogStartTime = $RunStartTime,
         [switch] $NoTimestamp
     )
 
@@ -152,10 +154,10 @@ function Write-Log {
         New-Item -Path $dir.logs -ItemType "directory" -ErrorAction Stop | Out-Null
     }
     if ($NoTimestamp) {
-        Write-Output $Message | Out-File "$($dir.logs)\${Log}_$RunTimestamp.log" -Append
+        Write-Output $Message | Out-File "$($dir.logs)\${Log}_$LogStartTime.log" -Append
     }
     else {
-        Write-Output $Message | ForEach-Object {"[$((Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))] $_".Trim()} | Out-File "$($dir.logs)\${Log}_$RunTimestamp.log" -Append
+        Write-Output $Message | ForEach-Object {"[$((Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))] $_".Trim()} | Out-File "$($dir.logs)\${Log}_$LogStartTime.log" -Append
     }
 }
 

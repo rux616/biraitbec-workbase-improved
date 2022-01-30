@@ -28,12 +28,17 @@ param (
 # constants and variables
 # -----------------------
 
+Set-Variable "InstallerVersion" -Value $(New-Object "System.Version" -ArgumentList @(0, 1, 0))
+
 Set-Variable "FileHashAlgorithm" -Value "SHA256" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
 Set-Variable "LineWidth" -Value ($Host.UI.RawUI.WindowSize.Width - 1) -Option Constant
 Set-Variable "TagJoiner" -Value "+" -Option Constant
+Set-Variable "OriginalBackgroundColor" -Value $Host.UI.RawUI.BackgroundColor -Option Constant
 
 $dir = @{}
+$dir.fallout4DataRegistry = ""
+$dir.fallout4DataSteam = ""
 $dir.logs = ".\Logs"
 $dir.originalBa2 = ".\OriginalBa2"
 $dir.patchedBa2 = ".\PatchedBa2"
@@ -77,6 +82,10 @@ $ba2Files.fallout4Textures7 = "Fallout4 - Textures7.ba2"
 $ba2Files.fallout4Textures8 = "Fallout4 - Textures8.ba2"
 $ba2Files.fallout4Textures9 = "Fallout4 - Textures9.ba2"
 
+$msvcp110dllVersion = (Get-Command "${env:windir}\System32\msvcp110.dll" -ErrorAction SilentlyContinue).Version
+$msvcr110dllVersion = (Get-Command "${env:windir}\System32\msvcr110.dll" -ErrorAction SilentlyContinue).Version
+$vcrMinVersion = New-Object "System.Version" -ArgumentList @(11, 00, 51106, 1)
+
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 $sectionTimer = New-Object System.Diagnostics.Stopwatch
 $toolTimer = New-Object System.Diagnostics.Stopwatch
@@ -107,21 +116,57 @@ $toolRobocopy = "robocopy"
 # imports
 # -------
 
-. .\Functions.ps1
-. .\Hashes.ps1
+. .\Tools\lib\Functions.ps1
+. .\Tools\lib\Hashes.ps1
 
 
 # late variables
 # --------------
 
+$currentDirectory = [IO.Path]::GetFullPath((Get-Location))
+
 # more complicated than simply using $ba2Files, but allows for easier testing
 [string[]] $ba2Filenames = @($originalBa2Hashes.Keys | ForEach-Object { $originalBa2Hashes[$_].FileName }) | Sort-Object -Unique
+
+$dir.fallout4DataRegistry = Get-Fallout4DataFolder -DiscoveryMethod Registry
+$dir.fallout4DataSteam = Get-Fallout4DataFolder -DiscoveryMethod Steam
 
 
 # begin script
 # ------------
 
+$Host.UI.RawUI.BackgroundColor = 'black'
 Clear-Host
+Write-Log @(
+    ">" * $LineWidth
+    "Diagnostic Information:"
+    "  Installer Version: $InstallerVersion"
+    "  Functions Version: $FunctionsVersion"
+    "  Hashes Version: $HashesVersion"
+    ""
+    "  Windows Version: $(Get-WindowsVersion)"
+    "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) {$msvcp110dllVersion} else {"Not Found"})
+    "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) {$msvcr110dllVersion} else {"Not Found"})
+    ""
+    "  Current Directory: $currentDirectory"
+    ""
+    "  Number of Repack archive hashes: $($repack7zHashes.Keys.Count)"
+    "  Number of Original BA2 Hashes: $($originalBa2Hashes.Keys.Count)"
+    "  Number of Patched BA2 Hashes: $($patchedBa2Hashes.Keys.Count)"
+    ""
+    "  Line Width: $LineWidth"
+    "  Original Console Background Color: $OriginalBackgroundColor"
+    "  Color Hex Value (Black): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Black.value__).ToString("D2"))").ToString("X6"))"
+    "  Color Hex Value (Blue): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Blue.value__).ToString("D2"))").ToString("X6"))"
+    "  Color Hex Value (Green): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Green.value__).ToString("D2"))").ToString("X6"))"
+    "  Color Hex Value (Red): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Red.value__).ToString("D2"))").ToString("X6"))"
+    "  Color Hex Value (Yellow): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Yellow.value__).ToString("D2"))").ToString("X6"))"
+    ""
+    "  Fallout 4 Data directory (Registry method): " + $(if ($dir.fallout4DataRegistry) {$dir.fallout4DataSteam} else {"Not Found"})
+    "  Fallout 4 Data directory (Steam method): " + $(if ($dir.fallout4DataSteam) {$dir.fallout4DataSteam} else {"Not Found"})
+    "<" * $LineWidth
+    ""
+)
 
 
 # check location to ensure it's not located in a problematic directory
@@ -134,7 +179,6 @@ $problemDirs = @(
     [IO.Path]::GetFullPath(${env:USERPROFILE})
     [IO.Path]::GetFullPath(${env:PUBLIC})
 )
-$currentDirectory = [IO.Path]::GetFullPath((Get-Location))
 foreach ($problemDir in $problemDirs) {
     if ($currentDirectory.StartsWith($problemDir, [System.StringComparison]::OrdinalIgnoreCase)) {
         Write-Error @(
@@ -154,20 +198,13 @@ foreach ($problemDir in $problemDirs) {
 # from vc redist 2012 update 4:
 #   msvcp110.dll version = 11.00.51106.1
 #   msvcr110.dll version = 11.00.51106.1
-$vcRedistFile = @{}
-$vcRedistFile.msvcp110dll = "${env:windir}\System32\msvcp110.dll"
-$vcRedistFile.msvcr110dll = "${env:windir}\System32\msvcr110.dll"
 $vcrMinVersion = New-Object "System.Version" -ArgumentList @(11, 00, 51106, 1)
-if (
-    @(Test-Path $vcRedistFile.msvcp110dll,$vcRedistFile.msvcr110dll) -contains $false -or
-    (Get-Command $vcRedistFile.msvcp110dll).Version -lt $vcrMinVersion -or
-    (Get-Command $vcRedistFile.msvcr110dll).Version -lt $vcrMinVersion
-) {
-        Write-Error @(
-            "Need 64-bit Visual C++ Redistributable for Visual Studio 2012 Update 4! Please download it from this link:"
-            "https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe"
-         ) -Prefix "ERROR: "
-        Exit-Script 1
+if ($msvcp110dllVersion -lt $vcrMinVersion -or $msvcr110dllVersion -lt $vcrMinVersion) {
+    Write-Error @(
+        "Need 64-bit Visual C++ Redistributable for Visual Studio 2012 Update 4! Please download it from this link:"
+        "https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe"
+        ) -Prefix "ERROR: "
+    Exit-Script 1
 }
 
 
@@ -244,8 +281,8 @@ foreach ($object in $repackFlags.GetEnumerator()) {
     }
 }
 
-Write-Log "","Repack Tag: $repackTag"
-Write-Log "","Section Duration: $($sectionTimer.Elapsed.ToString())"
+Write-Log "","Repack tag: $repackTag"
+Write-Log "","Section duration: $($sectionTimer.Elapsed.ToString())"
 
 if ($repackFlags.Custom) {
     Write-Warning "","No repack sets found, but custom assets exist." -NoJustifyRight
@@ -261,8 +298,28 @@ elseif (-not $repackTag) {
 
 $sectionTimer.Restart()
 
+try {
+    if (-not (Test-Path $dir.patchedBa2)) {
+        New-Item $dir.patchedBa2 -ItemType "directory" -ErrorAction Stop | Out-Null
+    }
+}
+catch {
+    Write-Error $_ -Prefix "ERROR: " -SnippetLength 3
+    Exit-Script 1
+}
+
 Write-Custom ""
-Write-Custom "Validating existing patched archives:" -NoNewLine
+Write-Custom "Patched BA2 archive folder:" -NoNewLine
+$dir.patchedBa2 = Get-Folder -Description "Select patched BA2 output folder:" -InitialDirectory $([IO.Path]::GetFullPath("$(Get-Location)\$($dir.patchedBa2)"))
+if ($null -eq $dir.patchedBa2) {
+    Write-Custom "" -BypassLog
+    Write-Error "","Cancelled by user." -NoJustifyRight
+    Exit-Script 1
+}
+Write-Info $dir.patchedBa2
+
+Write-Custom ""
+Write-Custom "Validating existing patched BA2 archives:" -NoNewLine
 if ($repackFlags.Custom -or $SkipExistingPatchedHashing) {
     Write-Warning "[SKIPPED]"
 }
@@ -306,7 +363,7 @@ else {
     }
 }
 
-Write-Log "","Section Duration: $($sectionTimer.Elapsed.ToString())"
+Write-Log "","Section duration: $($sectionTimer.Elapsed.ToString())"
 
 if (-not $ba2Filenames.Count) {
     Write-Success "","Existing patched archives validated successfully; nothing to do!" -NoJustifyRight
@@ -327,7 +384,7 @@ if ($repackFlags.Custom) {
 else {
     # remove PatchedFiles\Textures directory if not a custom repack and said directory exists
     if (Test-Path "$($dir.patchedFiles)\Textures") {
-        Remove-Item "$($dir.patchedFiles)\Textures" -Recurse
+        Remove-Item "$($dir.patchedFiles)\Textures" -Force -Recurse
     }
 
     # create PatchedFiles directory if it doesn't exist
@@ -429,7 +486,7 @@ else {
     }
 }
 
-Write-Log "","Section Duration: $($sectionTimer.Elapsed.ToString())"
+Write-Log "","Section duration: $($sectionTimer.Elapsed.ToString())"
 
 if ($extractRepackFailed) {
     Exit-Script 1
@@ -475,22 +532,33 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         $file = $ba2Filenames[$index]
         Write-Custom "  Archive $($index + 1) of $($ba2Filenames.Count) ($file):"
         $originalBa2File = "$($dir.originalBa2)\$file"
+        if (-not (Test-Path $originalBa2File)) {
+            if (Test-Path "$($dir.fallout4DataRegistry)\$file") {
+                $originalBa2File = "$($dir.fallout4DataRegistry)\$file"
+            }
+            elseif (Test-Path "$($dir.fallout4DataSteam)\$file") {
+                $originalBa2File = "$($dir.fallout4DataSteam)\$file"
+            }
+        }
         $patchedBa2File = "$($dir.patchedBa2)\$file"
 
+        Write-Custom "    Original BA2: " -NoNewLine
+        Write-Info "    $originalBa2File"
+
         # validate original archive
-        Write-Custom "    Validating original archive..." -NoNewline
+        Write-Custom "      Validating original archive..." -NoNewline
         $hash = (Get-FileHash -Path $originalBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
-        Write-Log "    Hash: $hash"
+        Write-Log "      Hash: $hash"
         if ($originalBa2Hashes[$hash].FileName -ne $file) {
             throw "Hash mismatch."
         }
-        Write-Success "    [VALID]"
+        Write-Success "      [VALID]"
 
         # create working files directory
         New-Item $dir.workingFiles -ItemType "directory" -ErrorAction Stop | Out-Null
 
         # extract original archive
-        Write-Custom "    Extracting original archive..." -NoNewline
+        Write-Custom "      Extracting original archive..." -NoNewline
         Write-Log "`"$toolArchive2`" `"$originalBa2File`" -extract=`"$($dir.workingFiles)`"" -Log "tool"
         $toolTimer.Restart()
         $stdout, $stderr = (& "$toolArchive2" "$originalBa2File" -extract="$($dir.workingFiles)" 2>&1).`
@@ -521,10 +589,13 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             throw "Extracting cubemaps from '$originalBa2File' failed."
         }
         $stdout, $stderr = $null
-        Write-Success "    [DONE]"
+        Write-Success "      [DONE]"
+
+        Write-Custom "    Patched BA2: " -NoNewLine
+        Write-Info "    $patchedBa2File"
 
         # copy patched files
-        Write-Custom "    Copying patched files..." -NoNewline
+        Write-Custom "      Copying patched files..." -NoNewline
         Write-Log "`"$toolRobocopy`" `"$($dir.patchedFiles)`" `"$($dir.workingFiles)`" /s /xl /np /njh" -Log "tool"
         $toolTimer.Restart()
         $stdout, $stderr = (& "$toolRobocopy" "$($dir.patchedFiles)" "$($dir.workingFiles)" /s /xl /np /njh 2>&1).`
@@ -541,10 +612,10 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             throw "Copying patched files failed."
         }
         $stdout, $stderr = $null
-        Write-Success "    [DONE]"
+        Write-Success "      [DONE]"
 
         # create patched archive
-        Write-Custom "    Creating patched archive..." -NoNewline
+        Write-Custom "      Creating patched archive..." -NoNewline
         Write-Log "`"$toolArchive2`" `"$($dir.workingFiles)`" -format=`"DDS`" -create=`"$patchedBa2File`" -root=`"$(Resolve-Path $dir.workingFiles)`"" -Log "tool"
         $toolTimer.Restart()
         $stdout, $stderr = (& "$toolArchive2" "$($dir.workingFiles)" -format="DDS" -create="$patchedBa2File" -root="$(Resolve-Path $dir.workingFiles)" 2>&1).`
@@ -557,28 +628,28 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             throw "Creating '$patchedBa2File' failed."
         }
         $stdout, $stderr = $null
-        Write-Success "    [DONE]"
+        Write-Success "      [DONE]"
 
         # validate patched archive
-        Write-Custom "    Validating patched archive..." -NoNewline
+        Write-Custom "      Validating patched archive..." -NoNewline
         $hash = $(Get-FileHash $patchedBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
-        Write-Log "    Hash: $hash"
+        Write-Log "      Hash: $hash"
         if ($repackFlags.Custom) {
-            Write-Warning "    [CUSTOM]"
+            Write-Warning "      [CUSTOM]"
         }
         elseif ($patchedBa2Hashes[$hash].FileName -ne $file) {
             throw "Unknown hash `"$hash`"."
         }
-        Write-Log "    Tags: $($patchedBa2Hashes[$hash].Tags -join ", ")"
+        Write-Log "      Tags: $($patchedBa2Hashes[$hash].Tags -join ", ")"
         if ($patchedBa2Hashes[$hash].Tags -contains $repackTag) {
-            Write-Success "    [VALID]"
+            Write-Success "      [VALID]"
         }
         else {
             throw "Archive hash does not have tag `"$repackTag`"."
         }
     }
     catch {
-        Write-Error "    [FAIL]"
+        Write-Error "      [FAIL]"
         if ($null -ne $stderr) {
             Write-Error $stderr -Prefix "ERROR: " -SnippetLength 3
             $stdout, $stderr = $null
@@ -590,14 +661,29 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         if (Test-Path $dir.workingFiles) {
             Remove-Item $dir.workingFiles -Recurse -Force
         }
-        Write-Log "  $($archiveTimer.Elapsed.ToString())"
+        Write-Log "  Archive duration: $($archiveTimer.Elapsed.ToString())"
         if ($index -lt $ba2Filenames.Length - 1) {
             Write-Custom "  $("-" * ($LineWidth - 2))" -JustifyRight
         }
     }
 }
 
-Write-Log "","Section Duration: $($sectionTimer.Elapsed.ToString())"
+Write-Log "","Section duration: $($sectionTimer.Elapsed.ToString())"
+
+if (-not $repackFlags.Custom) {
+    Write-Custom ""
+    Write-Custom "Cleaning up..." -NoNewLine
+    try {
+        if (Test-Path $dir.patchedFiles) {
+            Remove-Item $dir.patchedFiles -Force -Recurse
+        }
+    }
+    catch {
+        Write-Error "[ERROR]"
+        Write-Error $_ -Prefix "ERROR: " -SnippetLength 3
+    }
+    Write-Success "[DONE]"
+}
 
 Write-Custom ""
 

@@ -1,6 +1,10 @@
 # file hashes
 # -----------
 
+Write-Host "Loading hashes..."
+
+Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 0, 0))
+
 $repack7zHashes = @{}; $var = "repack7zHashes"
 $tag = "Performance"
 Add-Hash -VariableName $var -Hash "CB0C484C4034777E29694B0F128F49B1BA6EFA4CCE93298C34F04AA9EF847C93" -Tag $tag -FileName $repackFiles.Performance[0]

@@ -1,6 +1,10 @@
 # functions
 # ---------
 
+Write-Host "Loading Functions..."
+
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 0, 0))
+
 function Add-Hash {
     [CmdletBinding()]
     param (
@@ -31,18 +35,102 @@ function Exit-Script {
     param (
         [int] $ExitCode = 0,
         [switch] $Immediate,
-        [System.Diagnostics.Stopwatch] $ScriptTimer = $scriptTimer
+        [System.Diagnostics.Stopwatch] $ScriptTimer = $scriptTimer,
+        [System.ConsoleColor] $OriginalConsoleColor = $OriginalConsoleColor
     )
 
     $ScriptTimer.Stop()
-    Write-Custom "","Elapsed time: $(Write-TimeSpan $ScriptTimer.Elapsed)"
+    Write-Custom ""
+    Write-Custom "Elapsed time: " -NoNewLine
+    Write-Info "$(Write-TimeSpan $ScriptTimer.Elapsed)" -NoJustifyRight
 
     if (-not $Immediate) {
         Write-Custom "" -BypassLog
         Wait-KeyPress
     }
     Write-Log "","Exit Code: $ExitCode"
+    $Host.UI.RawUI.BackgroundColor = $OriginalConsoleColor
     exit $ExitCode
+}
+
+function Get-Fallout4DataFolder {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)] [string] $DiscoveryMethod
+    )
+
+    switch -exact ($DiscoveryMethod) {
+        "Registry" {
+            # attempt to get the install path of Fallout 4 from the registry
+            $fallout4RegistryFolder = (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Bethesda Softworks\Fallout4" -ErrorAction SilentlyContinue)."installed path"
+            if (-not $fallout4RegistryFolder -or -not (Test-Path $fallout4RegistryFolder)) { return "" }
+            # if it exists, set the location of the Fallout 4 folder
+            $fallout4Folder = $fallout4RegistryFolder
+            break
+        }
+        "Steam" {
+            # attempt to get steam install path from the registry
+            $steamDir = (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Valve\Steam" -ErrorAction SilentlyContinue).InstallPath
+            if (-not $steamDir) { return "" }
+            # set the location of the file that has the configuration of Steam's library folders
+            $steamLibraryFile = "$steamDir\config\libraryfolders.vdf"
+            if (-not (Test-Path $steamLibraryFile)) { return "" }
+            # search the steam library file for the game ID of Fallout 4
+            #   (Select-String "^\s+`"377160`"" -Path $steamLibraryFile)
+            # get the line number it's found at
+            #   .LineNumber
+            $fallout4EntryLineNumber = (Select-String "^\s+`"377160`"" -Path $steamLibraryFile).LineNumber
+            if (-not $fallout4EntryLineNumber) { return "" }
+            # search for "path" entries in the steam library file, making sure it's an array
+            #   (@(Select-String "^\s+`"path`"" -Path $steamLibraryFile)
+            # find the path entry just before the fallout 4 ID, will be an entry similar to '       "path"      "C:\Foo"'
+            #   .Where({$_.LineNumber -lt $fallout4EntryLineNumber}, "Last")
+            # split the line using " as a delimiter
+            #   .Line -split "`"")
+            # trim any whitespace from the resulting array entries
+            #   .Trim()
+            # get the last entry that's not an empty string, which should be the location of the steam library where Fallout 4 is
+            #   .Where({$_}, "Last")
+            $steamLibraryPath = (@(Select-String "^\s+`"path`"" -Path $steamLibraryFile).Where({$_.LineNumber -lt $fallout4EntryLineNumber}, "Last").Line -split "`"").Trim().Where({$_}, "Last")
+            if (-not $steamLibraryPath) { return "" }
+            # set the location of the Fallout 4 folder gotten through this method
+            $fallout4SteamFolder = "$steamLibraryPath\steamapps\common\Fallout 4"
+            if (-not (Test-Path $fallout4SteamFolder)) { return "" }
+            # if it exists, set the location of the Fallout 4 folder
+            $fallout4Folder = $fallout4SteamFolder
+            break
+        }
+        default {
+            throw "Invalid discovery method `"$DiscoveryMethod`" specified."
+        }
+    }
+    # set the location of the fallout 4 data folder
+    $fallout4DataFolder = [IO.Path]::GetFullPath("$fallout4Folder\Data")
+    if (-not (Test-Path $fallout4DataFolder)) { return "" }
+    # if it exists, return the location of the fallout 4 data folder
+    return $fallout4DataFolder
+}
+
+function Get-Folder {
+    [CmdletBinding()]
+    param (
+        [Parameter()] [string] $Description = "",
+        [Parameter()] [string] $InitialDirectory = (Get-Location),
+        [Parameter()] [string] $RootFolder = "MyComputer"
+    )
+
+    [System.Reflection.Assembly]::LoadWithPartialName("System.windows.forms")|Out-Null
+
+    $folderDialog = New-Object System.Windows.Forms.FolderBrowserDialog
+    $folderDialog.Description = $Description
+    $folderDialog.RootFolder = $RootFolder
+    $folderDialog.SelectedPath = $InitialDirectory
+
+    if($folderDialog.ShowDialog() -eq "OK")
+    {
+        $folder += $folderDialog.SelectedPath
+    }
+    return $folder
 }
 
 function Wait-KeyPress {
@@ -137,8 +225,25 @@ function Write-Custom {
     }
 
     if (-not $BypassLog) {
-        Write-Log $Message
+        Write-Log $($Message | ForEach-Object {"$Prefix$_"})
     }
+}
+
+function Write-Info {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
+        [switch] $NoJustifyRight,
+        [string] $Prefix = $null
+    )
+
+    $hashArguments = @{
+        Message = $Message
+        JustifyRight = -not $NoJustifyRight
+        Prefix = $Prefix
+        Color = [System.ConsoleColor]::Blue
+    }
+    Write-Custom @hashArguments
 }
 
 function Write-Log {

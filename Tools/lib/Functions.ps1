@@ -21,7 +21,7 @@
 
 Write-Host "Loading Functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 2, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 3, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -156,7 +156,10 @@ function Get-WindowsVersion {
     return @(
         Get-ItemPropertyValue -Path $regKey -Name "ProductName"
         Get-ItemPropertyValue -Path $regKey -Name "DisplayVersion"
-        "(" + (Get-ItemPropertyValue -Path $regKey -Name "CurrentBuild") + "." + (Get-ItemPropertyValue -Path $regKey -Name "UBR") + ")"
+        "(Version"
+        (Get-ItemPropertyValue -Path $regKey -Name "ReleaseId") + ","
+        "OS Build"
+        (Get-ItemPropertyValue -Path $regKey -Name "CurrentBuild") + "." + (Get-ItemPropertyValue -Path $regKey -Name "UBR") + ")"
     ) -join " "
 }
 

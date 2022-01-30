@@ -21,7 +21,7 @@
 
 Write-Host "Loading Functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 1, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 2, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -149,6 +149,15 @@ function Get-Folder {
         $folder += $folderDialog.SelectedPath
     }
     return $folder
+}
+
+function Get-WindowsVersion {
+    $regKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion"
+    return @(
+        Get-ItemPropertyValue -Path $regKey -Name "ProductName"
+        Get-ItemPropertyValue -Path $regKey -Name "DisplayVersion"
+        "(" + (Get-ItemPropertyValue -Path $regKey -Name "CurrentBuild") + "." + (Get-ItemPropertyValue -Path $regKey -Name "UBR") + ")"
+    ) -join " "
 }
 
 function Wait-KeyPress {

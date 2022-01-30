@@ -21,7 +21,7 @@
 
 Write-Host "Loading Functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 0, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 1, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -54,7 +54,7 @@ function Exit-Script {
         [int] $ExitCode = 0,
         [switch] $Immediate,
         [System.Diagnostics.Stopwatch] $ScriptTimer = $scriptTimer,
-        [System.ConsoleColor] $OriginalConsoleColor = $OriginalConsoleColor
+        [System.ConsoleColor] $OriginalBackgroundColor = $OriginalBackgroundColor
     )
 
     $ScriptTimer.Stop()
@@ -67,7 +67,7 @@ function Exit-Script {
         Wait-KeyPress
     }
     Write-Log "","Exit Code: $ExitCode"
-    $Host.UI.RawUI.BackgroundColor = $OriginalConsoleColor
+    $Host.UI.RawUI.BackgroundColor = $OriginalBackgroundColor
     exit $ExitCode
 }
 

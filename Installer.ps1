@@ -28,7 +28,7 @@ param (
 # constants and variables
 # -----------------------
 
-Set-Variable "InstallerVersion" -Value $(New-Object "System.Version" -ArgumentList @(0, 1, 0))
+Set-Variable "InstallerVersion" -Value $(New-Object "System.Version" -ArgumentList @(0, 2, 0))
 
 Set-Variable "FileHashAlgorithm" -Value "SHA256" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -37,11 +37,12 @@ Set-Variable "TagJoiner" -Value "+" -Option Constant
 Set-Variable "OriginalBackgroundColor" -Value $Host.UI.RawUI.BackgroundColor -Option Constant
 
 $dir = @{}
+$dir.defaultPatchedBa2 = ".\PatchedBa2"
 $dir.fallout4DataRegistry = ""
 $dir.fallout4DataSteam = ""
 $dir.logs = ".\Logs"
 $dir.originalBa2 = ".\OriginalBa2"
-$dir.patchedBa2 = ".\PatchedBa2"
+$dir.patchedBa2 = $dir.defaultPatchedBa2
 $dir.patchedFiles = ".\PatchedFiles"
 $dir.repack7z = ".\Repack7z"
 $dir.temp = ".\Temp"
@@ -382,18 +383,32 @@ if ($repackFlags.Custom) {
     Write-Warning "[SKIPPED]"
 }
 else {
-    # remove PatchedFiles\Textures directory if not a custom repack and said directory exists
-    if (Test-Path "$($dir.patchedFiles)\Textures") {
-        Remove-Item "$($dir.patchedFiles)\Textures" -Force -Recurse
+    Write-Custom "" -BypassLog
+
+    # because not using a custom repack, move PatchedFiles directory if said directory exists
+    if (Test-Path $dir.patchedFiles) {
+        Write-Custom "  Pre-existing PatchedFiles folder moved to:" -NoNewLine
+        try {
+            Rename-Item $dir.patchedFiles -NewName "$($dir.patchedFiles).backup.$RunStartTime" -ErrorAction Stop
+        }
+        catch {
+            Write-Error "[ERROR]"
+            Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight
+            Exit-Script 1
+        }
+        Write-Info "  $($dir.patchedFiles).backup.$RunStartTime"
     }
 
-    # create PatchedFiles directory if it doesn't exist
-    if (-not (Test-Path $dir.patchedFiles)) {
-        New-Item $dir.patchedFiles -ItemType "directory" | Out-Null
+    # create PatchedFiles directory
+    try {
+        New-Item $dir.patchedFiles -ItemType "directory" -ErrorAction Stop | Out-Null
+    }
+    catch {
+        Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight
+        Exit-Script 1
     }
 
     $firstIteration = $true
-    Write-Custom "" -BypassLog
     foreach ($object in $repackFiles.GetEnumerator()) {
         try {
             if (-not $repackFlags[$object.Key]) { continue }
@@ -676,6 +691,9 @@ if (-not $repackFlags.Custom) {
     try {
         if (Test-Path $dir.patchedFiles) {
             Remove-Item $dir.patchedFiles -Force -Recurse
+        }
+        if (-not (Get-ChildItem $dir.defaultPatchedBa2)) {
+            Remove-Item $dir.defaultPatchedBa2
         }
     }
     catch {

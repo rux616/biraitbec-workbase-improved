@@ -21,14 +21,15 @@
 
 param (
     [switch] $SkipRepackHashing,
-    [switch] $SkipExistingPatchedHashing
+    [switch] $SkipExistingPatchedHashing,
+    [switch] $SkipChoosingPatchedBa2Dir
 )
 
 
 # constants and variables
 # -----------------------
 
-Set-Variable "InstallerVersion" -Value $(New-Object "System.Version" -ArgumentList @(0, 2, 0))
+Set-Variable "InstallerVersion" -Value $(New-Object "System.Version" -ArgumentList @(0, 3, 0))
 
 Set-Variable "FileHashAlgorithm" -Value "SHA256" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -61,6 +62,9 @@ $repackFiles.Main = @(
 $repackFiles.Quality = @(
     "2a. Quality Addon - Part One-23556-1-0-1565546826.7z"
     "2b. Quality Overhaul - Part Two-23556-1-0-1565980973.7z"
+)
+$repackFiles."Vault Fix" = @(
+    "Fix Vault-Window-Metal-Institute-40534-1-02-1565670781.7z"
 )
 $repackFiles.Restyle = @(
     "3. Restyle Pack - Fomod-23556-1-0-1565546849.7z"
@@ -215,10 +219,7 @@ if ($msvcp110dllVersion -lt $vcrMinVersion -or $msvcr110dllVersion -lt $vcrMinVe
 $sectionTimer.Restart()
 
 $repackFlags = [ordered]@{}
-$repackFlags.Performance = $true
-$repackFlags.Main = $true
-$repackFlags.Quality = $true
-$repackFlags.Restyle = $true
+$repackFiles.Keys | ForEach-Object { $repackFlags.$_ = $true }
 
 $firstIteration = $true
 Write-Custom "Validating repack sets:"
@@ -258,6 +259,11 @@ foreach ($object in $repackFiles.GetEnumerator()) {
     }
 }
 
+# if not using Performance, Main, or Quality, don't need to install the Vault Fix
+if (-not $repackFlags.Performance -and -not $repackFlags.Main -and -not $repackFlags.Quality) {
+    $repackFlags."Vault Fix" = $false
+}
+
 $repackTag = $repackFlags.Keys.Where({$repackFlags[$_]}) -join $TagJoiner
 if (-not $repackTag) {
     if (
@@ -274,11 +280,15 @@ Write-Custom "","Using repack set:"
 foreach ($object in $repackFlags.GetEnumerator()) {
     if ($firstIteration) {$firstIteration = $false} else {Write-Log "  $("-" * ($LineWidth - 2))"}
     Write-Custom "  $($object.Key)" -NoNewLine
+    switch -wildcard ($object.Key) {
+        "*" { $flagSetText = "  [YES]"; $flagUnsetText = "  [NO]" }
+        "Vault Fix" { $flagUnsetText = "  [NOT NEEDED]" }
+    }
     if ($object.Value) {
-        Write-Success "  [YES]"
+        Write-Success $flagSetText
     }
     else {
-        Write-Warning "  [NO]"
+        Write-Warning $flagUnsetText
     }
 }
 
@@ -311,7 +321,9 @@ catch {
 
 Write-Custom ""
 Write-Custom "Patched BA2 archive folder:" -NoNewLine
-$dir.patchedBa2 = Get-Folder -Description "Select patched BA2 output folder:" -InitialDirectory $([IO.Path]::GetFullPath("$(Get-Location)\$($dir.patchedBa2)"))
+if (-not $SkipChoosingPatchedBa2Dir) {
+    $dir.patchedBa2 = Get-Folder -Description "Select patched BA2 output folder:" -InitialDirectory $([IO.Path]::GetFullPath("$(Get-Location)\$($dir.patchedBa2)"))
+}
 if ($null -eq $dir.patchedBa2) {
     Write-Custom "" -BypassLog
     Write-Error "","Cancelled by user." -NoJustifyRight
@@ -340,7 +352,7 @@ else {
             }
             catch {
                 Write-Error "  [ERROR]"
-                Write-Error $_ -Prefix "ERROR: " -NoJustifyRight
+                Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight
                 Exit-Script 1
             }
             Write-Log "  Hash: $hash"
@@ -421,25 +433,31 @@ else {
             }
             New-Item $dir.temp -ItemType "directory" -ErrorAction Stop | Out-Null
 
-            # special case: if main is being used with performance, save texture from performance for later use
-            if ($object.Key -eq "Main" -and $repackFlags.Performance) {
-                Copy-Item "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
+            switch ($object.Key) {
+                # special case: if main is being used with performance, save texture from performance for later use
+                "Main" {
+                     if ($repackFlags.Performance) {
+                        Copy-Item "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
+                    }
+                }
             }
 
             # extract files
             foreach ($file in $object.Value) {
                 $relFile = "$($dir.repack7z)\$file"
-                if ($object.Key -ne "Restyle") {
-                    $outDir = $dir.patchedFiles
-                    $extra = @()
-                }
-                else {
-                    $outDir = $dir.temp
-                    $extra = @(
-                        "Creatures\Dogmeat\2k Shadow The Dark Husky\Textures"
-                        "Environment\Evil Institute HD\2k\Textures"
-                        "Miscellaneous\Perk Grid Background Replacer\2k Silver White\Textures"
-                    )
+                switch -wildcard ($object.Key) {
+                    "*" { $outDir = $dir.patchedFiles; $extra = @() }
+                    "Restyle" {
+                        $outDir = $dir.temp
+                        $extra = @(
+                            "Creatures\Dogmeat\2k Shadow The Dark Husky\Textures"
+                            "Environment\Evil Institute HD\2k\Textures"
+                            "Miscellaneous\Perk Grid Background Replacer\2k Silver White\Textures"
+                        )
+                    }
+                    "Vault Fix" {
+                        $outDir = $dir.temp
+                    }
                 }
                 Write-Custom "    $file" -NoNewLine
 
@@ -470,27 +488,33 @@ else {
                 $stdout = $null
             }
 
-            # special case: if on main and using performance, copy previously-saved texture, otherwise delete corrupted texture
-            if ($object.Key -eq "Main") {
-                if ($repackFlags.Performance){
-                    Copy-Item "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
+            switch ($object.Key) {
+                # special case: if on main and using performance, copy previously-saved texture, otherwise delete corrupted texture
+                "Main" {
+                    if ($repackFlags.Performance){
+                        Copy-Item "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
+                    }
+                    else {
+                        Remove-Item "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds"
+                    }
                 }
-                else {
-                    Remove-Item "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds"
+                # special case: if on restyle, copy items to PatchedFiles folder
+                "Restyle" {
+                    Copy-Item $($extra | ForEach-Object {"$($dir.temp)\$_"}) -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
                 }
-            }
-            # special case: if on restyle, copy items to PatchedFiles folder
-            elseif ($object.Key -eq "Restyle") {
-                Copy-Item $($extra | ForEach-Object {"$($dir.temp)\$_"}) -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
+                # special case: if using vault fix, copy copy Textures subdirectory
+                "Vault Fix" {
+                    Copy-Item "$($dir.temp)\Data\Textures" -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
+                }
             }
         }
         catch {
-            Write-Error "[ERROR]"
+            Write-Error "    [ERROR]"
             if ($null -ne $stdout) {
-                Write-Error $stdout -Prefix "ERROR: " -SnippetLength 3 -NoJustifyRight
+                Write-Error $stdout -Prefix "    ERROR: " -SnippetLength 3 -NoJustifyRight
                 $stdout = $null
             }
-            Write-Error $_ -Prefix "ERROR: " -SnippetLength 3 -NoJustifyRight
+            Write-Error $_ -Prefix "    ERROR: " -SnippetLength 3 -NoJustifyRight
             $extractRepackFailed = $true
         }
         finally {
@@ -666,10 +690,10 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
     catch {
         Write-Error "      [FAIL]"
         if ($null -ne $stderr) {
-            Write-Error $stderr -Prefix "ERROR: " -SnippetLength 3
+            Write-Error $stderr -Prefix "      ERROR: " -NoJustifyRight -SnippetLength 3
             $stdout, $stderr = $null
         }
-        Write-Error $_ -Prefix "ERROR: " -SnippetLength 3
+        Write-Error $_ -Prefix "      ERROR: " -NoJustifyRight -SnippetLength 3
         $processingFailed = $true
     }
     finally {
@@ -698,7 +722,7 @@ if (-not $repackFlags.Custom) {
     }
     catch {
         Write-Error "[ERROR]"
-        Write-Error $_ -Prefix "ERROR: " -SnippetLength 3
+        Write-Error $_ -Prefix "ERROR: " -SnippetLength 3 -NoJustifyRight
     }
     Write-Success "[DONE]"
 }

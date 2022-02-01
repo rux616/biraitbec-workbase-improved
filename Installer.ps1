@@ -348,8 +348,11 @@ Write-Info $dir.patchedBa2
 
 Write-Custom ""
 Write-Custom "Validating existing patched BA2 archives:" -NoNewLine
-if ($repackFlags.Custom -or $SkipExistingPatchedHashing) {
+if ($SkipExistingPatchedHashing) {
     Write-Warning "[SKIPPED]"
+}
+elseif ($repackFlags.Custom) {
+    Write-Warning "[CUSTOM - SKIPPED]"
 }
 else {
     $firstIteration = $true
@@ -417,7 +420,7 @@ $sectionTimer.Restart()
 Write-Custom ""
 Write-Custom "Extracting repack archives:" -NoNewLine
 if ($repackFlags.Custom) {
-    Write-Warning "[SKIPPED]"
+    Write-Warning "[CUSTOM - SKIPPED]"
 }
 else {
     Write-Custom "" -BypassLog
@@ -710,7 +713,8 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         $hash = $(Get-FileHash -LiteralPath $patchedBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
         Write-Log "      Hash: $hash"
         if ($repackFlags.Custom) {
-            Write-Warning "      [CUSTOM]"
+            Write-Warning "      [CUSTOM - SKIPPED]"
+            continue
         }
         elseif ($patchedBa2Hashes[$hash].FileName -ne $file) {
             throw "Unknown hash `"$hash`"."

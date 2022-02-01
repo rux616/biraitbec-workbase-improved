@@ -229,6 +229,7 @@ Write-Custom "Validating repack sets:"
     foreach ($file in $object.Value) {
         try {
             $archiveTimer.Restart()
+
             $relFile = "$($dir.repack7z)\$file"
             Write-Custom "    $file" -NoNewLine
             if (Test-Path -LiteralPath $relFile) {
@@ -254,13 +255,13 @@ Write-Custom "Validating repack sets:"
         }
         catch {
             Write-Error "    [ERROR]"
-            Write-Error $_ -Prefix "ERROR: " -NoJustifyRight
-            $validateRepacksFailed
+            Write-Error $_ -Prefix "    ERROR: " -NoJustifyRight
+            $validateRepacksFailed = $true
+            break outerLoop
         }
         finally {
             Write-Log "    Archive duration: $($archiveTimer.Elapsed.ToString())"
         }
-        if ($validateRepacksFailed) { break outerLoop }
     }
 }
 
@@ -273,7 +274,12 @@ if (-not $repackFlags.Performance -and -not $repackFlags.Main -and -not $repackF
     $repackFlags."Vault Fix" = $false
 }
 
+# create tag
 $repackTag = $repackFlags.Keys.Where({$repackFlags[$_]}) -join $TagJoiner
+
+# if no standard tag, then check to see if the conditions for a custom run are met:
+#   .\PatchedFiles\Textures exists
+#   .\PatchedFiles\Textures has DDS files
 if (-not $repackTag) {
     if (
         (Test-Path -LiteralPath "$($dir.patchedFiles)\Textures") -and
@@ -351,6 +357,7 @@ else {
     foreach ($object in $ba2Files.GetEnumerator()) {
         try {
             $archiveTimer.Restart()
+
             $file = $object.Value
             $relFile = "$($dir.patchedBa2)\$file"
 
@@ -382,11 +389,11 @@ else {
             Write-Error "  [ERROR]"
             Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight
             $validateArchivesFailed = $true
+            break
         }
         finally {
             Write-Log "  Archive duration: $($archiveTimer.Elapsed.ToString())"
         }
-        if ($validateArchivesFailed) { break }
     }
 }
 
@@ -471,6 +478,7 @@ else {
         foreach ($file in $object.Value) {
             try {
                 $archiveTimer.Restart()
+
                 $relFile = "$($dir.repack7z)\$file"
                 switch -wildcard ($object.Key) {
                     "*" { $outDir = $dir.patchedFiles; $extra = @() }
@@ -518,14 +526,12 @@ else {
                 }
                 Write-Error $_ -Prefix "    ERROR: " -SnippetLength 3 -NoJustifyRight
                 $extractRepackFailed = $true
+                break outerLoop
             }
             finally {
                 $stdout = $null
                 Write-Log "    Archive duration: $($archiveTimer.Elapsed.ToString())"
             }
-
-            # if extracting an archive fails, break out of foreach so as not to waste time
-            if ($extractRepackFailed) { break outerLoop }
         }
 
         try {
@@ -638,7 +644,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-Custom "      Extracting original archive..." -NoNewline
         Write-Log "`"$toolArchive2`" `"$originalBa2File`" -extract=`"$($dir.workingFiles)`"" -Log "tool"
         $toolTimer.Restart()
-        $stdout, $stderr = (& "$toolArchive2" "$originalBa2File" -extract="$($dir.workingFiles)" 2>&1).`
+        $stdout, $stderr = (& "$toolArchive2" "$originalBa2File" -extract="$($dir.workingFiles)" 2>&1).
             Where({$_ -is [string] -and $_ -ne ""}, "Split")
         Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
         Write-Log "STDOUT:",$stdout,"","STDERR:",$stderr,"","$("-" * $LineWidth)","" -Log "tool" -NoTimestamp
@@ -650,7 +656,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         # correctly extract cubemaps
         Write-Log "`"$toolBsab`" -e -o -f `"Textures\Shared\Cubemaps\*`" `"$originalBa2File`" `"$($dir.workingFiles)`"" -Log "tool"
         $toolTimer.Restart()
-        $stdout, $stderr = (& "$toolBsab" -e -o -f "Textures\Shared\Cubemaps\*" "$originalBa2File" "$($dir.workingFiles)" 2>&1).`
+        $stdout, $stderr = (& "$toolBsab" -e -o -f "Textures\Shared\Cubemaps\*" "$originalBa2File" "$($dir.workingFiles)" 2>&1).
             Where({$_ -is [string] -and $_ -ne ""}, "Split")
         Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
         Write-Log "STDOUT:",$stdout,"","STDERR:",$stderr,"","$("-" * $LineWidth)","" -Log "tool" -NoTimestamp
@@ -671,7 +677,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-Custom "      Copying patched files..." -NoNewline
         Write-Log "`"$toolRobocopy`" `"$($dir.patchedFiles)`" `"$($dir.workingFiles)`" /s /xl /np /njh" -Log "tool"
         $toolTimer.Restart()
-        $stdout, $stderr = (& "$toolRobocopy" "$($dir.patchedFiles)" "$($dir.workingFiles)" /s /xl /np /njh 2>&1).`
+        $stdout, $stderr = (& "$toolRobocopy" "$($dir.patchedFiles)" "$($dir.workingFiles)" /s /xl /np /njh 2>&1).
             Where({$_ -is [string] -and $_ -ne ""}, "Split")
         Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
         Write-Log "STDOUT:",$stdout,"","STDERR:",$stderr,"","$("-" * $LineWidth)","" -Log "tool" -NoTimestamp
@@ -689,7 +695,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-Custom "      Creating patched archive..." -NoNewline
         Write-Log "`"$toolArchive2`" `"$($dir.workingFiles)`" -format=`"DDS`" -create=`"$patchedBa2File`" -root=`"$(Resolve-Path $dir.workingFiles)`"" -Log "tool"
         $toolTimer.Restart()
-        $stdout, $stderr = (& "$toolArchive2" "$($dir.workingFiles)" -format="DDS" -create="$patchedBa2File" -root="$(Resolve-Path $dir.workingFiles)" 2>&1).`
+        $stdout, $stderr = (& "$toolArchive2" "$($dir.workingFiles)" -format="DDS" -create="$patchedBa2File" -root="$(Resolve-Path $dir.workingFiles)" 2>&1).
             Where({$_ -is [string] -and $_ -ne ""}, "Split")
         Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
         Write-Log "STDOUT:",$stdout,"","STDERR:",$stderr,"","$("-" * $LineWidth)","" -Log "tool" -NoTimestamp

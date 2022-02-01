@@ -21,7 +21,7 @@
 
 Write-Host "Loading Functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 4, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 5, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -203,6 +203,7 @@ function Write-Custom {
         [switch] $BypassLog,
         [string] $Prefix = $null,
         [switch] $JustifyRight,
+        [switch] $JustifyCenter,
         [int] $LineWidth = $LineWidth,
         [switch] $UseErrorStream,
         [int] $SnippetLength = 0,
@@ -226,22 +227,27 @@ function Write-Custom {
     for ($index = 0; $index -lt $Message.Length; $index++) {
         $line = $Message[$index]
         if ($doSnip -and $index -eq $SnippetLength) {
-            $line = $Prefix + "--- snip ---"
+            $line = "--- snip ---"
             $index = $Message.Length - $SnippetLength - 1
         }
         if ($NoNewLine) {
             if ($JustifyRight) {
                 $stream.Write("{0,$LineWidth}", $Prefix + $line)
-                $PreviousLineLength.Value = $LineWidth
+            }
+            elseif ($JustifyCenter) {
+                $stream.Write("{0,$([int](($LineWidth - $PreviousLineLength.Value) / 2.0 + ($Prefix.Length + $line.Length) / 2.0))}", $Prefix + $line)
             }
             else {
                 $stream.Write("{0}", $Prefix + $line)
-                $PreviousLineLength.Value = $Prefix.Length + $line.Length
             }
+            $PreviousLineLength.Value = $Host.UI.RawUI.CursorPosition.X
         }
         else {
             if ($JustifyRight) {
                 $stream.WriteLine("{0,$($LineWidth - $PreviousLineLength.Value)}", $Prefix + $line)
+            }
+            elseif ($JustifyCenter) {
+                $stream.WriteLine("{0,$([int](($LineWidth - $PreviousLineLength.Value) / 2.0 + ($Prefix.Length + $line.Length) / 2.0))}", $Prefix + $line)
             }
             else {
                 $stream.WriteLine("{0}", $Prefix + $line)

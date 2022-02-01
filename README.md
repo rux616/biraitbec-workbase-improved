@@ -1,10 +1,10 @@
-BRB WorkBase Improved
-=====================
+BiRaitBec WorkBase Improved
+===========================
 by rux616
 
 Table Of Contents
 -----------------
-- [BRB WorkBase Improved](#brb-workbase-improved)
+- [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Overview](#overview)
     - [Summary](#summary)

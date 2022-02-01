@@ -25,7 +25,7 @@
 
 Write-Host "Loading hashes..."
 
-Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 1, 0))
+Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 1, 1))
 
 $repack7zHashes = @{}; $var = "repack7zHashes"
 $tag = "Performance"
@@ -354,7 +354,7 @@ Add-Hash -VariableName $var -Hash "8C33901A7EFB29DACF297CE9A16F0B1B3BE95E240E945
 Add-Hash -VariableName $var -Hash "D422789209B67839D479DEA076D386AECC22903D71F692A0A02BB4E38E6FDC11" -Tag $tag -FileName $ba2Files.fallout4Textures9
 
 # performance + main + vault fix
-$tag = @("Performance", "Main", "VaultFix") -join $TagJoiner
+$tag = @("Performance", "Main", "Vault Fix") -join $TagJoiner
 Add-Hash -VariableName $var -Hash "F6978CC6A06718ED784C89EFC82181B28BEA350218485429A86D1C7A29ACD549" -Tag $tag -FileName $ba2Files.dlcCoastTextures
 Add-Hash -VariableName $var -Hash "1935EC880BC3729F8A8D35CD926445E2216441BCA0CCC3EC63D609BF4EEDC3AB" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures
 Add-Hash -VariableName $var -Hash "9F754D6A677C9F6E571D221A85C5318BDE4527946477B1A2AD0BD88FD89909DA" -Tag $tag -FileName $ba2Files.dlcRobotTextures

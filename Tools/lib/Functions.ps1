@@ -21,7 +21,7 @@
 
 Write-Host "Loading Functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 3, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 4, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -285,15 +285,16 @@ function Write-Log {
         [switch] $NoTimestamp
     )
 
-    if ($(Test-Path -Path $dir.logs) -eq $false) {
-        New-Item -Path $dir.logs -ItemType "directory" -ErrorAction Stop | Out-Null
+    if ($(Test-Path -LiteralPath $dir.logs) -eq $false) {
+        New-Item $dir.logs -ItemType "directory" -ErrorAction Stop | Out-Null
     }
-    if ($NoTimestamp) {
-        Write-Output $Message | Out-File "$($dir.logs)\${Log}_$LogStartTime.log" -Append
+    $(if ($NoTimestamp) {
+        Write-Output $Message
     }
     else {
-        Write-Output $Message | ForEach-Object {"[$((Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))] $_".Trim()} | Out-File "$($dir.logs)\${Log}_$LogStartTime.log" -Append
-    }
+        Write-Output $Message |
+            ForEach-Object {"[$((Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))] $_".Trim()}
+    }) | Out-File -LiteralPath "$($dir.logs)\${Log}_$LogStartTime.log" -Append
 }
 
 function Write-Success {
@@ -316,9 +317,7 @@ function Write-Success {
 function Write-TimeSpan {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
-        [System.TimeSpan]
-        $TimeSpan
+        [Parameter(Mandatory)] [System.TimeSpan] $TimeSpan
     )
 
     $formatString = @(

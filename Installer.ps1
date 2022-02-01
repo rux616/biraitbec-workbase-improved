@@ -29,7 +29,7 @@ param (
 # constants and variables
 # -----------------------
 
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(0, 4, 0))
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 0, 0))
 
 Set-Variable "FileHashAlgorithm" -Value "SHA256" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant

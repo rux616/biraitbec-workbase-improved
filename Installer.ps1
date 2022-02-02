@@ -161,17 +161,38 @@ Write-Log @(
     ""
     "  Line Width: $LineWidth"
     "  Original Console Background Color: $OriginalBackgroundColor"
-    "  Color Hex Value (Black): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Black.value__).ToString("D2"))").ToString("X6"))"
-    "  Color Hex Value (Blue): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Blue.value__).ToString("D2"))").ToString("X6"))"
-    "  Color Hex Value (Green): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Green.value__).ToString("D2"))").ToString("X6"))"
-    "  Color Hex Value (Red): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Red.value__).ToString("D2"))").ToString("X6"))"
-    "  Color Hex Value (Yellow): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Yellow.value__).ToString("D2"))").ToString("X6"))"
+    "  Color DWORD Value (Black): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Black.value__).ToString("D2"))").ToString("X6"))"
+    "  Color DWORD Value (Blue): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Blue.value__).ToString("D2"))").ToString("X6"))"
+    "  Color DWORD Value (Green): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Green.value__).ToString("D2"))").ToString("X6"))"
+    "  Color DWORD Value (Red): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Red.value__).ToString("D2"))").ToString("X6"))"
+    "  Color DWORD Value (Yellow): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Yellow.value__).ToString("D2"))").ToString("X6"))"
     ""
     "  Fallout 4 Data directory (Registry method): " + $(if ($dir.fallout4DataRegistry) {$dir.fallout4DataSteam} else {"(Not Found)"})
     "  Fallout 4 Data directory (Steam method): " + $(if ($dir.fallout4DataSteam) {$dir.fallout4DataSteam} else {"(Not Found)"})
     "<" * $LineWidth
     ""
 )
+
+Write-Custom @(
+    " ____    _   ____            _   _     ____                "
+    "| __ )  (_) |  _ \    __ _  (_) | |_  | __ )    ___    ___ "
+    "|  _ \  | | | |_) |  / _`` | | | | __| |  _ \   / _ \  / __|"
+    "| |_) | | | |  _ <  | (_| | | | | |_  | |_) | |  __/ | (__ "
+    "|____/  |_| |_| \_\  \__,_| |_|  \__| |____/   \___|  \___|"
+    ""
+    "__        __                 _      ____                       "
+    "\ \      / /   ___    _ __  | | __ | __ )    __ _   ___    ___ "
+    " \ \ /\ / /   / _ \  | '__| | |/ / |  _ \   / _`` | / __|  / _ \"
+    "  \ V  V /   | (_) | | |    |   <  | |_) | | (_| | \__ \ |  __/"
+    "   \_/\_/     \___/  |_|    |_|\_\ |____/   \__,_| |___/  \___|"
+    ""
+    " ___                                                         _ "
+    "|_ _|  _ __ ___    _ __    _ __    ___   __   __   ___    __| |"
+    " | |  | '_ `` _ \  | '_ \  | '__|  / _ \  \ \ / /  / _ \  / _`` |"
+    " | |  | | | | | | | |_) | | |    | (_) |  \ V /  |  __/ | (_| |"
+    "|___| |_| |_| |_| | .__/  |_|     \___/    \_/    \___|  \__,_|"
+    "                  |_|                                          "
+) -JustifyCenter -BypassLog
 
 
 # check location to ensure it's not located in a problematic directory
@@ -187,6 +208,7 @@ $problemDirs = @(
 foreach ($problemDir in $problemDirs) {
     if ($currentDirectory.StartsWith($problemDir, [System.StringComparison]::OrdinalIgnoreCase)) {
         Write-Error @(
+            ""
             "Attempting to run script from `"$currentDirectory`"."
             "Problematic location detected. Please ensure this folder is OUTSIDE of any of the following folders:"
         ) -Prefix "ERROR: "
@@ -206,11 +228,51 @@ foreach ($problemDir in $problemDirs) {
 $vcrMinVersion = New-Object System.Version -ArgumentList @(11, 00, 51106, 1)
 if ($msvcp110dllVersion -lt $vcrMinVersion -or $msvcr110dllVersion -lt $vcrMinVersion) {
     Write-Error @(
+        ""
         "Need 64-bit Visual C++ Redistributable for Visual Studio 2012 Update 4! Please download it from this link:"
         "https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe"
         ) -Prefix "ERROR: "
     Exit-Script 1
 }
+
+
+# select patched BA2 folder
+# -------------------------
+
+$sectionTimer.Restart()
+
+try {
+    if (-not (Test-Path -LiteralPath $dir.patchedBa2)) {
+        New-Item $dir.patchedBa2 -ItemType "directory" -ErrorAction Stop | Out-Null
+    }
+}
+catch {
+    Write-Error $_ -Prefix "ERROR: " -SnippetLength 3
+    Exit-Script 1
+}
+
+Write-Custom ""
+Write-Custom "Patched BA2 archive folder:" -NoNewLine
+if (-not $SkipChoosingPatchedBa2Dir) {
+    $dir.patchedBa2 = Get-Folder -Description "Select patched BA2 output folder:" -InitialDirectory $([IO.Path]::GetFullPath("$(Get-Location)\$($dir.patchedBa2)"))
+}
+if ($null -eq $dir.patchedBa2) {
+    Write-Error "[CANCELLED]"
+    Write-Error "","Cancelled by user." -NoJustifyRight
+    Exit-Script 1
+}
+
+# prettify the common case of user specifying the default folder
+if (
+    $(Resolve-Path -LiteralPath $dir.defaultPatchedBa2 -ErrorAction SilentlyContinue).Path -eq
+    $(Resolve-Path -LiteralPath $dir.patchedBa2 -ErrorAction SilentlyContinue).Path
+) {
+    $dir.patchedBa2 = $dir.defaultPatchedBa2
+}
+
+Write-Info $dir.patchedBa2
+
+Write-Log "","Section duration: $($sectionTimer.Elapsed.ToString())"
 
 
 # check for repack archives
@@ -222,7 +284,7 @@ $repackFlags = [ordered]@{}
 $repackFiles.Keys | ForEach-Object { $repackFlags.$_ = $true }
 
 $firstIteration = $true
-Write-Custom "Validating repack sets:"
+Write-Custom "","Validating repack sets:"
 :outerLoop foreach ($object in $repackFiles.GetEnumerator()) {
     if ($firstIteration) {$firstIteration = $false} else {Write-Custom "  $("-" * ($LineWidth - 2))"}
     Write-Custom "  $($object.Key) ($($object.Value.Count) archive$(if ($object.Value.Count -ne 1) {"s"})):"
@@ -323,28 +385,6 @@ elseif (-not $repackTag) {
 # --------------------------------------
 
 $sectionTimer.Restart()
-
-try {
-    if (-not (Test-Path -LiteralPath $dir.patchedBa2)) {
-        New-Item $dir.patchedBa2 -ItemType "directory" -ErrorAction Stop | Out-Null
-    }
-}
-catch {
-    Write-Error $_ -Prefix "ERROR: " -SnippetLength 3
-    Exit-Script 1
-}
-
-Write-Custom ""
-Write-Custom "Patched BA2 archive folder:" -NoNewLine
-if (-not $SkipChoosingPatchedBa2Dir) {
-    $dir.patchedBa2 = Get-Folder -Description "Select patched BA2 output folder:" -InitialDirectory $([IO.Path]::GetFullPath("$(Get-Location)\$($dir.patchedBa2)"))
-}
-if ($null -eq $dir.patchedBa2) {
-    Write-Custom "" -BypassLog
-    Write-Error "","Cancelled by user." -NoJustifyRight
-    Exit-Script 1
-}
-Write-Info $dir.patchedBa2
 
 Write-Custom ""
 Write-Custom "Validating existing patched BA2 archives:" -NoNewLine

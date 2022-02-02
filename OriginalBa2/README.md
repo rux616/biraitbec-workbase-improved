@@ -1,6 +1,5 @@
 OriginalBa2 Folder
 ==================
-
 This folder is meant to hold the original texture archives from the Fallout 4 `Data` folder. Note that this may not be necessary as the installer will search for these archives in the Fallout 4 folder if they are not in this folder.
 
 - `DLCCoast - Textures.ba2`

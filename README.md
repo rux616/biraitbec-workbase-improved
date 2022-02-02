@@ -176,7 +176,7 @@ Credits and Thanks
 
 Contact
 =======
-If you find a bug or have a question about the mod, please post it on the [mod page at Nexus Mods](), or in the [GitHub project](https://github.com/rux616/biraitbec-workbase-improved).
+If you find a bug or have a question about the mod, please post it on the [mod page at Nexus Mods](https://www.nexusmods.com/fallout4/mods/57782), or in the [GitHub project](https://github.com/rux616/biraitbec-workbase-improved).
 
 If you need to contact me personally, I can be reached through one of the following means:
 - **Nexus Mods**: [rux616](https://www.nexusmods.com/users/124191) (Send a message via the "CONTACT" button.)

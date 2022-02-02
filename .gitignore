@@ -1,0 +1,10 @@
+Logs/
+PatchedBa2/
+PatchedFiles/
+Temp/
+WorkingFiles/
+*.7z
+*.ba2
+*.dds
+*.log
+*.zip

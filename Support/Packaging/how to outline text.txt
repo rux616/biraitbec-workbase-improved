@@ -1,0 +1,10 @@
+- Download BoltBait's Plugin Pack for PdN 4.2.12+ https://forums.getpaint.net/topic/113220-boltbaits-plugin-pack-for-pdn-v4212-and-beyond-updated-july-16-2020/
+- Make text in its own transparent layer
+- Choose "Effects" > "Objects" > "Outline Object..."
+- Use following settings:
+    - Outline Width: 10
+    - R: 0
+    - G: 0
+    - B: 0
+    - A: 15
+- Click "OK"

@@ -25,7 +25,7 @@
 
 Write-Host "Loading hashes..."
 
-Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 1, 1))
+Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 2, 0))
 
 $repack7zHashes = @{}; $var = "repack7zHashes"
 $tag = "Performance"
@@ -44,7 +44,7 @@ Add-Hash -VariableName $var -Hash "8ED930478DDB5DAC02A03461F860250D5E7EF4E9993DA
 
 $originalBa2Hashes = @{}; $var = "originalBa2Hashes"
 # game version 1.10.163.0 (steam build ID 4460038)
-$tag = "1.10.163.0-4460038"
+$tag = "Vanilla v1.10.163.0-4460038"
 Add-Hash -VariableName $var -Hash "D800B065414007F5060879D199D1961C8F36489841BB61B34E8C560E99B1C6B4" -Tag $tag -FileName $ba2Files.dlcCoastTextures
 Add-Hash -VariableName $var -Hash "3FE2C787F0D4D88B043EC5580982A5DD728BD7F031633C72D27D89B0D9F1351E" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures
 Add-Hash -VariableName $var -Hash "AE3801E98EA5AA8C8925A0DC9DC17227F46855F77AA05DE5B8EB2156667E1FE6" -Tag $tag -FileName $ba2Files.dlcRobotTextures
@@ -60,6 +60,28 @@ Add-Hash -VariableName $var -Hash "3407A0184BC871567DD1AA5B9E120A5B93AD035BDA961
 Add-Hash -VariableName $var -Hash "06299876A2FDBA48C2FC707C34314047FE423163A84CFE1E70986177E6C053B4" -Tag $tag -FileName $ba2Files.fallout4Textures7
 Add-Hash -VariableName $var -Hash "BBA344ED3DA7A4ED9EC8CA8ABAD77CDFBF9756FC1C2B17F4F6B221368EF37374" -Tag $tag -FileName $ba2Files.fallout4Textures8
 Add-Hash -VariableName $var -Hash "1F4DD1E0BC003195C8B4C39819B4657194E3196CDFA758DE57BF4D6A0B8E8A4D" -Tag $tag -FileName $ba2Files.fallout4Textures9
+
+$tag = "Luxor HD v1.0"
+Add-Hash -VariableName $var -Hash "A40C5078CB2970B78DDB91AE43256D0B29AC438EDA95A3423F9FCD9E5E29BE9C" -Tag $tag -FileName $ba2Files.dlcCoastTextures
+Add-Hash -VariableName $var -Hash "7A9CF210B5FC7D5A5ABE64FD8DD9450C65E6A928672D87DDC5DD56EFBBC82941" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures
+Add-Hash -VariableName $var -Hash "D8F59AD57DB4DFE1008D03C7B2C9FC16C348027724A50FBEB06EF5972E6B073E" -Tag $tag -FileName $ba2Files.dlcRobotTextures
+Add-Hash -VariableName $var -Hash "4AD20EB67FA6530516ED95EBA6F14F6DAF32B0ACAB21BAC8B842DBA8C00A0666" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures
+Add-Hash -VariableName $var -Hash "C25446189A96E9A2D2716ECD51FBA6D9A1990189B21A9A49F308C79D316FBF58" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures
+Add-Hash -VariableName $var -Hash "44A8426606AAF1827E5C42E921742DEADAC2C5532F562890A0BF8A53EA71BD78" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures
+Add-Hash -VariableName $var -Hash "68C05A16ADD10AB3D08488215AA0C3E04965016BFC4B21F3ACA9EA9DD099D898" -Tag $tag -FileName $ba2Files.fallout4Textures4
+Add-Hash -VariableName $var -Hash "888FEDDD322C754E957A260BEE2D39E493DF95B5F977C9D851DEED8E06859255" -Tag $tag -FileName $ba2Files.fallout4Textures5
+Add-Hash -VariableName $var -Hash "B207442F6599933B7FC2ACA13917FFC9769070E4EB8C72A2C988EFA8A79490B2" -Tag $tag -FileName $ba2Files.fallout4Textures6
+Add-Hash -VariableName $var -Hash "67D36F7ADF81762B73A452288677FCAD8676C37D7CF94ABF5D939342E72765E8" -Tag $tag -FileName $ba2Files.fallout4Textures7
+Add-Hash -VariableName $var -Hash "0CFDB7ABFCF51BB60D83729A0D610375751814EC9080A6363723BD46A0AD239A" -Tag $tag -FileName $ba2Files.fallout4Textures8
+Add-Hash -VariableName $var -Hash "B5EAA4EFABFCC8FECF76870C7CEF837A4442843278E59EF1ACCCE69E001B821D" -Tag $tag -FileName $ba2Files.fallout4Textures9
+
+$tag = "Luxor HD v1.01"
+Add-Hash -VariableName $var -Hash "9045EE5D72FA855D1487499BEA92164881E29F2A18EBCA9ED6BD41809C5D1BFF" -Tag $tag -FileName $ba2Files.fallout4Textures2
+
+$tag = "Luxor HD v1.02"
+Add-Hash -VariableName $var -Hash "6D8A9519804BB0A52FBC87E82CB93B68F499B10DB7D8715E38CADAFDC9855FF6" -Tag $tag -FileName $ba2Files.fallout4Textures1
+Add-Hash -VariableName $var -Hash "E859958B1246357152741A716A191B309B9327AF208F47F17EC271ECE0E06EFF" -Tag $tag -FileName $ba2Files.fallout4Textures3
+
 
 # notes:
 # when 'main' is used without 'performance', Textures\interiors\vault\VltHallResPaneled07Cafeteria02_Damage_d.DDS is deleted

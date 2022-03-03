@@ -25,7 +25,11 @@
 
 Write-Host "Loading hashes..."
 
-Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 2, 0))
+Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 3, 0)) -Option Constant
+
+
+# repack hashes
+# -------------
 
 $repack7zHashes = @{}; $var = "repack7zHashes"
 $tag = "Performance"
@@ -42,8 +46,12 @@ Add-Hash -VariableName $var -Hash "8B7F6F9D19244629F9C43C88C64F93E9659CC8DAF377A
 $tag = "Restyle"
 Add-Hash -VariableName $var -Hash "8ED930478DDB5DAC02A03461F860250D5E7EF4E9993DAE9710253C218EF73D5B" -Tag $tag -FileName $repackFiles.Restyle[0]
 
+
+# original ba2 hashes
+# -------------------
+
 $originalBa2Hashes = @{}; $var = "originalBa2Hashes"
-# game version 1.10.163.0 (steam build ID 4460038)
+# vanilla v1.10.163.0 (steam build ID 4460038)
 $tag = "Vanilla v1.10.163.0-4460038"
 Add-Hash -VariableName $var -Hash "D800B065414007F5060879D199D1961C8F36489841BB61B34E8C560E99B1C6B4" -Tag $tag -FileName $ba2Files.dlcCoastTextures
 Add-Hash -VariableName $var -Hash "3FE2C787F0D4D88B043EC5580982A5DD728BD7F031633C72D27D89B0D9F1351E" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures
@@ -61,6 +69,13 @@ Add-Hash -VariableName $var -Hash "06299876A2FDBA48C2FC707C34314047FE423163A84CF
 Add-Hash -VariableName $var -Hash "BBA344ED3DA7A4ED9EC8CA8ABAD77CDFBF9756FC1C2B17F4F6B221368EF37374" -Tag $tag -FileName $ba2Files.fallout4Textures8
 Add-Hash -VariableName $var -Hash "1F4DD1E0BC003195C8B4C39819B4657194E3196CDFA758DE57BF4D6A0B8E8A4D" -Tag $tag -FileName $ba2Files.fallout4Textures9
 
+
+# alternate original ba2 hashes
+# -----------------------------
+
+$alternateOriginalBa2Hashes = @{}; $var = "alternateOriginalBa2Hashes"
+
+# luxor
 $tag = "Luxor HD v1.0"
 Add-Hash -VariableName $var -Hash "A40C5078CB2970B78DDB91AE43256D0B29AC438EDA95A3423F9FCD9E5E29BE9C" -Tag $tag -FileName $ba2Files.dlcCoastTextures
 Add-Hash -VariableName $var -Hash "7A9CF210B5FC7D5A5ABE64FD8DD9450C65E6A928672D87DDC5DD56EFBBC82941" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures
@@ -74,14 +89,219 @@ Add-Hash -VariableName $var -Hash "B207442F6599933B7FC2ACA13917FFC9769070E4EB8C7
 Add-Hash -VariableName $var -Hash "67D36F7ADF81762B73A452288677FCAD8676C37D7CF94ABF5D939342E72765E8" -Tag $tag -FileName $ba2Files.fallout4Textures7
 Add-Hash -VariableName $var -Hash "0CFDB7ABFCF51BB60D83729A0D610375751814EC9080A6363723BD46A0AD239A" -Tag $tag -FileName $ba2Files.fallout4Textures8
 Add-Hash -VariableName $var -Hash "B5EAA4EFABFCC8FECF76870C7CEF837A4442843278E59EF1ACCCE69E001B821D" -Tag $tag -FileName $ba2Files.fallout4Textures9
-
+# luxor fixes
 $tag = "Luxor HD v1.01"
 Add-Hash -VariableName $var -Hash "9045EE5D72FA855D1487499BEA92164881E29F2A18EBCA9ED6BD41809C5D1BFF" -Tag $tag -FileName $ba2Files.fallout4Textures2
-
 $tag = "Luxor HD v1.02"
 Add-Hash -VariableName $var -Hash "6D8A9519804BB0A52FBC87E82CB93B68F499B10DB7D8715E38CADAFDC9855FF6" -Tag $tag -FileName $ba2Files.fallout4Textures1
 Add-Hash -VariableName $var -Hash "E859958B1246357152741A716A191B309B9327AF208F47F17EC271ECE0E06EFF" -Tag $tag -FileName $ba2Files.fallout4Textures3
 
+# phyop custom
+$tag = "PhyOp (Custom) v1.2a"
+Add-Hash -VariableName $var -Hash "427395F246578F4CF0BAE368915E6120FCFAB43AE6E867A0DA38356E734E4BCF" -Tag $tag -FileName $ba2Files.dlcCoastTextures
+Add-Hash -VariableName $var -Hash "E7BEAC413D1DB17FC4D283BAA4830FA66B10D0514726FFD2F5AD768AAB42385A" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures
+Add-Hash -VariableName $var -Hash "B856F44D4C5E08E4057C697C2B3B0B6F432C304F1EB4226782AFE76419541B66" -Tag $tag -FileName $ba2Files.dlcRobotTextures
+Add-Hash -VariableName $var -Hash "87925DE2312B5103A0029FF46CFF72D2FFF0B9FBE60E9017F0402021D057A95B" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures
+Add-Hash -VariableName $var -Hash "835E5219922DFD6BE519DBEA386751E1C8CB15F4C11871B72382383CB0478234" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures
+Add-Hash -VariableName $var -Hash "D20B3236DC9E6035892A34FBF0CD8B0F1AF6806F240C36E62251FFA1E0084D78" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures
+Add-Hash -VariableName $var -Hash "95872998A86B8344F9C2CE0A9913C1A490D737AB1D567F627209EC8993E3FDB7" -Tag $tag -FileName $ba2Files.fallout4Textures2
+Add-Hash -VariableName $var -Hash "C333402B21500CAF2F87C6312BB9EC4CC226D1C6FF653D937DBC76D98D4FC3D7" -Tag $tag -FileName $ba2Files.fallout4Textures3
+Add-Hash -VariableName $var -Hash "AAFDEA1C54E21FD7D5E7659BE03234101C0679E6EC8C9E2B2FD934D2B364A3C9" -Tag $tag -FileName $ba2Files.fallout4Textures5
+Add-Hash -VariableName $var -Hash "8D5E0086A8209DD5B34B3EA91B0BB32CB6AEAC8A4AB987C50225C6F91F546B32" -Tag $tag -FileName $ba2Files.fallout4Textures6
+Add-Hash -VariableName $var -Hash "72510AFF24C91B5A1072EDB46190D90683630AF7BCCDB42EDF6CB2AC3F8714A0" -Tag $tag -FileName $ba2Files.fallout4Textures8
+Add-Hash -VariableName $var -Hash "80D67F0855381EA1FD18E7ECC336785B8C301CC5CD742C1A155B1863F6381785" -Tag $tag -FileName $ba2Files.fallout4Textures9
+# phyop custom fixes
+$tag = "PhyOp (Custom) Brahmin Pack Fix v1.2a"
+Add-Hash -VariableName $var -Hash "162AFB885D2E9D6E729D395BA8391C3F69FDC9EC9143939D2EAB8C55BFB44C49" -Tag $tag -FileName $ba2Files.fallout4Textures1
+$tag = "PhyOp (Custom) Face Sculpting Fix v1.2a"
+Add-Hash -VariableName $var -Hash "3CDDE54C0AF5479256BBEA209BF885FF9DAD150577645A67F97075DE85EE7203" -Tag $tag -FileName $ba2Files.fallout4Textures4
+$tag = "PhyOp (Custom) Street Sign Fix v1.2a"
+Add-Hash -VariableName $var -Hash "162C0EC5B2931381C119EB3464E1F1BCB221995B5D010703300ECE0C563884DC" -Tag $tag -FileName $ba2Files.fallout4Textures7
+# phyop custom optionals
+$tag = "PhyOp (Custom) Original Pip-boy v1.2a"
+Add-Hash -VariableName $var -Hash "34A779723637CDECE4B3271B256D938B3EBB9E06706FF4E434719CA3F4661C07" -Tag $tag -FileName $ba2Files.fallout4Textures2
+$tag = "PhyOp (Custom) Original Weapon Colors v1.2a"
+Add-Hash -VariableName $var -Hash "650C5F9F53BD9B6F22C61277614D5D00B71E7AB64E9F428553DF7060E46C7F73" -Tag $tag -FileName $ba2Files.dlcCoastTextures
+Add-Hash -VariableName $var -Hash "25E91D88D4D4AA2E501E98DAB46B60DF38F1536C94ABBFF37569FE49E022C7F2" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures
+Add-Hash -VariableName $var -Hash "043A9352C75478BA70523D7E777FBC03183E16D464470B550BC38D7B2265363C" -Tag $tag -FileName $ba2Files.dlcRobotTextures
+Add-Hash -VariableName $var -Hash "B56FBE53BFE21A7C91FC890EE3B1B809F17B00CB3D7CCA764A25FF787213C3A6" -Tag $tag -FileName $ba2Files.fallout4Textures8
+
+# phyop custom performance
+$tag = "PhyOp (Custom) Performance v1.2a"
+Add-Hash -VariableName $var -Hash "F5939C5BD9FA9C7FC2BA5268840ED98DA103030FCE4F3DEA2E8F6A050F282902" -Tag $tag -FileName $ba2Files.dlcCoastTextures
+Add-Hash -VariableName $var -Hash "B7B02A1D83F8E231EC802CFB3BEFF26A8A7A2F3F10BD546F9F5829D1C473AAF6" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures
+Add-Hash -VariableName $var -Hash "DE69659B157876ED43FBB0F0C909BA622FEE3CA7DD84246135E9EF00A1456213" -Tag $tag -FileName $ba2Files.dlcRobotTextures
+Add-Hash -VariableName $var -Hash "68E77584E711E7DF9FE71D7F7F9DA855C0848B62365EECF27B514C3D34C189F9" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures
+Add-Hash -VariableName $var -Hash "63F8BE0EB4EFE34C6B08BEA650BB8735C018033AAAF3343811EC15E4F2166AC8" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures
+Add-Hash -VariableName $var -Hash "C8890BDB8305CF043FC095542DF572CD377267FA87334C48091AA0CCCACA9CC5" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures
+Add-Hash -VariableName $var -Hash "43CDA0FA2E11240AE4DCF1C3C017B9FE3A7DCDE96D1E92A2AC5B1ED05B2CDD81" -Tag $tag -FileName $ba2Files.fallout4Textures2
+Add-Hash -VariableName $var -Hash "A0ACC1B1DD32275BC3F3306D51182C64014E30144D5B8BDC8BFD5451645D1FDE" -Tag $tag -FileName $ba2Files.fallout4Textures3
+Add-Hash -VariableName $var -Hash "89EE4800F8874AF13D7A6669F6077453CD3C747F7322F815F58C71B29399DF67" -Tag $tag -FileName $ba2Files.fallout4Textures5
+Add-Hash -VariableName $var -Hash "57D1A8932026F2DC4A29C7FFA99BE9032CEDE05EFB75771402F5A8770CD28147" -Tag $tag -FileName $ba2Files.fallout4Textures6
+Add-Hash -VariableName $var -Hash "B0B1C6EF548565747783A9430EA37C952ED975354E575D751634AE3E5D987EDB" -Tag $tag -FileName $ba2Files.fallout4Textures7
+Add-Hash -VariableName $var -Hash "42AE814E9B24B1E20953D56004C42ADDC99D6BC5CB1B1861491ECCBAB2A18B09" -Tag $tag -FileName $ba2Files.fallout4Textures8
+Add-Hash -VariableName $var -Hash "80D67F0855381EA1FD18E7ECC336785B8C301CC5CD742C1A155B1863F6381785" -Tag $tag -FileName $ba2Files.fallout4Textures9
+# phyop custom performance fixes
+$tag = "PhyOp (Custom) Performance Brahmin Pack Fix v1.2a"
+Add-Hash -VariableName $var -Hash "9AC1580C987E75990E6BCEC612FAE78C085CBEBA062E9496C2489BF7AEC9A979" -Tag $tag -FileName $ba2Files.fallout4Textures1
+$tag = "PhyOp (Custom) Performance Face Sculpting Fix v1.2a"
+Add-Hash -VariableName $var -Hash "F8EDCA3C759E82BB0CD292C23239BD429AC1367D2BC94D4251EAF1A75C206D35" -Tag $tag -FileName $ba2Files.fallout4Textures4
+# phyop custom performance optionals
+$tag = "PhyOp (Custom) Performance Original Pip-boy v1.2a"
+Add-Hash -VariableName $var -Hash "976B2FC8D9128DB51FEF3E1138E5994F45E76D5A3E0E4BB5E65699A3D0AF5B93" -Tag $tag -FileName $ba2Files.fallout4Textures2
+
+# phyop dark
+$tag = "PhyOp (Dark) v1.2a"
+Add-Hash -VariableName $var -Hash "30954E88F7B7937FB8CEF60670B5B83D069470F5B7C2257DC19739ED095CF9B3" -Tag $tag -FileName $ba2Files.dlcCoastTextures
+Add-Hash -VariableName $var -Hash "44B68E0D11DE7F1525441390F99304E16DEA96F1F1874A8431F4A48591AB660E" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures
+Add-Hash -VariableName $var -Hash "A48F280257A9F016C21EB5C90817A01DBB49511F2405FE319FFF2C1FEF828701" -Tag $tag -FileName $ba2Files.dlcRobotTextures
+Add-Hash -VariableName $var -Hash "363520A48CC5B04334D739B3DE2924B1294F15D9F6B5889A5DB6D3D56F6E975A" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures
+Add-Hash -VariableName $var -Hash "C68D9047151E6C09E4CD1FBFFC7CA8B778119FBBDDDEE32E16A8659DA3B68F04" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures
+Add-Hash -VariableName $var -Hash "D20B3236DC9E6035892A34FBF0CD8B0F1AF6806F240C36E62251FFA1E0084D78" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures
+Add-Hash -VariableName $var -Hash "54252E77DF04D6C67CBCC543A7E7F8BA31A18070599B291288B581CE93B62BAA" -Tag $tag -FileName $ba2Files.fallout4Textures2
+Add-Hash -VariableName $var -Hash "7EBA4D00F1211F6E10983E6BA773FF58C14537E4CF88A1EDBC67C795B7494CFE" -Tag $tag -FileName $ba2Files.fallout4Textures3
+Add-Hash -VariableName $var -Hash "D9B5E74BCF2BEFC90DF7C969EF610910642BC828BF65E215F30A59C650116665" -Tag $tag -FileName $ba2Files.fallout4Textures5
+Add-Hash -VariableName $var -Hash "7D2BCC0BB153155211BD06C2C4A3EDF4F036DB7B6209E640EB1E960614B146A5" -Tag $tag -FileName $ba2Files.fallout4Textures6
+Add-Hash -VariableName $var -Hash "52F99F6D318D768DF6E8D7B054280E978B5677AA2FB792E0A02D249BB4359938" -Tag $tag -FileName $ba2Files.fallout4Textures8
+Add-Hash -VariableName $var -Hash "80D67F0855381EA1FD18E7ECC336785B8C301CC5CD742C1A155B1863F6381785" -Tag $tag -FileName $ba2Files.fallout4Textures9
+# phyop dark fixes
+$tag = "PhyOp (Dark) Brahmin Pack Fix v1.2a"
+Add-Hash -VariableName $var -Hash "AEC9DA62A5479D637C9561ACED4750880B062788C3DCE42C5F7F112BDD64380A" -Tag $tag -FileName $ba2Files.fallout4Textures1
+$tag = "PhyOp (Dark) Face Sculpting Fix v1.2a"
+Add-Hash -VariableName $var -Hash "E625592389BA3E762667027109F632026632C99D865A0F4506B61929FCBF4C1E" -Tag $tag -FileName $ba2Files.fallout4Textures4
+$tag = "PhyOp (Dark) Street Sign Fix v1.2a"
+Add-Hash -VariableName $var -Hash "7C29100F295F32FF92F14E6823B919806DDBFADD9BF0A6DAA536261977DBB803" -Tag $tag -FileName $ba2Files.fallout4Textures7
+
+# phyop dark performance
+$tag = "PhyOp (Dark) Performance v1.2a"
+Add-Hash -VariableName $var -Hash "75A9003E0C5F47113CE77E9EC655D2BA75A6510044F2646C11CC3A5CEA130846" -Tag $tag -FileName $ba2Files.dlcCoastTextures
+Add-Hash -VariableName $var -Hash "86FB13A1E319DAB9B2472B7BF553D44B7FE0E56BF71C1592029C0BC04B819FB8" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures
+Add-Hash -VariableName $var -Hash "7D5605DA11B2C55E08A756B5267F6BC1F79D3E0DC8451F2BA291C846D3A2284F" -Tag $tag -FileName $ba2Files.dlcRobotTextures
+Add-Hash -VariableName $var -Hash "C4FF8D76A41CFE8E43528479BDCFD45CEFF52D3F775B2C8AC76BF167C14BAD8A" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures
+Add-Hash -VariableName $var -Hash "6DD53014755A6988AEC8CBF255574921C9BC9597DC745ED52775E5006AB6895D" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures
+Add-Hash -VariableName $var -Hash "C8890BDB8305CF043FC095542DF572CD377267FA87334C48091AA0CCCACA9CC5" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures
+Add-Hash -VariableName $var -Hash "93300DA55EFE75C66384D909C7A4CAF34E820668658425104AD9A8FAF85CC22E" -Tag $tag -FileName $ba2Files.fallout4Textures2
+Add-Hash -VariableName $var -Hash "970B511FFFD41DB7D1D3387FB4857383B8F7F704F83568465BD63566A2272983" -Tag $tag -FileName $ba2Files.fallout4Textures3
+Add-Hash -VariableName $var -Hash "D2350D1C61D44C192642977DECEE7D6DF500121D5877C246D367A41727034FBF" -Tag $tag -FileName $ba2Files.fallout4Textures5
+Add-Hash -VariableName $var -Hash "A0757340B3557AA832DC7BAF401851988B88CE7162042497BD015A1BC7E514F0" -Tag $tag -FileName $ba2Files.fallout4Textures6
+Add-Hash -VariableName $var -Hash "5E6D3181222C9247C986C375A26981C74442746AF3DC7EA865E3F6FD34F6517A" -Tag $tag -FileName $ba2Files.fallout4Textures7
+Add-Hash -VariableName $var -Hash "E2E421FD9DD2D7DA5EDE92C83F28836BB24E4A6D2D1FF29768101E1A2FE54987" -Tag $tag -FileName $ba2Files.fallout4Textures8
+Add-Hash -VariableName $var -Hash "80D67F0855381EA1FD18E7ECC336785B8C301CC5CD742C1A155B1863F6381785" -Tag $tag -FileName $ba2Files.fallout4Textures9
+# phyop dark performance fixes
+$tag = "PhyOp (Dark) Performance Brahmin Pack Fix v1.2a"
+Add-Hash -VariableName $var -Hash "5405F40EF945BFF9F035282A7F026C36D04EE7588A715E45E613790C1F47A737" -Tag $tag -FileName $ba2Files.fallout4Textures1
+$tag = "PhyOp (Dark) Performance Face Sculpting Fix v1.2a"
+Add-Hash -VariableName $var -Hash "B84696B03BD0718A13640423855CA59D5FD4CE50AD1DAE8BB6A9B36E8F6E0EFF" -Tag $tag -FileName $ba2Files.fallout4Textures4
+
+# phyop light
+$tag = "PhyOp (Light) v1.2a"
+Add-Hash -VariableName $var -Hash "86B99F810CCF0EDCA71924FCC314FCDBFFB4AD748E5B3F23A4D16718370804FF" -Tag $tag -FileName $ba2Files.dlcCoastTextures
+Add-Hash -VariableName $var -Hash "06D8AC656252B36F299D5570B2E0412CCC7734C889CE07E7BE329C84945C2A9F" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures
+Add-Hash -VariableName $var -Hash "A2B0DDC1772287B5F791F37F7AC55B788892EFBC3C17DB7DA74D93971FC8B13C" -Tag $tag -FileName $ba2Files.dlcRobotTextures
+Add-Hash -VariableName $var -Hash "F8DA9A5EB547E31BE260F647A15158B946D25CD0A26CFC20E06C65B9B165F178" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures
+Add-Hash -VariableName $var -Hash "54F127585008682FBB216CA69C0099C89B511929133564724C7FCDC10A1091DB" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures
+Add-Hash -VariableName $var -Hash "94A06FA7FC4DC855E9478F994FD2DC144D5349C2030FEA26F1E87E405BE291D8" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures
+Add-Hash -VariableName $var -Hash "C3A8759A10F8DA57C302F0455C627799741F833444B10B34987C071409BCA3FE" -Tag $tag -FileName $ba2Files.fallout4Textures2
+Add-Hash -VariableName $var -Hash "E914225FF7B700E7F5E31D247A07FBA2CC6132856537234F0B5DD56275150AC2" -Tag $tag -FileName $ba2Files.fallout4Textures3
+Add-Hash -VariableName $var -Hash "557D1200AD4F52BAA920459380A0DF90D419DBFDD68C7346622B7E6B329E83DE" -Tag $tag -FileName $ba2Files.fallout4Textures5
+Add-Hash -VariableName $var -Hash "985E8AF0D4376D04FEC69BB0E2FD928917A0E886C4C142251FFD01B246DECE63" -Tag $tag -FileName $ba2Files.fallout4Textures6
+Add-Hash -VariableName $var -Hash "5F461B362C5A3EDE5DB763581071C276C92A3F9DF6DDE92F1E0F760CD389E248" -Tag $tag -FileName $ba2Files.fallout4Textures7
+Add-Hash -VariableName $var -Hash "BE907F2C69BFA030C4E781E560B4C39B0166C8F9DD5A6C60DCB92877DA55A239" -Tag $tag -FileName $ba2Files.fallout4Textures8
+Add-Hash -VariableName $var -Hash "D6510E42825960734C318D1400E2288D64CBC540F9943AA90CF46AF3682DCBCC" -Tag $tag -FileName $ba2Files.fallout4Textures9
+# phyop light fixes
+$tag = "PhyOp (Light) Brahmin Pack Fix v1.2a"
+Add-Hash -VariableName $var -Hash "4B0B91729122D0368BCD263A8CBC921F5C455BC2CEBA249B176BBF531AA48F3E" -Tag $tag -FileName $ba2Files.fallout4Textures1
+$tag = "PhyOp (Light) Face Sculpting Fix v1.2a"
+Add-Hash -VariableName $var -Hash "A97F5FF8CA4AFD5581067942D7ABB180E6C807B5968C68BAC45420120094A3B1" -Tag $tag -FileName $ba2Files.fallout4Textures4
+
+# phyop light performance
+$tag = "PhyOp (Light) Performance v1.2a"
+Add-Hash -VariableName $var -Hash "2542E15160C353AB902C6249755BAA43953C10478FCD0E1A284B89FE2C67E2C6" -Tag $tag -FileName $ba2Files.dlcCoastTextures
+Add-Hash -VariableName $var -Hash "1F7B16CFACD53D69B48D409BD4285A8CFA7D0CF21CE4F55F0889C34384EB08DD" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures
+Add-Hash -VariableName $var -Hash "1119271B707AFD98DECE3EF3757780DAE41EFB37836C273E3C9B118CCE18A6B4" -Tag $tag -FileName $ba2Files.dlcRobotTextures
+Add-Hash -VariableName $var -Hash "AAA05C2428A77F25314B96B74C5D749940976F063656F3622655A5E27D1C780B" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures
+Add-Hash -VariableName $var -Hash "DAF0D6213AF6896C3BBC5F5B69038C15096E7C4564DCF4187859E9B2C0EB132F" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures
+Add-Hash -VariableName $var -Hash "73560E783CAB71DA0030DA231E75735ADCC7AA53612A473DB655014EB2FB1F7A" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures
+Add-Hash -VariableName $var -Hash "13104917819D0E1C8EDADF36219B7C52B8979BD15AACF2B78D53755902754AC2" -Tag $tag -FileName $ba2Files.fallout4Textures2
+Add-Hash -VariableName $var -Hash "0DA22B21D84F16D0B3BC23D21CE271C44E2343A9A10C98CA7C385C4055AE478A" -Tag $tag -FileName $ba2Files.fallout4Textures3
+Add-Hash -VariableName $var -Hash "F434E87DE6E9AC0B9CC08B9ECA2C3AD2C5C0D32D8436CF610D1827DE2D3F47D8" -Tag $tag -FileName $ba2Files.fallout4Textures5
+Add-Hash -VariableName $var -Hash "07114A3D12216A2A3F73B7C3AC3530E620E3B84F148716FC170C99CD6ED15CEA" -Tag $tag -FileName $ba2Files.fallout4Textures6
+Add-Hash -VariableName $var -Hash "77E70B8BFAD1769BFA6247B9991FCF73FD99DFABFA0AA78C9535CA5A32E341D6" -Tag $tag -FileName $ba2Files.fallout4Textures7
+Add-Hash -VariableName $var -Hash "E9E9EACF023779D03858B59A6FC146DF12E8B2BBF4210C3A1A89EE3B914F5435" -Tag $tag -FileName $ba2Files.fallout4Textures8
+Add-Hash -VariableName $var -Hash "D6510E42825960734C318D1400E2288D64CBC540F9943AA90CF46AF3682DCBCC" -Tag $tag -FileName $ba2Files.fallout4Textures9
+# phyop light performance fixes
+$tag = "PhyOp (Light) Performance Brahmin Pack Fix v1.2a"
+Add-Hash -VariableName $var -Hash "3F135341D403BD185349E52EF0072131CDFDD61047AB94B1ECC57316FB1818A6" -Tag $tag -FileName $ba2Files.fallout4Textures1
+$tag = "PhyOp (Light) Performance Face Sculpting Fix v1.2a"
+Add-Hash -VariableName $var -Hash "BBEE6919CDC404F2A0D9A785B93118953404491255C90BFB5F560EEE66E56FB8" -Tag $tag -FileName $ba2Files.fallout4Textures4
+
+# phyop light potato
+$tag = "PhyOp (Light) Potato v1.2a"
+Add-Hash -VariableName $var -Hash "3893685E360BD2FD24467205AAADADC28A4C6FAABD293F5DE6ED3B5B53E08854" -Tag $tag -FileName $ba2Files.dlcCoastTextures
+Add-Hash -VariableName $var -Hash "C0D70FBE02551F295880BA91AEE233C55B271941D628D7F63A27785C5A9869F8" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures
+Add-Hash -VariableName $var -Hash "108F7DAEC9C7895FCFB0A839D675CB7F7B3E35E1081A561420D7A526DF091EA3" -Tag $tag -FileName $ba2Files.dlcRobotTextures
+Add-Hash -VariableName $var -Hash "AAA05C2428A77F25314B96B74C5D749940976F063656F3622655A5E27D1C780B" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures
+Add-Hash -VariableName $var -Hash "B575C0EDE2D5194DEE5F4426D7641C1BE0EFDB48401A9615421091C58D284734" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures
+Add-Hash -VariableName $var -Hash "A4BA20057BE64B0BED0CD1EC59A7598A71488A7613A4F433664800D161F169F7" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures
+Add-Hash -VariableName $var -Hash "B5DB65B87E5DA020A0259B64F8096383B1F66E383E5AAE46818D6145157A9FCD" -Tag $tag -FileName $ba2Files.fallout4Textures1
+Add-Hash -VariableName $var -Hash "7C6A7A27D71EF64C040DAD64650330CD945B343D5E972C67B2916AD7CF49DF39" -Tag $tag -FileName $ba2Files.fallout4Textures2
+Add-Hash -VariableName $var -Hash "55E483F6A1F74E19C03EF78761BE547BD296E539F2BAF42D4A264E3CA8338D0A" -Tag $tag -FileName $ba2Files.fallout4Textures3
+Add-Hash -VariableName $var -Hash "EC6ADD903C05BCF9DDB78DBEFBB543E1F9FE8E07DCD3E4A00DD2340A15E9FBE3" -Tag $tag -FileName $ba2Files.fallout4Textures5
+Add-Hash -VariableName $var -Hash "829D448F9B4DC90095EE616288C3D59D9C061A8B153A97E1614553B29655C9CD" -Tag $tag -FileName $ba2Files.fallout4Textures6
+Add-Hash -VariableName $var -Hash "B3BC300D60667EC9EDE55C0A7B788759FD1196AE8A8AE71FE54AA02EE0EF9174" -Tag $tag -FileName $ba2Files.fallout4Textures7
+Add-Hash -VariableName $var -Hash "4A75B49BCBA3DF13BA4CB29A488DC2B54A01C6C2F23302B643ACB7F227DEF579" -Tag $tag -FileName $ba2Files.fallout4Textures8
+Add-Hash -VariableName $var -Hash "D6510E42825960734C318D1400E2288D64CBC540F9943AA90CF46AF3682DCBCC" -Tag $tag -FileName $ba2Files.fallout4Textures9
+# phyop light potato fixes
+$tag = "PhyOp (Light) Potato Face Sculpting Fix v1.2a"
+Add-Hash -VariableName $var -Hash "467900A3DEBA3652F93DDD9124E97FFDFA3794B3120757A548E2B9BC2CB01A50" -Tag $tag -FileName $ba2Files.fallout4Textures4
+
+
+# known bad file hashes
+# ---------------------
+
+$badPatchedFiles = @{}; $var = "badPatchedFiles"; $tag = "corrupt"
+# # template
+# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName ($dir.patchedFiles + "")
+
+# SavrenX HD 1K Buildings and Interior v1.00 - https://www.nexusmods.com/fallout4/mods/40534
+Add-Hash -VariableName $var -Hash "89AF2BD3620A2B849D8FC6266E71D6BBC34455CDB32C481C350F864ECDD7C67C" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\Buildings\BldgTrimDamage01_d.DDS")
+Add-Hash -VariableName $var -Hash "0A03536FDE70266F5C311D5EC03C0653CAF5396B2E8BFEBE6F2E83C1D987B3F9" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\Buildings\RoofMetal02_d.DDS")
+Add-Hash -VariableName $var -Hash "9B54AB02F67799AE580043647331EBC293FB90C12B6092EF32D14F1B49B71F20" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\diamondcity\DiamondMetalTrims01.DDS")
+Add-Hash -VariableName $var -Hash "8ABAF770C1708FB162375CB566267D0BD6DE7E9AB1DFBA1A6CA5D9C4DD9B5821" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\diamondcity\DiamondMetalTrims01_d.DDS")
+Add-Hash -VariableName $var -Hash "CF9A38E2A4A4E38605EA8C27343F61F2209304A430A90E54993302231AFF994D" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\diamondcity\DiamondMetalTrims01_n.DDS")
+Add-Hash -VariableName $var -Hash "35560375E99066066FA1E84AAC067EC6D636574A615EA7D9F74802BAC86DB719" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\diamondcity\DiamondMetalTrims01_s.DDS")
+Add-Hash -VariableName $var -Hash "02AADFF4006FDDA59CA58EB9956C01CB05D228A25037973484F1C0FB67A251F5" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\diamondcity\DiamondRVPanel02.DDS")
+Add-Hash -VariableName $var -Hash "B329807B569FDB2F393E446D2E4D7ABF7176F03740FEFB4E9B24F239F335FD04" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\diamondcity\DiamondRVPanel02_d.DDS")
+Add-Hash -VariableName $var -Hash "794186BAED5D0492A12AFF82BFC3F7776B02F9724F2AF69671F0701E2682C802" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\diamondcity\DiamondRVPanel02_n.DDS")
+Add-Hash -VariableName $var -Hash "71EF1D44A67202C52168E1C90999E14D7D83C6889F0BF52B33CF3183CFEA6651" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\diamondcity\DiamondRVPanel02_s.DDS")
+Add-Hash -VariableName $var -Hash "519CF66BE7295864B99744FBDB2BE0EB8A4984D6E0109401B19C3C60CF4935A3" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\diamondcity\DiamondWood01.DDS")
+Add-Hash -VariableName $var -Hash "A6C4AD71F80DCB7E8C2A37F0983B03864B5CB7F9134985313442287D84936594" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\diamondcity\DiamondWood01_d.DDS")
+Add-Hash -VariableName $var -Hash "27223F90A501B18340FCA431F218902A5483F94B0BA1AEBCAE50036D3A56EADD" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\diamondcity\DiamondWood01_n.DDS")
+Add-Hash -VariableName $var -Hash "6BAC4E1456BAC8182CD81CD7CC364AE52A138C8A0FD12A5816969CFE8AA65602" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\diamondcity\DiamondWood01_s.DDS")
+Add-Hash -VariableName $var -Hash "2A82B4AD9633CA9232155DD4C46F22BBB714AAF02D217217D54C7E44128629C4" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\Shacks\ShackPlywood02_d.DDS")
+Add-Hash -VariableName $var -Hash "1384FEB18A5EB3F196E4E07E793A8FBE259F89E6EE4DFF181C760BA56E5C1155" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\Unique\BunkerHillMonument\BHMarbleEdgeTrim01_d.DDS")
+Add-Hash -VariableName $var -Hash "705A84DFA0DD34DC823E3ACDE6C0D25F4D485279871D5BFCF109909D2C8B78E6" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\Building\bldconcdamagegross02_d.DDS")
+Add-Hash -VariableName $var -Hash "1DA79D97698301F6361045FF34E70CBE13CE61C670002D6810D113989B8FD224" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\Building\BldWindow01_d.DDS")
+Add-Hash -VariableName $var -Hash "A006521449A7410F38627C81EE30883D62391DE6E2B9C2F2D305819930F7832D" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\Institute\InstitutePanel03_d.DDS")
+Add-Hash -VariableName $var -Hash "21649EE3EACC112F8927A9B5B97464394A34859D6A4E5DD4F1CCF18B07065B8E" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled02Clinic_Damage_d.DDS")
+Add-Hash -VariableName $var -Hash "DE8FCE93C4620A2D66AA29C5219E60F7C4BC3DF51DAF4AF40840A18B4A5B20E4" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled04School02_Damage_d.DDS")
+Add-Hash -VariableName $var -Hash "52E7F09AC9F4C0989D2E22B9252CAB3EB09B63FA6E2E10B03204E1EBA8CB9F65" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled04School_DAMAGE_d.DDS")
+Add-Hash -VariableName $var -Hash "57A171BA3820D50D4DC661A878BD792C00D18CA39417B9D32E6F08C1AE85BC25" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled05Residence01_Damage_d.DDS")
+Add-Hash -VariableName $var -Hash "C85DA1BF814C115DD9ACA9F7120F9A076CE2DFE0C23162DFBEBA1F05D4E8E5C3" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled05Residence02_Damage_d.DDS")
+Add-Hash -VariableName $var -Hash "B456EEECEF272D8350F7E62E90F15A4C0ECAD3119A7052AF49EC4B01620DC8C3" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled05Residence03_Damage_d.DDS")
+Add-Hash -VariableName $var -Hash "8341D85234A4BCB282C1C23AC1BCA1F8AD289E1C744184DCEEE2E0B134DEA6A1" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled05Residence04_Damage_d.DDS")
+Add-Hash -VariableName $var -Hash "AB6BD58E0625A5326B7D462933BB24F380842F97C23B7ED63B9AEC51670D30F3" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled05Residence05Vintage_Damage_d.DDS")
+Add-Hash -VariableName $var -Hash "CE0DD44FE3B1446FF85B6834978684F5F4644233A08B814E28CDC8DD42D5E2AE" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled06AdminBlue_Damage_d.DDS")
+Add-Hash -VariableName $var -Hash "A54288D4CCCF49426BF512A4C3A29C70B84ADB913DAD8A9B8152B7CBD1EA92D1" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled07Cafeteria01_Damage_d.DDS")
+Add-Hash -VariableName $var -Hash "D108E62A549845BBEF746986E801BB183B139A0245A8B99139DD635D51AAB25C" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled07Cafeteria02_Damage_d.DDS")
+Add-Hash -VariableName $var -Hash "A501200BBF2AE3CF095E8880436E78AC569612D7352DF362087701ED33EF8ECD" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled07Cafeteria03_Damage_d.DDS")
+Add-Hash -VariableName $var -Hash "6E72CFD69EC64BAF1AB5AFE5B3E23F31BD81B8639F3E91F500EB77D68C14CDFB" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltSecretWindow01_d.DDS")
+
+# TODO BiRaitBec bad file hashes
+
+
+# patched ba2 hashes
+# ------------------
 
 # notes:
 # when 'main' is used without 'performance', Textures\interiors\vault\VltHallResPaneled07Cafeteria02_Damage_d.DDS is deleted

@@ -45,8 +45,8 @@ function Add-Hash {
     else {
         $var[$Hash] = @{
             FileName = $FileName
-            Tags = @($Tag)
-            Actions = @($Action)
+            Tags     = @($Tag)
+            Actions  = @($Action)
         }
     }
 }
@@ -69,7 +69,7 @@ function Exit-Script {
         Write-Custom "" -BypassLog
         Wait-KeyPress
     }
-    Write-Log "","Exit Code: $ExitCode"
+    Write-Log "", "Exit Code: $ExitCode"
     $Host.UI.RawUI.BackgroundColor = $OriginalBackgroundColor
     exit $ExitCode
 }
@@ -112,7 +112,7 @@ function Get-Fallout4DataFolder {
             #   .Trim()
             # get the last entry that's not an empty string, which should be the location of the steam library where Fallout 4 is
             #   .Where({$_}, "Last")
-            $steamLibraryPath = (@(Select-String "^\s+`"path`"" -Path $steamLibraryFile).Where({$_.LineNumber -lt $fallout4EntryLineNumber}, "Last").Line -split "`"").Trim().Where({$_}, "Last")
+            $steamLibraryPath = (@(Select-String "^\s+`"path`"" -Path $steamLibraryFile).Where({ $_.LineNumber -lt $fallout4EntryLineNumber }, "Last").Line -split "`"").Trim().Where({ $_ }, "Last")
             if (-not $steamLibraryPath) { return "" }
             # set the location of the Fallout 4 folder gotten through this method
             $fallout4SteamFolder = "$steamLibraryPath\steamapps\common\Fallout 4"
@@ -140,15 +140,14 @@ function Get-Folder {
         [Parameter()] [string] $RootFolder = "MyComputer"
     )
 
-    [System.Reflection.Assembly]::LoadWithPartialName("System.windows.forms")|Out-Null
+    [System.Reflection.Assembly]::LoadWithPartialName("System.windows.forms") | Out-Null
 
     $folderDialog = New-Object System.Windows.Forms.FolderBrowserDialog
     $folderDialog.Description = $Description
     $folderDialog.RootFolder = $RootFolder
     $folderDialog.SelectedPath = $InitialDirectory
 
-    if($folderDialog.ShowDialog() -eq "OK")
-    {
+    if ($folderDialog.ShowDialog() -eq "OK") {
         $folder += $folderDialog.SelectedPath
     }
     return $folder
@@ -174,13 +173,13 @@ function Invoke-HashActions {
     )
 
     $var = (Get-Variable -Name $VariableName -ErrorAction Stop).Value
-    if (-not $var.ContainsKey($Hash)) {return}  # hash does not exist in variable
-    if ($var.$Hash.Length -eq 0) {return}       # no actions associated with hash
+    if (-not $var.ContainsKey($Hash)) { return }  # hash does not exist in variable
+    if ($var.$Hash.Length -eq 0) { return }       # no actions associated with hash
     $var.$Hash.Actions | ForEach-Object {
         $action = $_ -split "|"
         switch ($action[0]) {
             ResetRepackFlags {
-                $repackFlags.Keys | ForEach-Object {$repackFlags.$_ = $false}
+                $repackFlags.Keys | ForEach-Object { $repackFlags.$_ = $false }
             }
             SetRepackFlag {
                 $repackFlags.$action[1] = $action[2]
@@ -199,7 +198,7 @@ function Wait-KeyPress {
     Write-Custom $Message -NoNewLine -BypassLog
     [Void][System.Console]::ReadKey($true)
     if (-not $NoPadding) {
-        Write-Custom "","" -BypassLog
+        Write-Custom "", "" -BypassLog
     }
 }
 
@@ -213,11 +212,11 @@ function Write-Error {
     )
 
     $hashArguments = @{
-        Message = $Message
-        JustifyRight = -not $NoJustifyRight
-        Prefix = $Prefix
+        Message       = $Message
+        JustifyRight  = -not $NoJustifyRight
+        Prefix        = $Prefix
         SnippetLength = $SnippetLength
-        Color = [System.ConsoleColor]::Red
+        Color         = [System.ConsoleColor]::Red
     }
     Write-Custom @hashArguments
 }
@@ -288,7 +287,7 @@ function Write-Custom {
     }
 
     if (-not $BypassLog) {
-        Write-Log $($Message | ForEach-Object {"$Prefix$_"})
+        Write-Log $($Message | ForEach-Object { "$Prefix$_" })
     }
 }
 
@@ -301,10 +300,10 @@ function Write-Info {
     )
 
     $hashArguments = @{
-        Message = $Message
+        Message      = $Message
         JustifyRight = -not $NoJustifyRight
-        Prefix = $Prefix
-        Color = [System.ConsoleColor]::Blue
+        Prefix       = $Prefix
+        Color        = [System.ConsoleColor]::Blue
     }
     Write-Custom @hashArguments
 }
@@ -322,12 +321,12 @@ function Write-Log {
         New-Item $dir.logs -ItemType "directory" -ErrorAction Stop | Out-Null
     }
     $(if ($NoTimestamp) {
-        Write-Output $Message
-    }
-    else {
-        Write-Output $Message |
-            ForEach-Object {"[$((Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))] $_".Trim()}
-    }) | Out-File -LiteralPath "$($dir.logs)\${Log}_$LogStartTime.log" -Append
+            Write-Output $Message
+        }
+        else {
+            Write-Output $Message |
+            ForEach-Object { "[$((Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))] $_".Trim() }
+        }) | Out-File -LiteralPath "$($dir.logs)\${Log}_$LogStartTime.log" -Append
 }
 
 function Write-Success {
@@ -339,10 +338,10 @@ function Write-Success {
     )
 
     $hashArguments = @{
-        Message = $Message
+        Message      = $Message
         JustifyRight = -not $NoJustifyRight
-        Prefix = $Prefix
-        Color = [System.ConsoleColor]::Green
+        Prefix       = $Prefix
+        Color        = [System.ConsoleColor]::Green
     }
     Write-Custom @hashArguments
 }
@@ -358,7 +357,7 @@ function Write-TimeSpan {
         "$(if ($TimeSpan.TotalHours -ge 1) {"h\h"})"
         "$(if ($TimeSpan.TotalMinutes -ge 1) {"m\m"})"
         "$(if ($TimeSpan.TotalSeconds) {"s\.f\s"})"
-    ).Where{$_} -join "\ "
+    ).Where{ $_ } -join "\ "
     return [System.TimeSpan]::FromSeconds([Math]::Round($TimeSpan.TotalSeconds, 1)).ToString($formatString)
 }
 
@@ -371,10 +370,10 @@ function Write-Warning {
     )
 
     $hashArguments = @{
-        Message = $Message
+        Message      = $Message
         JustifyRight = -not $NoJustifyRight
-        Prefix = $Prefix
-        Color = [System.ConsoleColor]::Yellow
+        Prefix       = $Prefix
+        Color        = [System.ConsoleColor]::Yellow
     }
     Write-Custom @hashArguments
 }

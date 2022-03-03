@@ -21,7 +21,7 @@
 
 Write-Host "Loading Functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 5, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 6, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -29,7 +29,8 @@ function Add-Hash {
         [Parameter(Mandatory)] [string] $VariableName,
         [Parameter(Mandatory)] [string] $Hash,
         [Parameter(Mandatory)] [string] $FileName,
-        [Parameter(Mandatory)] [string] $Tag
+        [Parameter(Mandatory)] [string] $Tag,
+        [Parameter()] [string] $Action = $null
     )
 
     $var = (Get-Variable -Name $VariableName -ErrorAction Stop).Value
@@ -39,11 +40,13 @@ function Add-Hash {
             Exit-Script 1
         }
         $var[$Hash].Tags = $var[$Hash].Tags + @($Tag) | Sort-Object -Unique
+        $var[$Hash].Action = $var[$Hash].Actions + @($Action) | Sort-Object -Unique
     }
     else {
         $var[$Hash] = @{
             FileName = $FileName
             Tags = @($Tag)
+            Actions = @($Action)
         }
     }
 }
@@ -161,6 +164,30 @@ function Get-WindowsVersion {
         "OS Build"
         (Get-ItemPropertyValue -Path $regKey -Name "CurrentBuild") + "." + (Get-ItemPropertyValue -Path $regKey -Name "UBR") + ")"
     ) -join " "
+}
+
+function Invoke-HashActions {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)] [string] $VariableName,
+        [Parameter(Mandatory)] [string] $Hash
+    )
+
+    $var = (Get-Variable -Name $VariableName -ErrorAction Stop).Value
+    if (-not $var.ContainsKey($Hash)) {return}  # hash does not exist in variable
+    if ($var.$Hash.Length -eq 0) {return}       # no actions associated with hash
+    $var.$Hash.Actions | ForEach-Object {
+        $action = $_ -split "|"
+        switch ($action[0]) {
+            ResetRepackFlags {
+                $repackFlags.Keys | ForEach-Object {$repackFlags.$_ = $false}
+            }
+            SetRepackFlag {
+                $repackFlags.$action[1] = $action[2]
+            }
+            Default {}
+        }
+    }
 }
 
 function Wait-KeyPress {

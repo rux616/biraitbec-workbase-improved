@@ -21,7 +21,7 @@
 
 Write-Host "Loading Functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 6, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 7, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -30,6 +30,7 @@ function Add-Hash {
         [Parameter(Mandatory)] [string] $Hash,
         [Parameter(Mandatory)] [string] $FileName,
         [Parameter(Mandatory)] [string] $Tag,
+        [Parameter()] [long] $FileSize = $null,
         [Parameter()] [string] $Action = $null
     )
 
@@ -39,12 +40,22 @@ function Add-Hash {
             Write-Error "Assigning file `"$FileName`" to hash `"$Hash`" failed because that hash is already in use by file `"$($var[$Hash].FileName)`"."
             Exit-Script 1
         }
+        if ($null -ne $FileSize) {
+            if ($null -eq $var[$Hash].FileSize) {
+                $var[$Hash].FileSize = $FileSize
+            }
+            elseif ($var[$Hash].FileSize -ne $FileSize) {
+                Write-Error "Assigning size `"$FileSize`" to hash `"$Hash`" failed because that hash already has size `"$($var[$Hash].FileSize)`"."
+                Exit-Script 1
+            }
+        }
         $var[$Hash].Tags = $var[$Hash].Tags + @($Tag) | Sort-Object -Unique
         $var[$Hash].Action = $var[$Hash].Actions + @($Action) | Sort-Object -Unique
     }
     else {
         $var[$Hash] = @{
             FileName = $FileName
+            FileSize = $FileSize
             Tags     = @($Tag)
             Actions  = @($Action)
         }

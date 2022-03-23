@@ -19,9 +19,9 @@
 # functions
 # ---------
 
-Write-Host "Loading Functions..."
+Write-Host "Loading functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 7, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 8, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -184,8 +184,7 @@ function Invoke-HashActions {
     )
 
     $var = (Get-Variable -Name $VariableName -ErrorAction Stop).Value
-    if (-not $var.ContainsKey($Hash)) { return }  # hash does not exist in variable
-    if ($var.$Hash.Length -eq 0) { return }       # no actions associated with hash
+    if (-not $var.ContainsKey($Hash)) { return }    # hash does not exist in variable
     $var.$Hash.Actions | ForEach-Object {
         $action = $_ -split "|"
         switch ($action[0]) {
@@ -259,13 +258,13 @@ function Write-Custom {
         [Console]::ForegroundColor = $Color
     }
 
-    $doSnip = $Message.Length -gt $SnippetLength * 2 -and $SnippetLength -gt 0
+    $doSnip = $Message.Count -gt $SnippetLength * 2 -and $SnippetLength -gt 0
 
-    for ($index = 0; $index -lt $Message.Length; $index++) {
+    for ($index = 0; $index -lt $Message.Count; $index++) {
         $line = $Message[$index]
         if ($doSnip -and $index -eq $SnippetLength) {
             $line = "--- snip ---"
-            $index = $Message.Length - $SnippetLength - 1
+            $index = $Message.Count - $SnippetLength - 1
         }
         if ($NoNewLine) {
             if ($JustifyRight) {

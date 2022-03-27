@@ -21,7 +21,7 @@
 
 Write-Host "Loading functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 8, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 9, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -164,6 +164,30 @@ function Get-Folder {
     return $folder
 }
 
+function Get-OriginalBa2File {
+    [CmdletBinding()]
+    param (
+        [Parameter()] [string] $FileName,
+        [Parameter()] [string] $FolderOriginal = $dir.originalBa2,
+        [Parameter()] [string] $FolderRegistry = $dir.fallout4DataRegistry,
+        [Parameter()] [string] $FolderSteam = $dir.fallout4DataSteam
+    )
+
+    $toReturn = "$FolderOriginal\$FileName"
+    $folderList = @(
+        $FolderOriginal
+        $FolderRegistry
+        $FolderSteam
+    )
+    foreach ($folder in $folderList) {
+        if (Test-Path -LiteralPath "$folder\$FileName") {
+            $toReturn = "$folder\$FileName"
+            break
+        }
+    }
+    return $toReturn
+}
+
 function Get-WindowsVersion {
     $regKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion"
     return @(
@@ -212,25 +236,6 @@ function Wait-KeyPress {
     }
 }
 
-function Write-Error {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
-        [switch] $NoJustifyRight,
-        [string]$Prefix = $null,
-        [int]$SnippetLength = 0
-    )
-
-    $hashArguments = @{
-        Message       = $Message
-        JustifyRight  = -not $NoJustifyRight
-        Prefix        = $Prefix
-        SnippetLength = $SnippetLength
-        Color         = [System.ConsoleColor]::Red
-    }
-    Write-Custom @hashArguments
-}
-
 function Write-Custom {
     [CmdletBinding()]
     param (
@@ -266,28 +271,21 @@ function Write-Custom {
             $line = "--- snip ---"
             $index = $Message.Count - $SnippetLength - 1
         }
+        if ($JustifyRight) {
+            $formatString = "{0,$($LineWidth - $PreviousLineLength.Value)}"
+        }
+        elseif ($JustifyCenter) {
+            $formatString = "{0,$([int](($LineWidth - $PreviousLineLength.Value) / 2.0 + ($Prefix.Length + $line.Length) / 2.0))}"
+        }
+        else {
+            $formatString = "{0}"
+        }
         if ($NoNewLine) {
-            if ($JustifyRight) {
-                $stream.Write("{0,$LineWidth}", $Prefix + $line)
-            }
-            elseif ($JustifyCenter) {
-                $stream.Write("{0,$([int](($LineWidth - $PreviousLineLength.Value) / 2.0 + ($Prefix.Length + $line.Length) / 2.0))}", $Prefix + $line)
-            }
-            else {
-                $stream.Write("{0}", $Prefix + $line)
-            }
+            $stream.Write($formatString, $Prefix + $line)
             $PreviousLineLength.Value = $Host.UI.RawUI.CursorPosition.X
         }
         else {
-            if ($JustifyRight) {
-                $stream.WriteLine("{0,$($LineWidth - $PreviousLineLength.Value)}", $Prefix + $line)
-            }
-            elseif ($JustifyCenter) {
-                $stream.WriteLine("{0,$([int](($LineWidth - $PreviousLineLength.Value) / 2.0 + ($Prefix.Length + $line.Length) / 2.0))}", $Prefix + $line)
-            }
-            else {
-                $stream.WriteLine("{0}", $Prefix + $line)
-            }
+            $stream.WriteLine($formatString, $Prefix + $line)
             $PreviousLineLength.Value = 0
         }
     }
@@ -301,16 +299,39 @@ function Write-Custom {
     }
 }
 
+function Write-Error {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
+        [switch] $BypassLog,
+        [switch] $NoJustifyRight,
+        [string]$Prefix = $null,
+        [int]$SnippetLength = 0
+    )
+
+    $hashArguments = @{
+        Message       = $Message
+        BypassLog     = $BypassLog
+        JustifyRight  = -not $NoJustifyRight
+        Prefix        = $Prefix
+        SnippetLength = $SnippetLength
+        Color         = [System.ConsoleColor]::Red
+    }
+    Write-Custom @hashArguments
+}
+
 function Write-Info {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
+        [switch] $BypassLog,
         [switch] $NoJustifyRight,
         [string] $Prefix = $null
     )
 
     $hashArguments = @{
         Message      = $Message
+        BypassLog    = $BypassLog
         JustifyRight = -not $NoJustifyRight
         Prefix       = $Prefix
         Color        = [System.ConsoleColor]::Blue
@@ -343,12 +364,14 @@ function Write-Success {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
+        [switch] $BypassLog,
         [switch] $NoJustifyRight,
         [string] $Prefix = $null
     )
 
     $hashArguments = @{
         Message      = $Message
+        BypassLog    = $BypassLog
         JustifyRight = -not $NoJustifyRight
         Prefix       = $Prefix
         Color        = [System.ConsoleColor]::Green
@@ -375,12 +398,14 @@ function Write-Warning {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
+        [switch] $BypassLog,
         [switch] $NoJustifyRight,
         [string] $Prefix = $null
     )
 
     $hashArguments = @{
         Message      = $Message
+        BypassLog    = $BypassLog
         JustifyRight = -not $NoJustifyRight
         Prefix       = $Prefix
         Color        = [System.ConsoleColor]::Yellow

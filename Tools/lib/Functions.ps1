@@ -21,7 +21,7 @@
 
 Write-Host "Loading functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 9, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 10, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -208,7 +208,7 @@ function Invoke-HashActions {
     )
 
     $var = (Get-Variable -Name $VariableName -ErrorAction Stop).Value
-    if (-not $var.ContainsKey($Hash)) { return }    # hash does not exist in variable
+    if (-not $var.ContainsKey($Hash)) { return } # hash does not exist in variable
     $var.$Hash.Actions | ForEach-Object {
         $action = $_ -split "|"
         switch ($action[0]) {
@@ -249,7 +249,8 @@ function Write-Custom {
         [switch] $UseErrorStream,
         [int] $SnippetLength = 0,
         [PSObject] $Color = $null,
-        [ref] $PreviousLineLength = [ref] $writeCustomPrevNoNewLineLength
+        [ref] $PreviousLineLength = [ref] $writeCustomPrevNoNewLineLength,
+        [switch] $TrimBeforeDisplay
     )
 
     if ($UseErrorStream) {
@@ -280,12 +281,18 @@ function Write-Custom {
         else {
             $formatString = "{0}"
         }
+        if ($TrimBeforeDisplay) {
+            $outputString = ($Prefix + $line).Trim()
+        }
+        else {
+            $outputString = $Prefix + $line
+        }
         if ($NoNewLine) {
-            $stream.Write($formatString, $Prefix + $line)
+            $stream.Write($formatString, $outputString)
             $PreviousLineLength.Value = $Host.UI.RawUI.CursorPosition.X
         }
         else {
-            $stream.WriteLine($formatString, $Prefix + $line)
+            $stream.WriteLine($formatString, $outputString)
             $PreviousLineLength.Value = 0
         }
     }
@@ -305,17 +312,21 @@ function Write-Error {
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
         [switch] $BypassLog,
         [switch] $NoJustifyRight,
+        [switch] $NoNewLine,
+        [switch] $NoTrimBeforeDisplay,
         [string]$Prefix = $null,
         [int]$SnippetLength = 0
     )
 
     $hashArguments = @{
-        Message       = $Message
-        BypassLog     = $BypassLog
-        JustifyRight  = -not $NoJustifyRight
-        Prefix        = $Prefix
-        SnippetLength = $SnippetLength
-        Color         = [System.ConsoleColor]::Red
+        Message           = $Message
+        BypassLog         = $BypassLog
+        JustifyRight      = -not $NoJustifyRight
+        NoNewLine         = $NoNewLine
+        TrimBeforeDisplay = -not $NoTrimBeforeDisplay
+        Prefix            = $Prefix
+        SnippetLength     = $SnippetLength
+        Color             = [System.ConsoleColor]::Red
     }
     Write-Custom @hashArguments
 }
@@ -326,15 +337,19 @@ function Write-Info {
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
         [switch] $BypassLog,
         [switch] $NoJustifyRight,
+        [switch] $NoNewLine,
+        [switch] $NoTrimBeforeDisplay,
         [string] $Prefix = $null
     )
 
     $hashArguments = @{
-        Message      = $Message
-        BypassLog    = $BypassLog
-        JustifyRight = -not $NoJustifyRight
-        Prefix       = $Prefix
-        Color        = [System.ConsoleColor]::Blue
+        Message           = $Message
+        BypassLog         = $BypassLog
+        JustifyRight      = -not $NoJustifyRight
+        NoNewLine         = $NoNewLine
+        TrimBeforeDisplay = -not $NoTrimBeforeDisplay
+        Prefix            = $Prefix
+        Color             = [System.ConsoleColor]::Blue
     }
     Write-Custom @hashArguments
 }
@@ -366,15 +381,19 @@ function Write-Success {
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
         [switch] $BypassLog,
         [switch] $NoJustifyRight,
+        [switch] $NoNewLine,
+        [switch] $NoTrimBeforeDisplay,
         [string] $Prefix = $null
     )
 
     $hashArguments = @{
-        Message      = $Message
-        BypassLog    = $BypassLog
-        JustifyRight = -not $NoJustifyRight
-        Prefix       = $Prefix
-        Color        = [System.ConsoleColor]::Green
+        Message           = $Message
+        BypassLog         = $BypassLog
+        JustifyRight      = -not $NoJustifyRight
+        NoNewLine         = $NoNewLine
+        TrimBeforeDisplay = -not $NoTrimBeforeDisplay
+        Prefix            = $Prefix
+        Color             = [System.ConsoleColor]::Green
     }
     Write-Custom @hashArguments
 }
@@ -400,15 +419,19 @@ function Write-Warning {
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
         [switch] $BypassLog,
         [switch] $NoJustifyRight,
+        [switch] $NoNewLine,
+        [switch] $NoTrimBeforeDisplay,
         [string] $Prefix = $null
     )
 
     $hashArguments = @{
-        Message      = $Message
-        BypassLog    = $BypassLog
-        JustifyRight = -not $NoJustifyRight
-        Prefix       = $Prefix
-        Color        = [System.ConsoleColor]::Yellow
+        Message           = $Message
+        BypassLog         = $BypassLog
+        JustifyRight      = -not $NoJustifyRight
+        NoNewLine         = $NoNewLine
+        TrimBeforeDisplay = -not $NoTrimBeforeDisplay
+        Prefix            = $Prefix
+        Color             = [System.ConsoleColor]::Yellow
     }
     Write-Custom @hashArguments
 }

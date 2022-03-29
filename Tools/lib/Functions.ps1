@@ -21,7 +21,7 @@
 
 Write-Host "Loading functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 10, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 11, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -66,7 +66,7 @@ function Exit-Script {
     [CmdletBinding()]
     param (
         [int] $ExitCode = 0,
-        [switch] $Immediate,
+        [switch] $Immediate = $NoPauseOnExit,
         [System.Diagnostics.Stopwatch] $ScriptTimer = $scriptTimer,
         [System.ConsoleColor] $OriginalBackgroundColor = $OriginalBackgroundColor
     )

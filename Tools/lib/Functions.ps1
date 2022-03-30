@@ -21,7 +21,7 @@
 
 Write-Host "Loading functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 11, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 12, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -30,23 +30,21 @@ function Add-Hash {
         [Parameter(Mandatory)] [string] $Hash,
         [Parameter(Mandatory)] [string] $FileName,
         [Parameter(Mandatory)] [string] $Tag,
-        [Parameter()] [long] $FileSize = $null,
+        [Parameter()] [long] $FileSize = -1,
         [Parameter()] [string] $Action = $null
     )
 
     $var = (Get-Variable -Name $VariableName -ErrorAction Stop).Value
     if ($var.ContainsKey($Hash)) {
         if ($var[$Hash].FileName -ne $FileName) {
-            Write-Error "Assigning file `"$FileName`" to hash `"$Hash`" failed because that hash is already in use by file `"$($var[$Hash].FileName)`"."
-            Exit-Script 1
+            throw "Assigning file `"$FileName`" to hash `"$Hash`" failed because that hash is already in use by file `"$($var[$Hash].FileName)`"."
         }
-        if ($null -ne $FileSize) {
-            if ($null -eq $var[$Hash].FileSize) {
+        if ($FileSize -ne -1) {
+            if ($var[$Hash].FileSize -eq -1) {
                 $var[$Hash].FileSize = $FileSize
             }
             elseif ($var[$Hash].FileSize -ne $FileSize) {
-                Write-Error "Assigning size `"$FileSize`" to hash `"$Hash`" failed because that hash already has size `"$($var[$Hash].FileSize)`"."
-                Exit-Script 1
+                throw "Assigning size `"$FileSize`" to hash `"$Hash`" failed because that hash already has size `"$($var[$Hash].FileSize)`"."
             }
         }
         $var[$Hash].Tags = $var[$Hash].Tags + @($Tag) | Sort-Object -Unique

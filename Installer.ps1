@@ -24,7 +24,8 @@ param (
     [switch] $SkipExistingPatchedHashing,
     [switch] $SkipChoosingPatchedBa2Dir,
     [switch] $NoPauseOnExit,
-    [switch] $NoClearScreen
+    [switch] $NoClearScreen,
+    [switch] $AllowUnchanged
 )
 
 
@@ -32,7 +33,7 @@ param (
 # -----------------------
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 1, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 3, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "SHA256" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -402,7 +403,7 @@ if ($validateRepacksFailed) {
 $repackFiles = $foundRepackFiles
 
 
-# create tag and check if custom run
+# check if custom run and create tag
 # ----------------------------------
 
 $sectionTimer.Restart()
@@ -413,9 +414,6 @@ if (-not $repackFlags.Performance -and -not $repackFlags.Main -and -not $repackF
     $repackFlags."Vault Fix" = $false
     $vaultFixNeeded = $false
 }
-
-# create tag
-$repackTag = $repackFlags.Keys.Where({ $repackFlags[$_] }) -join $TagJoiner
 
 # get the list of original archive size mismatches, then take that list and see how many of those mismatches match sizes for alternate original archives
 $originalBa2SizeMismatches, $alternateOriginalBa2SizeMatches = $null
@@ -455,17 +453,20 @@ if (
     ) {
         $customReason = 1
     }
-    elseif (-not $repackTag) {
+    elseif ($repackFlags.Keys.Where({ $repackFlags[$_] }).Count -eq 0) {
         $customReason = 2
     }
     if ($customReason) {
-        $previousRepackTag = $repackTag
         foreach ($key in $($repackFlags.Keys)) { $repackFlags[$key] = $false }
         $repackFlags.Custom = $customReason
         $repackTag = "Custom"
         $repackFlags
     }
 }
+
+# create tag
+$repackTag = $repackFlags.Keys.Where({ $repackFlags[$_] }) -join $TagJoiner
+if (-not $repackTag) { $repackTag = "Unchanged" }
 
 $firstIteration = $true
 Write-Custom "", "Using repack set:"
@@ -488,10 +489,12 @@ foreach ($object in $repackFlags.GetEnumerator()) {
 
 Write-Log "", "Repack tag: $repackTag"
 if ($repackFlags.Custom) {
-    Write-Log "Previous repack tag: $(if ($previousRepackTag) {$previousRepackTag} else {"(None)"})", "Original BA2 size mismatches: $($originalBa2SizeMismatches.Count)"
-    Write-Log @($originalBa2SizeMismatches | ForEach-Object { "  $(Get-OriginalBa2File $_.Value.FileName) ($($_.Value.Tags -join ", "))" })
-    Write-Log "Original BA2 size mismatches that match alternate original BA2 sizes: $($alternateOriginalBa2SizeMatches.Count)"
-    Write-Log @($alternateOriginalBa2SizeMatches | ForEach-Object { "  $($_.Value.FileName) ($($_.Value.Tags -join ", "))" })
+    Write-Log @(
+        "Original BA2 size mismatches: $($originalBa2SizeMismatches.Count)"
+        @($originalBa2SizeMismatches | ForEach-Object { "  $(Get-OriginalBa2File $_.Value.FileName) ($($_.Value.Tags -join ", "))" })
+        "Original BA2 size mismatches that match alternate original BA2 sizes: $($alternateOriginalBa2SizeMatches.Count)"
+        @($alternateOriginalBa2SizeMatches | ForEach-Object { "  $($_.Value.FileName) ($($_.Value.Tags -join ", "))" })
+    )
 }
 Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
 
@@ -501,10 +504,16 @@ if ($repackFlags.Custom -eq 1) {
 elseif ($repackFlags.Custom -eq 2) {
     Write-Warning "", "Existing assets found in `"$($dir.patchedFiles)`" and no repack sets detected.", "Mode switched to `"Custom`"." -NoJustifyRight
 }
-elseif (-not $repackTag) {
+elseif ($repackTag -eq "Unchanged") {
+    $message = "No repack sets found and no custom assets exist."
     Write-Custom ""
-    Write-Error "No repack sets found and no custom assets exist." -NoJustifyRight
-    Exit-Script 1
+    if ($AllowUnchanged) {
+        Write-Warning $message -Prefix "WARNING: " -NoJustifyRight
+    }
+    else {
+        Write-Error $message -Prefix "ERROR: " -NoJustifyRight
+        Exit-Script 1
+    }
 }
 
 

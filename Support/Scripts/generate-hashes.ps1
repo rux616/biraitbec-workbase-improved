@@ -97,7 +97,7 @@ foreach ($keySet in $allKeyCombinations) {
 
     # execute
     "*******", "execute", "*******"
-    .\Installer.ps1 -SkipRepackHashing -SkipExistingPatchedHashing -SkipChoosingPatchedBa2Dir -NoPauseOnExit -NoClearScreen
+    .\Installer.ps1 -SkipRepackHashing -SkipExistingPatchedHashing -SkipChoosingPatchedBa2Dir -NoPauseOnExit -NoClearScreen -AllowUnchanged
 
     # log
     "***", "log", "***"

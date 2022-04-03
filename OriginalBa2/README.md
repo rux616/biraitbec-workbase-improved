@@ -1,6 +1,6 @@
 OriginalBa2 Folder
 ==================
-This folder is meant to hold the original texture archives from the Fallout 4 `Data` folder. Note that this may not be necessary as the installer will search for these archives in the Fallout 4 folder if they are not in this folder.
+This folder is meant to hold the original texture archives from the Fallout 4 `Data` folder:
 
 - `DLCCoast - Textures.ba2`
 - `DLCNukaWorld - Textures.ba2`
@@ -17,3 +17,165 @@ This folder is meant to hold the original texture archives from the Fallout 4 `D
 - `Fallout4 - Textures7.ba2`
 - `Fallout4 - Textures8.ba2`
 - `Fallout4 - Textures9.ba2`
+
+Note that this may not be necessary as while the installer will first look at the `OriginalBa2` folder when looking for the original BA2 archives, if it doesn't find an archive there, it will then attempt to look in the Fallout 4 Data folder.
+
+Currently, the following original BA2 archives are supported:
+
+- Vanilla (Game version v1.10.163.0, Steam build ID 4460038)
+    - (All archives)
+- Luxor's Fallout 4 HD Overhaul (v1.0)
+    - `DLCCoast - Textures.ba2`
+    - `DLCNukaWorld - Textures.ba2`
+    - `DLCRobot - Textures.ba2`
+    - `DLCworkshop01 - Textures.ba2`
+    - `DLCworkshop02 - Textures.ba2`
+    - `DLCworkshop03 - Textures.ba2`
+    - `Fallout4 - Textures4.ba2`
+    - `Fallout4 - Textures5.ba2`
+    - `Fallout4 - Textures6.ba2`
+    - `Fallout4 - Textures7.ba2`
+    - `Fallout4 - Textures8.ba2`
+    - `Fallout4 - Textures9.ba2`
+- Luxor's Fallout 4 HD Overhaul (v1.01)
+    - `Fallout4 - Textures2.ba2`
+- Luxor's Fallout 4 HD Overhaul (v1.02)
+    - `Fallout4 - Textures1.ba2`
+    - `Fallout4 - Textures3.ba2`
+- PhyOp's Overhauled Optimized Textures (v1.2a)
+    - Custom
+        - `DLCCoast - Textures.ba2`
+        - `DLCNukaWorld - Textures.ba2`
+        - `DLCRobot - Textures.ba2`
+        - `DLCworkshop01 - Textures.ba2`
+        - `DLCworkshop02 - Textures.ba2`
+        - `DLCworkshop03 - Textures.ba2`
+        - `Fallout4 - Textures2.ba2`
+        - `Fallout4 - Textures3.ba2`
+        - `Fallout4 - Textures5.ba2`
+        - `Fallout4 - Textures6.ba2`
+        - `Fallout4 - Textures8.ba2`
+        - `Fallout4 - Textures9.ba2`
+    - Custom Brahmin Pack Fix
+        - `Fallout4 - Textures1.ba2`
+    - Custom Face Sculpting Fix
+        - `Fallout4 - Textures4.ba2`
+    - Custom Street Sign Fix
+        - `Fallout4 - Textures7.ba2`
+    - Custom Original Pip-boy
+        - `Fallout4 - Textures2.ba2`
+    - Custom Original Weapon Colors
+        - `DLCCoast - Textures.ba2`
+        - `DLCNukaWorld - Textures.ba2`
+        - `DLCRobot - Textures.ba2`
+        - `Fallout4 - Textures8.ba2`
+    - Custom Performance
+        - `DLCCoast - Textures.ba2`
+        - `DLCNukaWorld - Textures.ba2`
+        - `DLCRobot - Textures.ba2`
+        - `DLCworkshop01 - Textures.ba2`
+        - `DLCworkshop02 - Textures.ba2`
+        - `DLCworkshop03 - Textures.ba2`
+        - `Fallout4 - Textures2.ba2`
+        - `Fallout4 - Textures3.ba2`
+        - `Fallout4 - Textures5.ba2`
+        - `Fallout4 - Textures6.ba2`
+        - `Fallout4 - Textures7.ba2`
+        - `Fallout4 - Textures8.ba2`
+        - `Fallout4 - Textures9.ba2`
+    - Custom Performance Brahmin Pack Fix
+        - `Fallout4 - Textures1.ba2`
+    - Custom Performance Face Sculpting Fix
+        - `Fallout4 - Textures4.ba2`
+    - Custom Performance Original Pip-boy
+        - `Fallout4 - Textures2.ba2`
+    - Dark
+        - `DLCCoast - Textures.ba2`
+        - `DLCNukaWorld - Textures.ba2`
+        - `DLCRobot - Textures.ba2`
+        - `DLCworkshop01 - Textures.ba2`
+        - `DLCworkshop02 - Textures.ba2`
+        - `DLCworkshop03 - Textures.ba2`
+        - `Fallout4 - Textures2.ba2`
+        - `Fallout4 - Textures3.ba2`
+        - `Fallout4 - Textures5.ba2`
+        - `Fallout4 - Textures6.ba2`
+        - `Fallout4 - Textures8.ba2`
+        - `Fallout4 - Textures9.ba2`
+    - Dark Brahmin Pack Fix
+        - `Fallout4 - Textures1.ba2`
+    - Dark Face Sculpting Fix
+        - `Fallout4 - Textures4.ba2`
+    - Dark Street Sign Fix
+        - `Fallout4 - Textures7.ba2`
+    - Dark Performance
+        - `DLCCoast - Textures.ba2`
+        - `DLCNukaWorld - Textures.ba2`
+        - `DLCRobot - Textures.ba2`
+        - `DLCworkshop01 - Textures.ba2`
+        - `DLCworkshop02 - Textures.ba2`
+        - `DLCworkshop03 - Textures.ba2`
+        - `Fallout4 - Textures2.ba2`
+        - `Fallout4 - Textures3.ba2`
+        - `Fallout4 - Textures5.ba2`
+        - `Fallout4 - Textures6.ba2`
+        - `Fallout4 - Textures7.ba2`
+        - `Fallout4 - Textures8.ba2`
+        - `Fallout4 - Textures9.ba2`
+    - Dark Performance Brahmin Pack Fix
+        - `Fallout4 - Textures1.ba2`
+    - Dark Performance Face Sculpting Fix
+        - `Fallout4 - Textures4.ba2`
+    - Light
+        - `DLCCoast - Textures.ba2`
+        - `DLCNukaWorld - Textures.ba2`
+        - `DLCRobot - Textures.ba2`
+        - `DLCworkshop01 - Textures.ba2`
+        - `DLCworkshop02 - Textures.ba2`
+        - `DLCworkshop03 - Textures.ba2`
+        - `Fallout4 - Textures2.ba2`
+        - `Fallout4 - Textures3.ba2`
+        - `Fallout4 - Textures5.ba2`
+        - `Fallout4 - Textures6.ba2`
+        - `Fallout4 - Textures7.ba2`
+        - `Fallout4 - Textures8.ba2`
+        - `Fallout4 - Textures9.ba2`
+    - Light Brahmin Pack Fix
+        - `Fallout4 - Textures1.ba2`
+    - Light Face Sculpting Fix
+        - `Fallout4 - Textures4.ba2`
+    - Light Performance
+        - `DLCCoast - Textures.ba2`
+        - `DLCNukaWorld - Textures.ba2`
+        - `DLCRobot - Textures.ba2`
+        - `DLCworkshop01 - Textures.ba2`
+        - `DLCworkshop02 - Textures.ba2`
+        - `DLCworkshop03 - Textures.ba2`
+        - `Fallout4 - Textures2.ba2`
+        - `Fallout4 - Textures3.ba2`
+        - `Fallout4 - Textures5.ba2`
+        - `Fallout4 - Textures6.ba2`
+        - `Fallout4 - Textures7.ba2`
+        - `Fallout4 - Textures8.ba2`
+        - `Fallout4 - Textures9.ba2`
+    - Light Performance Brahmin Pack Fix
+        - `Fallout4 - Textures1.ba2`
+    - Light Performance Face Sculpting Fix
+        - `Fallout4 - Textures4.ba2`
+    - Light Potato
+        - `DLCCoast - Textures.ba2`
+        - `DLCNukaWorld - Textures.ba2`
+        - `DLCRobot - Textures.ba2`
+        - `DLCworkshop01 - Textures.ba2`
+        - `DLCworkshop02 - Textures.ba2`
+        - `DLCworkshop03 - Textures.ba2`
+        - `Fallout4 - Textures1.ba1`
+        - `Fallout4 - Textures2.ba2`
+        - `Fallout4 - Textures3.ba2`
+        - `Fallout4 - Textures5.ba2`
+        - `Fallout4 - Textures6.ba2`
+        - `Fallout4 - Textures7.ba2`
+        - `Fallout4 - Textures8.ba2`
+        - `Fallout4 - Textures9.ba2`
+    - Light Potato Face Sculpting Fix
+        - `Fallout4 - Textures4.ba2`

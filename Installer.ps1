@@ -22,14 +22,18 @@
 param (
     [switch] $SkipRepackHashing,
     [switch] $SkipExistingPatchedHashing,
-    [switch] $SkipChoosingPatchedBa2Dir
+    [switch] $SkipChoosingPatchedBa2Dir,
+    [switch] $NoPauseOnExit,
+    [switch] $NoClearScreen,
+    [switch] $AllowUnchanged
 )
 
 
 # constants and variables
 # -----------------------
 
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 0, 0))
+Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 1, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 5, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "SHA256" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -141,17 +145,19 @@ $dir.fallout4DataSteam = Get-Fallout4DataFolder -DiscoveryMethod Steam
 # ------------
 
 $Host.UI.RawUI.BackgroundColor = 'black'
-Clear-Host
+if (-not $NoClearScreen) { Clear-Host }
 Write-Log @(
     ">" * $LineWidth
     "Diagnostic Information:"
+    "  BiRaitBec WorkBase Improved Version: $BRBWIVersion"
+    ""
     "  Installer Version: $InstallerVersion"
     "  Functions Version: $FunctionsVersion"
     "  Hashes Version: $HashesVersion"
     ""
     "  Windows Version: $(Get-WindowsVersion)"
-    "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) {$msvcp110dllVersion} else {"(Not Found)"})
-    "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) {$msvcr110dllVersion} else {"(Not Found)"})
+    "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) { $msvcp110dllVersion } else { "(Not Found)" })
+    "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { $msvcr110dllVersion } else { "(Not Found)" })
     ""
     "  Current Directory: $currentDirectory"
     ""
@@ -167,10 +173,15 @@ Write-Log @(
     "  Color DWORD Value (Red): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Red.value__).ToString("D2"))").ToString("X6"))"
     "  Color DWORD Value (Yellow): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Yellow.value__).ToString("D2"))").ToString("X6"))"
     ""
-    "  Fallout 4 Data directory (Registry method): " + $(if ($dir.fallout4DataRegistry) {$dir.fallout4DataSteam} else {"(Not Found)"})
-    "  Fallout 4 Data directory (Steam method): " + $(if ($dir.fallout4DataSteam) {$dir.fallout4DataSteam} else {"(Not Found)"})
-    "<" * $LineWidth
+    "  Fallout 4 Data directory (Registry method): " + $(if ($dir.fallout4DataRegistry) { $dir.fallout4DataSteam } else { "(Not Found)" })
+    "  Fallout 4 Data directory (Steam method): " + $(if ($dir.fallout4DataSteam) { $dir.fallout4DataSteam } else { "(Not Found)" })
     ""
+    "  Files in Repack7z directory:"
+    Get-ChildItem $dir.repack7z -File | ForEach-Object { "    `"$($_.Name)`" ($($_.Length) bytes)" }
+    ""
+    "  Files in OriginalBa2 directory:"
+    Get-ChildItem $dir.originalBa2 -File | ForEach-Object { "    `"$($_.Name)`" ($($_.Length) bytes)" }
+    "<" * $LineWidth
 )
 
 Write-Custom @(
@@ -195,24 +206,24 @@ Write-Custom @(
 ) -JustifyCenter -BypassLog
 
 
-# check location to ensure it's not located in a problematic directory
-# --------------------------------------------------------------------
+# check location to ensure the script is not located in a problematic directory
+# -----------------------------------------------------------------------------
 
 $problemDirs = @(
     [IO.Path]::GetFullPath(${env:ProgramFiles})
     [IO.Path]::GetFullPath(${env:ProgramFiles(x86)})
     [IO.Path]::GetFullPath(${env:windir})
-    [IO.Path]::GetFullPath(${env:USERPROFILE})
-    [IO.Path]::GetFullPath(${env:PUBLIC})
+    (Get-Item $([IO.Path]::GetFullPath(${env:USERPROFILE}))).Parent.FullName
 )
 foreach ($problemDir in $problemDirs) {
     if ($currentDirectory.StartsWith($problemDir, [System.StringComparison]::OrdinalIgnoreCase)) {
+        Write-Custom ""
         Write-Error @(
-            ""
             "Attempting to run script from `"$currentDirectory`"."
-            "Problematic location detected. Please ensure this folder is OUTSIDE of any of the following folders:"
-        ) -Prefix "ERROR: "
-        Write-Error $problemDirs -Prefix "ERROR:   "
+            ""
+            "Problematic location detected. Please ensure this script is not anywhere inside the following folders:"
+            $problemDirs | ForEach-Object { "  $_" }
+        ) -Prefix "ERROR: " -NoJustifyRight
         Exit-Script 1
     }
 }
@@ -227,11 +238,11 @@ foreach ($problemDir in $problemDirs) {
 #   msvcr110.dll version = 11.00.51106.1
 $vcrMinVersion = New-Object System.Version -ArgumentList @(11, 00, 51106, 1)
 if ($msvcp110dllVersion -lt $vcrMinVersion -or $msvcr110dllVersion -lt $vcrMinVersion) {
+    Write-Custom ""
     Write-Error @(
-        ""
         "Need 64-bit Visual C++ Redistributable for Visual Studio 2012 Update 4! Please download it from this link:"
         "https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe"
-        ) -Prefix "ERROR: "
+    ) -Prefix "ERROR: " -NoJustifyRight
     Exit-Script 1
 }
 
@@ -241,13 +252,14 @@ if ($msvcp110dllVersion -lt $vcrMinVersion -or $msvcr110dllVersion -lt $vcrMinVe
 
 $sectionTimer.Restart()
 
+# create the PatchedBa2 folder and error out if it fails
 try {
     if (-not (Test-Path -LiteralPath $dir.patchedBa2)) {
         New-Item $dir.patchedBa2 -ItemType "directory" -ErrorAction Stop | Out-Null
     }
 }
 catch {
-    Write-Error $_ -Prefix "ERROR: " -SnippetLength 3
+    Write-Error $_ -Prefix "ERROR: " -SnippetLength 3 -NoJustifyRight
     Exit-Script 1
 }
 
@@ -258,7 +270,12 @@ if (-not $SkipChoosingPatchedBa2Dir) {
 }
 if ($null -eq $dir.patchedBa2) {
     Write-Error "[CANCELLED]"
-    Write-Error "","Cancelled by user." -NoJustifyRight
+    Write-Error "Cancelled by user." -NoJustifyRight
+    Exit-Script 1
+}
+elseif ($dir.fallout4DataSteam -and $dir.fallout4DataSteam -eq $dir.patchedBa2) {
+    Write-Error "[ERROR]"
+    Write-Error "Cannot choose the Fallout 4\Data folder from your Steam library." -Prefix "ERROR: " -NoJustifyRight
     Exit-Script 1
 }
 
@@ -272,7 +289,7 @@ if (
 
 Write-Info $dir.patchedBa2
 
-Write-Log "","Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
 
 
 # check for repack archives
@@ -283,22 +300,62 @@ $sectionTimer.Restart()
 $repackFlags = [ordered]@{}
 $repackFiles.Keys | ForEach-Object { $repackFlags.$_ = $true }
 
+$foundRepackFiles = [ordered]@{}  # set up variable to mirror data structure of $repackFiles, only with the actual files used
 $firstIteration = $true
-Write-Custom "","Validating repack sets:"
+Write-Custom "", "Validating repack sets:"
 :outerLoop foreach ($object in $repackFiles.GetEnumerator()) {
-    if ($firstIteration) {$firstIteration = $false} else {Write-Custom "  $("-" * ($LineWidth - 2))"}
+    $foundFiles = @() # keep track of the actual found files for this key
+    if ($firstIteration) { $firstIteration = $false } else { Write-Custom "  $("-" * ($LineWidth - 2))" }
     Write-Custom "  $($object.Key) ($($object.Value.Count) archive$(if ($object.Value.Count -ne 1) {"s"})):"
-    foreach ($file in $object.Value) {
+    foreach ($file in $object.Value.GetEnumerator()) {
         try {
             $archiveTimer.Restart()
 
+            $altFile = $file
             $relFile = "$($dir.repack7z)\$file"
-            Write-Custom "    $file" -NoNewLine
+            $altRelFile = $null
+            $fileName = $file.Substring(0, $file.LastIndexOf('.'))
+            $fileExt = $file.Substring($file.LastIndexOf('.'))
+
+            # allow for fuzzy matching
+            # @(Get-ChildItem -Path $dir.repack7z -File -Filter "$fileName*$fileExt" | Where-Object
+            #   get files that match file name with anything between the end of the filename and the file extension and pipe them into Where-Object
+            # { $_.Length -eq
+            #   get the file size and prepare to see if it's equal to
+            # ($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file }).Value.FileSize })
+            #   get the repack hash object that matches the file name and get its file size for comparison
+            $potentialRepackFiles = @(Get-ChildItem -Path $dir.repack7z -File -Filter "$fileName*$fileExt" | Where-Object { $_.Length -eq ($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file }).Value.FileSize })
+            if ($potentialRepackFiles.Count -gt 0) {
+                if ($potentialRepackFiles.Count -gt 1) {
+                    Write-Log "    Found multiple candidate files for ${file}:"
+                    foreach ($potentialFile in $potentialRepackFiles) { Write-Log "      $($potentialFile.Name) ($($potentialFile.Length) bytes)" }
+                }
+                $altFile = $potentialRepackFiles[-1].Name
+                $altRelFile = "$($dir.repack7z)\$($potentialRepackFiles[-1].Name)"
+            }
+
+            $foundFiles += $altFile
+
+            if ($null -ne $altRelFile -and $altRelFile -ne $relFile) {
+                Write-Log "    `"$file`" not found; using `"$altFile`" instead"
+                $relFile = $altRelFile
+            }
+
+            Write-Custom "    $altFile" -NoNewLine
+
             if (Test-Path -LiteralPath $relFile) {
                 if ($SkipRepackHashing) {
                     Write-Warning "    [SKIPPED]"
                 }
                 else {
+                    # check size before checking hash
+                    if (@($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem $relFile).Length }).Count -eq 0) {
+                        Write-Warning "    [SIZE MISMATCH]"
+                        $repackFlags[$object.Key] = $false
+                        continue
+                    }
+
+                    Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
                     $hash = (Get-FileHash -LiteralPath $relFile -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
                     Write-Log "    Hash: $hash"
                     if ($repack7zHashes[$hash].FileName -eq $file) {
@@ -317,7 +374,7 @@ Write-Custom "","Validating repack sets:"
         }
         catch {
             Write-Error "    [ERROR]"
-            Write-Error $_ -Prefix "    ERROR: " -NoJustifyRight
+            Write-Error $_ -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
             $validateRepacksFailed = $true
             break outerLoop
         }
@@ -325,41 +382,94 @@ Write-Custom "","Validating repack sets:"
             Write-Log "    Archive duration: $($archiveTimer.Elapsed.ToString())"
         }
     }
+    $foundRepackFiles."$($object.Key)" = $foundFiles
 }
+
+Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
 
 if ($validateRepacksFailed) {
     Exit-Script 1
 }
 
+# replace list of expected repack files with the list of found repack files
+$repackFiles = $foundRepackFiles
+
+
+# check if custom run and create tag
+# ----------------------------------
+
+$sectionTimer.Restart()
+
 # if not using Performance, Main, or Quality, don't need to install the Vault Fix
+$vaultFixNeeded = $true
 if (-not $repackFlags.Performance -and -not $repackFlags.Main -and -not $repackFlags.Quality) {
     $repackFlags."Vault Fix" = $false
+    $vaultFixNeeded = $false
 }
 
-# create tag
-$repackTag = $repackFlags.Keys.Where({$repackFlags[$_]}) -join $TagJoiner
+# get the list of original archive size mismatches, then take that list and see how many of those mismatches match sizes for alternate original archives
+$originalBa2SizeMismatches, $alternateOriginalBa2SizeMatches = $null
+# $originalBa2Hashes.GetEnumerator() | Where-Object {
+#   get enumerator for the original BA2 hashes and pipe it into Where-Object
+# $_.Value.FileSize -ne
+#   get file size for a given file and prepare to see if it's not equal
+# (Get-ChildItem -LiteralPath (Get-OriginalBa2File $_.Value.FileName) -ErrorAction SilentlyContinue).Length
+#   use the Get-OriginalBa2File function to grab the full path of the file
+#   feed full file path of file to Get-ChildItem, telling it to silently continue if not there (it gets checked later)
+#   get file size of file returned by Get-ChildItem
+# } | Sort-Object { $_.Value.FileName }
+#   make sure that any objects found are sorted by file name
+$originalBa2SizeMismatches = $originalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileSize -ne (Get-ChildItem -LiteralPath (Get-OriginalBa2File $_.Value.FileName) -ErrorAction SilentlyContinue).Length } | Sort-Object { $_.Value.FileName }
+# $originalBa2SizeMismatches | ForEach-Object {
+#   take the original ba2 size mismatches and pipe them into ForEach-Object
+# $currentMismatch = $_;
+#   assign the current object in the pipeline to a variable other than $_
+# $alternateOriginalBa2Hashes.GetEnumerator() | Where-Object {
+#   get an enumerator for the alternate original ba2 hashes and pipe it into Where-Object
+# $_.Value.FileName -eq $currentMismatch.Value.FileName -and
+# $_.Value.FileSize -eq (Get-ChildItem -LiteralPath (Get-OriginalBa2File $_.Value.FileName) -ErrorAction SilentlyContinue).Length } }
+#   have Where-Object find alternate original BA2s that have matching file names and matching file sizes
+$alternateOriginalBa2SizeMatches = $originalBa2SizeMismatches | ForEach-Object { $currentMismatch = $_; $alternateOriginalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $currentMismatch.Value.FileName -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath (Get-OriginalBa2File $_.Value.FileName) -ErrorAction SilentlyContinue).Length } }
 
-# if no standard tag, then check to see if the conditions for a custom run are met:
-#   .\PatchedFiles\Textures exists
-#   .\PatchedFiles\Textures has DDS files
-if (-not $repackTag) {
+# check to see if the conditions for a custom run are met:
+#   custom assets exist AND one+ original BA2 size doesn't match expected original BA2 size AND those same archives original BA2 size matches expected alternate BA2 size
+#   custom assets exist AND no standard tag
+if (
+    (Test-Path -LiteralPath "$($dir.patchedFiles)\Textures") -and
+    (Get-ChildItem -LiteralPath "$($dir.patchedFiles)\Textures" -Filter "*.dds" -Recurse).Count
+) {
+    $customReason = 0
     if (
-        (Test-Path -LiteralPath "$($dir.patchedFiles)\Textures") -and
-        (Get-ChildItem -LiteralPath "$($dir.patchedFiles)\Textures" -Filter "*.dds" -Recurse).Count
+        $originalBa2SizeMismatches.Count -gt 0 -and
+        $alternateOriginalBa2SizeMatches.Count -gt 0
     ) {
-        $repackFlags.Custom = $true
+        $customReason = 1
+    }
+    elseif ($repackFlags.Keys.Where({ $repackFlags[$_] }).Count -eq 0) {
+        $customReason = 2
+    }
+    if ($customReason) {
+        foreach ($key in $($repackFlags.Keys)) { $repackFlags[$key] = $false }
+        $repackFlags.Custom = $customReason
         $repackTag = "Custom"
+        $repackFlags
     }
 }
 
+# create tag
+$repackTag = $repackFlags.Keys.Where({ $repackFlags[$_] }) -join $TagJoiner
+if (-not $repackTag) { $repackTag = "Unchanged" }
+
 $firstIteration = $true
-Write-Custom "","Using repack set:"
+Write-Custom "", "Using repack set:"
 foreach ($object in $repackFlags.GetEnumerator()) {
-    if ($firstIteration) {$firstIteration = $false} else {Write-Log "  $("-" * ($LineWidth - 2))"}
+    if ($firstIteration) { $firstIteration = $false } else { Write-Log "  $("-" * ($LineWidth - 2))" }
     Write-Custom "  $($object.Key)" -NoNewLine
     switch -wildcard ($object.Key) {
         "*" { $flagSetText = "  [YES]"; $flagUnsetText = "  [NO]" }
-        "Vault Fix" { $flagUnsetText = "  [NOT NEEDED]" }
+        "Vault Fix" {
+            if (-not $vaultFixNeeded) { $flagUnsetText = "  [NOT NEEDED]" }
+        }
     }
     if ($object.Value) {
         Write-Success $flagSetText
@@ -369,15 +479,33 @@ foreach ($object in $repackFlags.GetEnumerator()) {
     }
 }
 
-Write-Log "","Repack tag: $repackTag"
-Write-Log "","Section duration: $($sectionTimer.Elapsed.ToString())"
-
+Write-Log "", "Repack tag: $repackTag"
 if ($repackFlags.Custom) {
-    Write-Warning "","No repack sets found, but custom assets exist." -NoJustifyRight
+    Write-Log @(
+        "Original BA2 size mismatches: $($originalBa2SizeMismatches.Count)"
+        @($originalBa2SizeMismatches | ForEach-Object { "  $(Get-OriginalBa2File $_.Value.FileName) ($($_.Value.Tags -join ", "))" })
+        "Original BA2 size mismatches that match alternate original BA2 sizes: $($alternateOriginalBa2SizeMatches.Count)"
+        @($alternateOriginalBa2SizeMatches | ForEach-Object { "  $($_.Value.FileName) ($($_.Value.Tags -join ", "))" })
+    )
 }
-elseif (-not $repackTag) {
-    Write-Error "","No repack sets found and no custom assets exist." -NoJustifyRight
-    Exit-Script 1
+Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+
+if ($repackFlags.Custom -eq 1) {
+    Write-Warning "", "Existing assets found in `"$($dir.patchedFiles)`" and possible alternative original BA2 archive$(if ($alternateOriginalBa2SizeMatches.Count -ne 1) {"s"}) detected.", "Mode switched to `"Custom`"." -NoJustifyRight
+}
+elseif ($repackFlags.Custom -eq 2) {
+    Write-Warning "", "Existing assets found in `"$($dir.patchedFiles)`" and no repack sets detected.", "Mode switched to `"Custom`"." -NoJustifyRight
+}
+elseif ($repackTag -eq "Unchanged") {
+    $message = "No repack sets found and no custom assets exist."
+    Write-Custom ""
+    if ($AllowUnchanged) {
+        Write-Warning $message -Prefix "WARNING: " -NoJustifyRight
+    }
+    else {
+        Write-Error $message -Prefix "ERROR: " -NoJustifyRight
+        Exit-Script 1
+    }
 }
 
 
@@ -404,7 +532,7 @@ else {
             $file = $object.Value
             $relFile = "$($dir.patchedBa2)\$file"
 
-            if ($firstIteration) {$firstIteration = $false} else {Write-Log "  $("-" * ($LineWidth - 2))"}
+            if ($firstIteration) { $firstIteration = $false } else { Write-Log "  $("-" * ($LineWidth - 2))" }
             Write-Custom "  $file" -NoNewLine
 
             if (Test-Path -LiteralPath $relFile) {
@@ -414,7 +542,7 @@ else {
                     Write-Log "  Tags: $($patchedBa2Hashes[$hash].Tags -join ", ")"
                     if ($patchedBa2Hashes[$hash].Tags -contains $repackTag) {
                         Write-Success "  [VALID]"
-                        $ba2Filenames = $ba2Filenames.Where({$_ -ne $file})
+                        $ba2Filenames = $ba2Filenames.Where({ $_ -ne $file })
                     }
                     else {
                         Write-Warning "  [REPACK SET MISMATCH]"
@@ -430,7 +558,7 @@ else {
         }
         catch {
             Write-Error "  [ERROR]"
-            Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight
+            Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
             $validateArchivesFailed = $true
             break
         }
@@ -440,14 +568,14 @@ else {
     }
 }
 
-Write-Log "","Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
 
 if ($validateArchivesFailed) {
     Exit-Script 1
 }
 
 if (-not $ba2Filenames.Count) {
-    Write-Success "","Existing patched archives validated successfully; nothing to do!" -NoJustifyRight
+    Write-Success "", "Existing patched archives validated successfully; nothing to do!" -NoJustifyRight
     Exit-Script 0
 }
 
@@ -473,7 +601,7 @@ else {
         }
         catch {
             Write-Error "  [ERROR]"
-            Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight
+            Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
             Exit-Script 1
         }
         Write-Info "  $($dir.patchedFiles).backup.$RunStartTime"
@@ -484,15 +612,16 @@ else {
         New-Item $dir.patchedFiles -ItemType "directory" -ErrorAction Stop | Out-Null
     }
     catch {
-        Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight
+        Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
         Exit-Script 1
     }
 
     $firstIteration = $true
     :outerLoop foreach ($object in $repackFiles.GetEnumerator()) {
+        # pre-extraction
         try {
             if (-not $repackFlags[$object.Key]) { continue }
-            if ($firstIteration) {$firstIteration = $false} else {Write-Custom "  $("-" * ($LineWidth - 2))"}
+            if ($firstIteration) { $firstIteration = $false } else { Write-Custom "  $("-" * ($LineWidth - 2))" }
             Write-Custom "  $($object.Key) ($($object.Value.Count) archive$(if ($object.Value.Count -ne 1) {"s"})):"
 
             # remove and create temp directory
@@ -504,7 +633,7 @@ else {
             switch ($object.Key) {
                 # special case: if main is being used with performance, save texture from performance for later use
                 "Main" {
-                     if ($repackFlags.Performance) {
+                    if ($repackFlags.Performance) {
                         Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
                     }
                 }
@@ -512,7 +641,7 @@ else {
         }
         catch {
             Write-Error "  [ERROR]"
-            Write-Error $_ -Prefix "  ERROR: " -SnippetLength 3 -NoJustifyRight
+            Write-Error $_ -Prefix "  ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
             $extractRepackFailed = $true
             break
         }
@@ -538,23 +667,14 @@ else {
                     }
                 }
                 Write-Custom "    $file" -NoNewLine
-
-                # save the cursor position
-                $cursorPos = $Host.UI.RawUI.CursorPosition
-                $savedLineLength = $writeCustomPrevNoNewLineLength
-                Write-Custom "" -BypassLog
+                Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
 
                 # do the actual extraction and save the command line used to the tool log
-                Write-Log "`"$tool7za`" x -y -bb2 -bse1 -bsp2 -o`"$outDir`" `"$relFile`" `"$(if ($extra) {$extra -join '" "'})`"" -Log "tool"
+                Write-Log "`"$tool7za`" x -y -bb2 -bd -o`"$outDir`" `"$relFile`" `"$(if ($extra) {$extra -join '" "'})`"" -Log "tool"
                 $toolTimer.Restart()
-                $stdout = (& "$tool7za" x -y -bb2 -bse1 -bsp2 -o"$outDir" "$relFile" "$(if ($extra) {$extra -join '" "'})")
+                $stdout, $stderr = (& "$tool7za" x -y -bb2 -bd -o"$outDir" "$relFile" "$(if ($extra) {$extra -join '" "'})" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
                 Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-                Write-Log "STDOUT:",$stdout,"","$("-" * $LineWidth)","" -Log "tool" -NoTimestamp
-
-                # restore the cursor position
-                Write-Custom "$(" " * $LineWidth)" -NoNewLine -BypassLog
-                $Host.UI.RawUI.CursorPosition = $cursorPos
-                $writeCustomPrevNoNewLineLength = $savedLineLength
+                Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool" -NoTimestamp
 
                 # check if extracting the archive succeeded
                 if ($LASTEXITCODE -ne 0) {
@@ -564,10 +684,10 @@ else {
             }
             catch {
                 Write-Error "    [ERROR]"
-                if ($null -ne $stdout) {
-                    Write-Error $stdout -Prefix "    ERROR: " -SnippetLength 3 -NoJustifyRight
+                if ($null -ne $stderr) {
+                    Write-Error $stderr -Prefix "    ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
                 }
-                Write-Error $_ -Prefix "    ERROR: " -SnippetLength 3 -NoJustifyRight
+                Write-Error $_ -Prefix "    ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
                 $extractRepackFailed = $true
                 break outerLoop
             }
@@ -577,20 +697,18 @@ else {
             }
         }
 
+        # post-extraction
         try {
             switch ($object.Key) {
-                # special case: if on main and using performance, copy previously-saved texture, otherwise delete corrupted texture
+                # special case: if on main and using performance, copy previously-saved texture
                 "Main" {
-                    if ($repackFlags.Performance){
+                    if ($repackFlags.Performance) {
                         Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
-                    }
-                    else {
-                        Remove-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds"
                     }
                 }
                 # special case: if on restyle, copy items to PatchedFiles folder
                 "Restyle" {
-                    Copy-Item -LiteralPath $($extra | ForEach-Object {"$($dir.temp)\$_"}) -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
+                    Copy-Item -LiteralPath $($extra | ForEach-Object { "$($dir.temp)\$_" }) -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
                 }
                 # special case: if using vault fix, copy copy Textures subdirectory
                 "Vault Fix" {
@@ -603,14 +721,14 @@ else {
             }
         }
         catch {
-            Write-Error $_ -Prefix "  ERROR: " -SnippetLength 3 -NoJustifyRight
+            Write-Error $_ -Prefix "  ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
             $extractRepackFailed = $true
             break
         }
     }
 }
 
-Write-Log "","Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
 
 if ($extractRepackFailed) {
     if (Test-Path -LiteralPath $dir.temp) {
@@ -620,12 +738,46 @@ if ($extractRepackFailed) {
 }
 
 
+# remove known bad patched files
+# ------------------------------
+
+$sectionTimer.Restart()
+
+Write-Custom ""
+Write-Custom "Checking for known bad patched files:" -NoNewLine
+
+$potentiallyBadPatchedFilenames = @($badPatchedFileHashes.GetEnumerator() | ForEach-Object { $_.Value.FileName } | Where-Object { Test-Path -LiteralPath $_ } | Sort-Object -Unique)
+Write-Info "  $($potentiallyBadPatchedFilenames.Count) potential file$(if ($potentiallyBadPatchedFilenames.Count -ne 1) {"s"}) found"
+
+for ($index = 0; $index -lt $potentiallyBadPatchedFilenames.Count; $index++) {
+    $file = $potentiallyBadPatchedFilenames[$index]
+    Write-Custom "  File $($index + 1) of $($potentiallyBadPatchedFilenames.Count): " -NoNewLine
+    Write-Info "  $(($file.Split("\") | Select-Object -Skip 2) -join "\")" -NoJustifyRight -NoNewLine
+    $hash = (Get-FileHash -LiteralPath $file -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
+    if ($badPatchedFileHashes[$hash].FileName -eq $file) {
+        try {
+            Rename-Item -LiteralPath $file -NewName "$($file.Split("\")[-1]).bad_file" -ErrorAction Stop
+            Write-Warning "  [RENAMED]"
+        }
+        catch {
+            Write-Error "  [ERROR]"
+            Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+            Exit-Script 1
+        }
+    }
+    else {
+        Write-Success "  [GOOD FILE]"
+    }
+}
+
+Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+
+
 # process archives
 # ----------------
 
 $sectionTimer.Restart()
-
-Write-Custom "","Archives to build:"
+Write-Custom "", "Archives to build:"
 foreach ($file in $ba2Files.GetEnumerator()) {
     Write-Custom "  $($file.Value)" -NoNewLine
     if ($ba2Filenames -contains $file.Value) {
@@ -649,23 +801,18 @@ catch {
     Exit-Script 1
 }
 
-Write-Custom "","Processing archives:"
+$firstIteration = $true
+Write-Custom "", "Processing archives:"
 for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
     try {
         $archiveTimer.Restart()
 
+        if ($firstIteration) { $firstIteration = $false } else { Write-Custom "  $("-" * ($LineWidth - 2))" }
+
         $stdout, $stderr = $null
         $file = $ba2Filenames[$index]
         Write-Custom "  Archive $($index + 1) of $($ba2Filenames.Count) ($file):"
-        $originalBa2File = "$($dir.originalBa2)\$file"
-        if (-not (Test-Path -LiteralPath $originalBa2File)) {
-            if (Test-Path -LiteralPath "$($dir.fallout4DataRegistry)\$file") {
-                $originalBa2File = "$($dir.fallout4DataRegistry)\$file"
-            }
-            elseif (Test-Path -LiteralPath "$($dir.fallout4DataSteam)\$file") {
-                $originalBa2File = "$($dir.fallout4DataSteam)\$file"
-            }
-        }
+        $originalBa2File = Get-OriginalBa2File $file
         $patchedBa2File = "$($dir.patchedBa2)\$file"
 
         Write-Custom "    Original BA2: " -NoNewLine
@@ -673,24 +820,37 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
 
         # validate original archive
         Write-Custom "      Validating original archive..." -NoNewline
+        Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
         $hash = (Get-FileHash -LiteralPath $originalBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
         Write-Log "      Hash: $hash"
-        if ($originalBa2Hashes[$hash].FileName -ne $file) {
-            throw "Hash mismatch."
+        if ($originalBa2Hashes[$hash].FileName -eq $file) {
+            $validOriginalText = "[VALID]"
         }
-        Write-Success "      [VALID]"
+        elseif ($repackFlags.Custom -and $alternateOriginalBa2Hashes[$hash].FileName -eq $file) {
+            $validOriginalText = "[VALID - ALTERNATE]"
+        }
+        elseif ($repackFlags.Custom -and $oldAlternateOriginalBa2Hashes[$hash].FileName -eq $file) {
+            Write-Log "      Tags: $($oldAlternateOriginalBa2Hashes[$hash].Tags -join ", ")"
+            throw "Old version of an alternate original archive detected."
+        }
+        else {
+            throw "Unrecognized archive file."
+        }
+        Write-Log "      Tags: $($originalBa2Hashes[$hash].Tags -join ", ")$($alternateOriginalBa2Hashes[$hash].Tags -join ", ")"
+        Write-Success "      $validOriginalText"
 
         # create working files directory
         New-Item $dir.workingFiles -ItemType "directory" -ErrorAction Stop | Out-Null
 
         # extract original archive
         Write-Custom "      Extracting original archive..." -NoNewline
+        Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
         Write-Log "`"$toolArchive2`" `"$originalBa2File`" -extract=`"$($dir.workingFiles)`"" -Log "tool"
         $toolTimer.Restart()
         $stdout, $stderr = (& "$toolArchive2" "$originalBa2File" -extract="$($dir.workingFiles)" 2>&1).
-            Where({$_ -is [string] -and $_ -ne ""}, "Split")
+        Where({ $_ -is [string] -and $_ -ne "" }, "Split")
         Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-Log "STDOUT:",$stdout,"","STDERR:",$stderr,"","$("-" * $LineWidth)","" -Log "tool" -NoTimestamp
+        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool" -NoTimestamp
         if ($LASTEXITCODE -ne 0) {
             throw "Extracting `"$originalBa2File`" failed."
         }
@@ -700,9 +860,9 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-Log "`"$toolBsab`" -e -o -f `"Textures\Shared\Cubemaps\*`" `"$originalBa2File`" `"$($dir.workingFiles)`"" -Log "tool"
         $toolTimer.Restart()
         $stdout, $stderr = (& "$toolBsab" -e -o -f "Textures\Shared\Cubemaps\*" "$originalBa2File" "$($dir.workingFiles)" 2>&1).
-            Where({$_ -is [string] -and $_ -ne ""}, "Split")
+        Where({ $_ -is [string] -and $_ -ne "" }, "Split")
         Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-Log "STDOUT:",$stdout,"","STDERR:",$stderr,"","$("-" * $LineWidth)","" -Log "tool" -NoTimestamp
+        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool" -NoTimestamp
         if ($LASTEXITCODE -ne 0) {
             # because bsab doesn't use stderr, copy stdout to stderr, but check anyway just in case
             if ($stderr -eq "") {
@@ -718,12 +878,13 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
 
         # copy patched files
         Write-Custom "      Copying patched files..." -NoNewline
+        Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
         Write-Log "`"$toolRobocopy`" `"$($dir.patchedFiles)`" `"$($dir.workingFiles)`" /s /xl /np /njh" -Log "tool"
         $toolTimer.Restart()
         $stdout, $stderr = (& "$toolRobocopy" "$($dir.patchedFiles)" "$($dir.workingFiles)" /s /xl /np /njh 2>&1).
-            Where({$_ -is [string] -and $_ -ne ""}, "Split")
+        Where({ $_ -is [string] -and $_ -ne "" }, "Split")
         Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-Log "STDOUT:",$stdout,"","STDERR:",$stderr,"","$("-" * $LineWidth)","" -Log "tool" -NoTimestamp
+        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool" -NoTimestamp
         if ($LASTEXITCODE -ge 8) {
             # because robocopy doesn't use stderr, copy stdout to stderr, but check anyway just in case
             if ($stderr -eq "") {
@@ -736,12 +897,13 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
 
         # create patched archive
         Write-Custom "      Creating patched archive..." -NoNewline
+        Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
         Write-Log "`"$toolArchive2`" `"$($dir.workingFiles)`" -format=`"DDS`" -create=`"$patchedBa2File`" -root=`"$(Resolve-Path $dir.workingFiles)`"" -Log "tool"
         $toolTimer.Restart()
         $stdout, $stderr = (& "$toolArchive2" "$($dir.workingFiles)" -format="DDS" -create="$patchedBa2File" -root="$(Resolve-Path $dir.workingFiles)" 2>&1).
-            Where({$_ -is [string] -and $_ -ne ""}, "Split")
+        Where({ $_ -is [string] -and $_ -ne "" }, "Split")
         Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-Log "STDOUT:",$stdout,"","STDERR:",$stderr,"","$("-" * $LineWidth)","" -Log "tool" -NoTimestamp
+        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool" -NoTimestamp
         if ($LASTEXITCODE -ne 0) {
             throw "Creating `"$patchedBa2File`" failed."
         }
@@ -749,31 +911,37 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-Success "      [DONE]"
 
         # validate patched archive
-        Write-Custom "      Validating patched archive..." -NoNewline
+        if ($repackFlags.Custom) {
+            Write-Custom "      Hashing patched archive..." -NoNewLine
+        }
+        else {
+            Write-Custom "      Validating patched archive..." -NoNewline
+        }
+        Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
         $hash = $(Get-FileHash -LiteralPath $patchedBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
         Write-Log "      Hash: $hash"
         if ($repackFlags.Custom) {
-            Write-Warning "      [CUSTOM - SKIPPED]"
+            Write-Info "      [Hash: $hash]" -BypassLog
             continue
         }
         elseif ($patchedBa2Hashes[$hash].FileName -ne $file) {
-            throw "Unknown hash `"$hash`"."
+            throw "Unrecognized file. The file's SHA256 hash doesn't match any known outputs."
         }
         Write-Log "      Tags: $($patchedBa2Hashes[$hash].Tags -join ", ")"
         if ($patchedBa2Hashes[$hash].Tags -contains $repackTag) {
             Write-Success "      [VALID]"
         }
         else {
-            throw "Archive hash does not have tag `"$repackTag`"."
+            throw "Tag mismatch. Metadata for the hash of this archive does not contain tag `"$repackTag`"."
         }
     }
     catch {
         Write-Error "      [FAIL]"
         if ($null -ne $stderr) {
-            Write-Error $stderr -Prefix "      ERROR: " -NoJustifyRight -SnippetLength 3
+            Write-Error $stderr -Prefix "      ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
             $stdout, $stderr = $null
         }
-        Write-Error $_ -Prefix "      ERROR: " -NoJustifyRight -SnippetLength 3
+        Write-Error $_ -Prefix "      ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
         $processingFailed = $true
     }
     finally {
@@ -781,17 +949,15 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             Remove-Item -LiteralPath $dir.workingFiles -Recurse -Force
         }
         Write-Log "  Archive duration: $($archiveTimer.Elapsed.ToString())"
-        if ($index -lt $ba2Filenames.Length - 1) {
-            Write-Custom "  $("-" * ($LineWidth - 2))" -JustifyRight
-        }
     }
 }
 
-Write-Log "","Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
 
 if (-not $repackFlags.Custom) {
     Write-Custom ""
     Write-Custom "Cleaning up..." -NoNewLine
+    Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
     try {
         if (Test-Path -LiteralPath $dir.patchedFiles) {
             Remove-Item -LiteralPath $dir.patchedFiles -Force -Recurse
@@ -802,13 +968,12 @@ if (-not $repackFlags.Custom) {
     }
     catch {
         Write-Error "[ERROR]"
-        Write-Error $_ -Prefix "ERROR: " -SnippetLength 3 -NoJustifyRight
+        Write-Error $_ -Prefix "ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
     }
     Write-Success "[DONE]"
 }
 
 Write-Custom ""
-
 if ($processingFailed) {
     Write-Error "Processing archives failed." -NoJustifyRight
     Exit-Script 1

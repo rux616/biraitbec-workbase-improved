@@ -33,7 +33,7 @@ param (
 # -----------------------
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 1, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 4, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 5, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "SHA256" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -270,8 +270,12 @@ if (-not $SkipChoosingPatchedBa2Dir) {
 }
 if ($null -eq $dir.patchedBa2) {
     Write-Error "[CANCELLED]"
-    Write-Custom ""
     Write-Error "Cancelled by user." -NoJustifyRight
+    Exit-Script 1
+}
+elseif ($dir.fallout4DataSteam -and $dir.fallout4DataSteam -eq $dir.patchedBa2) {
+    Write-Error "[ERROR]"
+    Write-Error "Cannot choose the Fallout 4\Data folder from your Steam library." -Prefix "ERROR: " -NoJustifyRight
     Exit-Script 1
 }
 

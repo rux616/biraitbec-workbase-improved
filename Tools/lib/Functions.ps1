@@ -21,7 +21,7 @@
 
 Write-Host "Loading functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 12, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 13, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -248,7 +248,8 @@ function Write-Custom {
         [int] $SnippetLength = 0,
         [PSObject] $Color = $null,
         [ref] $PreviousLineLength = [ref] $writeCustomPrevNoNewLineLength,
-        [switch] $TrimBeforeDisplay
+        [switch] $TrimBeforeDisplay,
+        [switch] $KeepCursorPosition
     )
 
     if ($UseErrorStream) {
@@ -261,6 +262,9 @@ function Write-Custom {
     if ($null -ne $Color -and $Color.GetType().FullName -eq "System.ConsoleColor") {
         [Console]::ForegroundColor = $Color
     }
+
+    $savedCursorPosition = $Host.UI.RawUI.CursorPosition
+    $savedLineLength = $PreviousLineLength.Value
 
     $doSnip = $Message.Count -gt $SnippetLength * 2 -and $SnippetLength -gt 0
 
@@ -292,6 +296,10 @@ function Write-Custom {
         else {
             $stream.WriteLine($formatString, $outputString)
             $PreviousLineLength.Value = 0
+        }
+        if ($KeepCursorPosition) {
+            $Host.UI.RawUI.CursorPosition = $savedCursorPosition
+            $PreviousLineLength.Value = $savedLineLength
         }
     }
 

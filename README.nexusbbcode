@@ -11,6 +11,7 @@ by rux616
     - Installation
     - Repack Files
 - Instructions
+    - Common
     - Automatic
     - Custom
 - Troubleshooting Info
@@ -25,9 +26,9 @@ by rux616
 [size=4][b][u]Summary:[/u][/b][/size]
 An evolution of the BiRaitBec WorkBase file.
 
-The original [url=https://www.nexusmods.com/fallout4/mods/23556]BiRaitBec guide[/url] (this version is no longer supported), and the updated guide at the [url=https://discord.gg/DfFYJtt8p4]Collective Modding Discord server[/url] (which [u]is[/u] still being supported) specify that the user install the WorkBase file, but the old one was hard to diagnose and didn't generate clear errors.
+The original [url=https://www.nexusmods.com/fallout4/mods/23556]BiRaitBec guide[/url] (this version is no longer supported), and the updated guide at the [url=https://discord.gg/DfFYJtt8p4]Collective Modding Discord server[/url] (which [u]is[/u] still being supported) specify that the user install the original WorkBase file, but that one doesn't generate clear errors and is generally hard to diagnose.
 
-This edition attempts to address these shortcomings.
+This edition attempts to address those shortcomings.
 
 This mod is also available at the [url=https://github.com/rux616/biraitbec-workbase-improved]GitHub project[/url].
 
@@ -55,49 +56,230 @@ This mod is also available at the [url=https://github.com/rux616/biraitbec-workb
 These are the files from the [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files]BiRaitBec Guide[/url] as well as the Vault Fix file from the [url=https://www.nexusmods.com/fallout4/mods/40534]SavrenX HD 1K Buildings and Interior[/url] mod which are supported.
 
 [b]Performance:[/b]
-- [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files&file_id=164236][font=Courier New][color=#b2b2b2]1. Performance Overhaul-23556-1-0-1565601510.7z[/color][/font][/url]
+- [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files&file_id=164236]1. Performance Overhaul[/url]
+    - Version: 1.0
+    - Filename: [font=Courier New][color=#b2b2b2]1. Performance Overhaul-23556-1-0-1565601510.7z[/color][/font]
 
 [b]Main:[/b]
-- [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files&file_id=164245][font=Courier New][color=#b2b2b2]2a. Main Repack - Part One-23556-1-0-1565616028.7z[/color][/font][/url]
-- [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files&file_id=164487][font=Courier New][color=#b2b2b2]2b. Main Repack - Part Two-23556-1-0-1565980979.7z[/color][/font][/url]
-- [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files&file_id=164241][font=Courier New][color=#b2b2b2]2c. Main Reapack - Part Three-23556-1-0-1565605113.7z[/color][/font][/url]
+- [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files&file_id=164245]2a. Main Repack - Part One[/url]
+    - Version: 1.0
+    - Filename:  [font=Courier New][color=#b2b2b2]2a. Main Repack - Part One-23556-1-0-1565616028.7z[/color][/font]
+- [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files&file_id=164487]2b. Main Repack - Part Two[/url]
+    - Version: 1.0
+    - Filename:  [font=Courier New][color=#b2b2b2]2b. Main Repack - Part Two-23556-1-0-1565980979.7z[/color][/font]
+- [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files&file_id=164241]2c. Main Repack - Part Three[/url]
+    - Version: 1.0
+    - Filename: [font=Courier New][color=#b2b2b2]2c. Main Reapack - Part Three-23556-1-0-1565605113.7z[/color][/font]
 
 [b]Quality:[/b]
-- [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files&file_id=164210][font=Courier New][color=#b2b2b2]2a. Quality Addon - Part One-23556-1-0-1565546826.7z[/color][/font][/url]
-- [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files&file_id=164486][font=Courier New][color=#b2b2b2]2b. Quality Overhaul - Part Two-23556-1-0-1565980973.7z[/color][/font][/url]
+- [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files&file_id=164210]2a. Quality Addon - Part One[/url]
+    - Version: 1.0
+    - Filename: [font=Courier New][color=#b2b2b2]2a. Quality Addon - Part One-23556-1-0-1565546826.7z[/color][/font]
+- [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files&file_id=164486]2b. Quality Overhaul - Part Two[/url]
+    - Version: 1.0
+    - Filename: [font=Courier New][color=#b2b2b2]2b. Quality Overhaul - Part Two-23556-1-0-1565980973.7z[/color][/font]
 
 [b]Vault Fix:[/b]
 
-NOTE: Recommended if using the Performance, Main, or Quality repack sets.
+Recommended if using the Performance, Main, or Quality repack sets.
 
-- [url=https://www.nexusmods.com/fallout4/mods/40534?tab=files&file_id=164279][font=Courier New][color=#b2b2b2]Fix Vault-Window-Metal-Institute-40534-1-02-1565670781.7z[/color][/font][/url]
+- [url=https://www.nexusmods.com/fallout4/mods/40534?tab=files&file_id=164279]Fix Vault-Window-Metal-Institute[/url]
+    - Version: 1.02
+    - Filename: [font=Courier New][color=#b2b2b2]Fix Vault-Window-Metal-Institute-40534-1-02-1565670781.7z[/color][/font]
 
 [b]Restyle:[/b]
-- [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files&file_id=164211][font=Courier New][color=#b2b2b2]3. Restyle Pack - Fomod-23556-1-0-1565546849.7z[/color][/font][/url]
+- [url=https://www.nexusmods.com/fallout4/mods/23556?tab=files&file_id=164211]3. Restyle Pack - Fomod[/url]
+    - Version: 1.0
+    - Filename: [font=Courier New][color=#b2b2b2]3. Restyle Pack - Fomod-23556-1-0-1565546849.7z[/color][/font]
 
 
 [size=5][b]Instructions[/b][/size]
-There are two modes of operation for BRB WorkBase Improved:
+There are two modes of operation for BiRaitBec WorkBase Improved:
 
 - Automatic (recommended)
 - Custom
 
-NOTE: The script will automatically attempt to locate and use the any original BA2 archive from the Fallout 4 Data folder if it doesn't find it in the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder.
+In both modes, the installer will first look at the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder when looking for the original BA2 archives. If it doesn't find an archive there, it will then attempt to look in the Fallout 4 Data folder. Currently, the following original BA2 archives are supported:
+
+- Vanilla (game version 1.10.163.0, steam build ID 4460038)
+    - (All archives)
+- Luxor's Fallout 4 HD Overhaul (v1.0)
+    - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font]
+    - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font]
+    - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font]
+    - [font=Courier New][color=#b2b2b2]DLCworkshop01 - Textures.ba2[/color][/font]
+    - [font=Courier New][color=#b2b2b2]DLCworkshop02 - Textures.ba2[/color][/font]
+    - [font=Courier New][color=#b2b2b2]DLCworkshop03 - Textures.ba2[/color][/font]
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures4.ba2[/color][/font]
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures5.ba2[/color][/font]
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures6.ba2[/color][/font]
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures7.ba2[/color][/font]
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font]
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font]
+- Luxor's Fallout 4 HD Overhaul (v1.01)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures2.ba2[/color][/font]
+- Luxor's Fallout 4 HD Overhaul (v1.02)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures1.ba2[/color][/font]
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures3.ba2[/color][/font]
+- PhyOp's Overhauled Optimized Textures (v1.2a)
+    - Custom
+        - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop01 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop02 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop03 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures2.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures3.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures5.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures6.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font]
+    - Custom Brahmin Pack Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures1.ba2[/color][/font]
+    - Custom Face Sculpting Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures4.ba2[/color][/font]
+    - Custom Street Sign Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures7.ba2[/color][/font]
+    - Custom Original Pip-boy
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures2.ba2[/color][/font]
+    - Custom Original Weapon Colors
+        - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font]
+    - Custom Performance
+        - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop01 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop02 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop03 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures2.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures3.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures5.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures6.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures7.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font]
+    - Custom Performance Brahmin Pack Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures1.ba2[/color][/font]
+    - Custom Performance Face Sculpting Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures4.ba2[/color][/font]
+    - Custom Performance Original Pip-boy
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures2.ba2[/color][/font]
+    - Dark
+        - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop01 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop02 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop03 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures2.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures3.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures5.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures6.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font]
+    - Dark Brahmin Pack Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures1.ba2[/color][/font]
+    - Dark Face Sculpting Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures4.ba2[/color][/font]
+    - Dark Street Sign Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures7.ba2[/color][/font]
+    - Dark Performance
+        - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop01 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop02 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop03 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures2.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures3.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures5.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures6.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures7.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font]
+    - Dark Performance Brahmin Pack Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures1.ba2[/color][/font]
+    - Dark Performance Face Sculpting Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures4.ba2[/color][/font]
+    - Light
+        - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop01 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop02 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop03 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures2.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures3.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures5.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures6.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures7.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font]
+    - Light Brahmin Pack Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures1.ba2[/color][/font]
+    - Light Face Sculpting Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures4.ba2[/color][/font]
+    - Light Performance
+        - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop01 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop02 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop03 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures2.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures3.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures5.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures6.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures7.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font]
+    - Light Performance Brahmin Pack Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures1.ba2[/color][/font]
+    - Light Performance Face Sculpting Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures4.ba2[/color][/font]
+    - Light Potato
+        - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop01 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop02 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]DLCworkshop03 - Textures.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures1.ba1[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures2.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures3.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures5.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures6.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures7.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font]
+    - Light Potato Face Sculpting Fix
+        - [font=Courier New][color=#b2b2b2]Fallout4 - Textures4.ba2[/color][/font]
+
+[size=4][b][u]Common:[/u][/b][/size]
+NOTE: The script will automatically attempt to locate and use the original BA2 archive from the Fallout 4 Data folder if it doesn't find it in the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder.
+
+Currently supports the BA2s from vanilla, [url=https://www.nexusmods.com/fallout4/mods/52423]Luxor's Fallout 4 HD Overhaul[/url], and [url=https://www.nexusmods.com/fallout4/mods/27038?]PhyOp's Overhauled Optimized Textures[/url].
 
 - [Optional] Copy the original BA2 archives from the Fallout 4 Data folder to the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder.
 
 [size=4][b][u]Automatic:[/u][/b][/size]
-Notes:
-
-- If using the [font=Courier New][color=#b2b2b2]Main[/color][/font] repack set [u]with[/u] the [font=Courier New][color=#b2b2b2]Performance[/color][/font] repack set, the texture noted in the guide as being corrupt, [font=Courier New][color=#b2b2b2]Textures\interiors\vault\VltHallResPaneled07Cafeteria02_Damage_d.DDS[/color][/font], is preserved from the [font=Courier New][color=#b2b2b2]Performance[/color][/font] repack set
-- If using the [font=Courier New][color=#b2b2b2]Main[/color][/font] repack set [u]without[/u] the [font=Courier New][color=#b2b2b2]Performance[/color][/font] repack set, the texture noted in the guide as being corrupt, [font=Courier New][color=#b2b2b2]Textures\interiors\vault\VltHallResPaneled07Cafeteria02_Damage_d.DDS[/color][/font], is deleted
-- If using the [font=Courier New][color=#b2b2b2]Restyle[/color][/font] repack set, the "Author's Choice" options are automatically chosen
+This is designed to be a mostly automatic process which validates both input and output files.
 
 - Put the repack files you have downloaded into the [font=Courier New][color=#b2b2b2]Repack7z[/color][/font] folder.
 - Right click on [font=Courier New][color=#b2b2b2]Installer.ps1[/color][/font] file and select "Run with PowerShell".
 - If you get an "Execution Policy Change" warning, type [font=Courier New][color=#b2b2b2]Y[/color][/font] then hit the [font=Courier New][color=#b2b2b2]Enter[/color][/font] key.
 - A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the [font=Courier New][color=#b2b2b2]PatchedBa2[/color][/font] folder, but you can choose a different folder. [b]Do not choose the Fallout 4 Data folder.[/b]
 - The script will then proceed to verify and extract the the repack archives, then create the patched BA2 archives.
+
+Notes:
+
+- If using the [font=Courier New][color=#b2b2b2]Main[/color][/font] repack set [u]with[/u] the [font=Courier New][color=#b2b2b2]Performance[/color][/font] repack set, the uncorrupted repack texture [font=Courier New][color=#b2b2b2]Textures\interiors\vault\VltHallResPaneled07Cafeteria02_Damage_d.DDS[/color][/font] is preserved from the [font=Courier New][color=#b2b2b2]Performance[/color][/font] repack set
+- If using the [font=Courier New][color=#b2b2b2]Main[/color][/font] repack set [u]without[/u] the [font=Courier New][color=#b2b2b2]Performance[/color][/font] repack set, the repack texture noted in the updated guide as being corrupt, [font=Courier New][color=#b2b2b2]Textures\interiors\vault\VltHallResPaneled07Cafeteria02_Damage_d.DDS[/color][/font], is deleted so that the original is preserved
+- If using the [font=Courier New][color=#b2b2b2]Restyle[/color][/font] repack set, the "Author's Choice" options are automatically chosen
 
 [size=4][b][u]Custom:[/u][/b][/size]
 This process is basically the traditional BRB install process as has been described in the guide and is done the same way.
@@ -110,11 +292,10 @@ This process is basically the traditional BRB install process as has been descri
 
 
 [size=5][b]Troubleshooting Info[/b][/size]
-
 This script has a lot of built-in checks that will tend to have very clear error messages. If you run into something that's not clear though, post something on the Nexus mod comments page or make an issue on the GitHub project.
 
 [size=4][b][u]Logs:[/u][/b][/size]
-Logs will be located in the [font=Courier New][color=#b2b2b2]Logs[/color][/font] folder inside the [font=Courier New][color=#b2b2b2]WorkBase[/color][/font] folder. There will be 1 to 2 files generated per run, depending on how far the process gets: [font=Courier New][color=#b2b2b2]install_yyyymmddTHHMMssZ.log[/color][/font] and [font=Courier New][color=#b2b2b2]tool_yyyymmddTHHMMssZ.log[/color][/font], where [font=Courier New][color=#b2b2b2]yyyymmddTHHMMssZ[/color][/font] is the timestamp of when the process was started, for example [font=Courier New][color=#b2b2b2]20220201T205350Z[/color][/font].
+Logs will be located in the [font=Courier New][color=#b2b2b2]Logs[/color][/font] folder inside the [font=Courier New][color=#b2b2b2]WorkBase[/color][/font] folder. There will be 1 to 2 files generated per run, depending on how far the process gets: [font=Courier New][color=#b2b2b2]install_<timestamp>.log[/color][/font] and [font=Courier New][color=#b2b2b2]tool_<timestamp>.log[/color][/font], where [font=Courier New][color=#b2b2b2]<timestamp>[/color][/font] is the timestamp of when the process was started, for example [font=Courier New][color=#b2b2b2]20220201T205350Z[/color][/font].
 
 The [font=Courier New][color=#b2b2b2]install[/color][/font] log generally mirrors what is seen on screen, and the [font=Courier New][color=#b2b2b2]tool[/color][/font] log is the output of the various tools used, such as [font=Courier New][color=#b2b2b2]7za.exe[/color][/font] and [font=Courier New][color=#b2b2b2]archive2.exe[/color][/font]. When asking questions or attempting to get help for errors, please include at least the [font=Courier New][color=#b2b2b2]install[/color][/font] log.
 
@@ -133,14 +314,16 @@ This tool is bundled with the following programs, each having their own copyrigh
 
 
 [size=5][b]Credits and Thanks[/b][/size]
-- BiRaitBec: For the original WorkBase file and the [url=https://www.nexusmods.com/fallout4/mods/23556]guide[/url]
-- Screaminglake and CyberDanz: For administering the [url=https://discord.gg/DfFYJtt8p4]Community Modding discord server and the updated BRB guide[/url]
+- BiRaitBec: For the original WorkBase file and [url=https://www.nexusmods.com/fallout4/mods/23556]guide[/url]
+- ScreamingLake and CyberDanz: For administering the [url=https://discord.gg/DfFYJtt8p4]Community Modding discord server and the updated BRB guide[/url]
+- luxor8071: For the [url=https://www.nexusmods.com/fallout4/mods/52423]Fallout 4 HD Overhaul[/url] mod
+- Phylith: For the [url=https://www.nexusmods.com/fallout4/mods/27038]PhyOp - Overhauled Optimized Textures[/url] mod
 
 
 [size=5][b]Contact[/b][/size]
 If you find a bug or have a question about the mod, please post it on the [url=https://www.nexusmods.com/fallout4/mods/57782]mod page at Nexus Mods[/url], or in the [url=https://github.com/rux616/biraitbec-workbase-improved]GitHub project[/url].
 
 If you need to contact me personally, I can be reached through one of the following means:
-- [b]Nexus Mods[/b]: [url=https://www.nexusmods.com/users/124191]rux616[/url] (Send a message via the "CONTACT" button.)
+- [b]Nexus Mods[/b]: [url=https://www.nexusmods.com/users/124191]rux616[/url] (Send a message via the "CONTACT" button)
 - [b]Email[/b]: rux616-at-pm-dot-me (replace [font=Courier New][color=#b2b2b2]-at-[/color][/font] with [font=Courier New][color=#b2b2b2]@[/color][/font] and [font=Courier New][color=#b2b2b2]-dot-[/color][/font] with [font=Courier New][color=#b2b2b2].[/color][/font])
-- [b]Discord[/b]: rux616#0950 (I tend to hang out on the [url=https://discord.gg/nexusmods]Nexus Mods[/url] and [url=https://discord.gg/wabbajack]Wabbajack[/url] servers, amongst others.)
+- [b]Discord[/b]: rux616#0950 (I tend to hang out on the [url=https://discord.gg/nexusmods]Nexus Mods[/url] and [url=https://discord.gg/wabbajack]Wabbajack[/url] servers, amongst others)

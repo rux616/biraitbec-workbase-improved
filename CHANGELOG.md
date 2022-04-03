@@ -29,24 +29,24 @@ v1.1.0
 - Added logging of contents of Repack7z folder
 - Added logging of contents of OriginalBa2 folder
 - Added checks for known bad patched files
-- Added NoPauseOnExit, NoClearScreen, and AllowUnchanged CLI switches
+- Added `NoPauseOnExit`, `NoClearScreen`, and `AllowUnchanged` CLI switches
 - Added new `[WORKING...]` text to show that a process is running
 - Fixed mistaken right justification of some errors
 - Updated some error messages to enhance clarity
 - Updated some verbiage around custom repacks to enhance clarity
-- Transition to using .Count instead of .Length where possible
+- Transition to using `.Count` instead of `.Length` where possible
 
 **Functions v1.13.0:**
-- Added FileSize argument to Add-Hash function to allow for adding file sizes
-- Added ability to associate actions with hashes in Add-Hash function and to invoke said actions with Invoke-HashActions function
-- Added BypassLog parameter to Write-{Error,Info,Success,Warning} functions
-- Added Get-OriginalBa2File function
-- Added TrimBeforeDisplay parameter to Write-Custom
-- Added NoTrimBeforeDisplay parameter to Write-{Error,Info,Success,Warning}
-- Added KeepCursorPosition parameter to Write-Custom
-- Partially refactored Write-Custom function
-- Moved Write-Error function
-- Transition to using .Count instead of .Length where possible
+- Added `FileSize` argument to `Add-Hash` function to allow for adding file sizes
+- Added ability to associate actions with hashes in `Add-Hash` function and to invoke said actions with `Invoke-HashActions` function
+- Added `BypassLog` parameter to `Write-{Error,Info,Success,Warning}` functions
+- Added `Get-OriginalBa2File` function
+- Added `TrimBeforeDisplay` parameter to `Write-Custom`
+- Added `NoTrimBeforeDisplay` parameter to `Write-{Error,Info,Success,Warning}`
+- Added `KeepCursorPosition` parameter to `Write-Custom`
+- Partially refactored `Write-Custom` function
+- Moved `Write-Error` function
+- Transition to using `.Count` instead of `.Length` where possible
 
 **Hashes v1.5.0:**
 - Added Luxor HD texture BA2s to the list of valid alternate original BA2s

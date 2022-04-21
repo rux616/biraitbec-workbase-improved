@@ -33,7 +33,7 @@ param (
 # -----------------------
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 6, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "SHA256" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -91,8 +91,12 @@ $ba2Files.fallout4Textures7 = "Fallout4 - Textures7.ba2"
 $ba2Files.fallout4Textures8 = "Fallout4 - Textures8.ba2"
 $ba2Files.fallout4Textures9 = "Fallout4 - Textures9.ba2"
 
-$msvcp110dllVersion = (Get-Command "${env:windir}\System32\msvcp110.dll" -ErrorAction SilentlyContinue).Version
-$msvcr110dllVersion = (Get-Command "${env:windir}\System32\msvcr110.dll" -ErrorAction SilentlyContinue).Version
+$msvcp110dllPath = "${env:windir}\System32\msvcp110.dll"
+$msvcp110dllVersion = (Get-Command $msvcp110dllPath -ErrorAction SilentlyContinue).Version
+$msvcp110dllHash = (Get-FileHash $msvcp110dllPath -ErrorAction SilentlyContinue).Hash
+$msvcr110dllPath = "${env:windir}\System32\msvcr110.dll"
+$msvcr110dllVersion = (Get-Command $msvcr110dllPath -ErrorAction SilentlyContinue).Version
+$msvcr110dllHash = (Get-FileHash $msvcr110dllPath -ErrorAction SilentlyContinue).Hash
 
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 $sectionTimer = New-Object System.Diagnostics.Stopwatch
@@ -157,8 +161,8 @@ Write-Log @(
     "  Hashes Version: $HashesVersion"
     ""
     "  Windows Version: $(Get-WindowsVersion)"
-    "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) { $msvcp110dllVersion } else { "(Not Found)" })
-    "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { $msvcr110dllVersion } else { "(Not Found)" })
+    "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) { "$msvcp110dllVersion (Hash: $msvcp110dllHash)" } else { "(Not Found)" })
+    "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { "$msvcr110dllVersion (Hash: $msvcr110dllHash)" } else { "(Not Found)" })
     ""
     "  Current Directory: $currentDirectory"
     ""

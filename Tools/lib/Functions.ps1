@@ -21,7 +21,7 @@
 
 Write-Host "Loading functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 13, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 14, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -81,6 +81,37 @@ function Exit-Script {
     Write-Log "", "Exit Code: $ExitCode"
     $Host.UI.RawUI.BackgroundColor = $OriginalBackgroundColor
     exit $ExitCode
+}
+
+# adapted from https://gist.github.com/r3t3ch/86c944ac14a69bccbd81bff698050b83
+function Get-CRC32 {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)] [String] $Path
+    )
+
+    $ErrorActionPreference = "Stop"
+    $Path = Resolve-Path $Path
+    $crc32 = New-Object DamienG.Security.Cryptography.Crc32
+
+    $stream = New-Object System.IO.FileStream($Path, [System.IO.FileMode]::Open)
+    try {
+        $rawHash = $crc32.ComputeHash($stream)
+    }
+    finally {
+        $stream.Close()
+    }
+
+    $hash = ""
+    foreach ($byte in $rawHash) {
+        $hash += $byte.toString('x2').toUpper()
+    }
+
+    return [PSCustomObject] @{
+        Algorithm = "CRC32"
+        Hash      = "$hash"
+        Path      = "$Path"
+    }
 }
 
 function Get-Fallout4DataFolder {

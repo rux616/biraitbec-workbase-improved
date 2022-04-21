@@ -32,8 +32,8 @@ param (
 # constants and variables
 # -----------------------
 
-Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 1, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 5, 0)) -Option Constant
+Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 6, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "SHA256" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -125,8 +125,9 @@ $toolRobocopy = "robocopy"
 # imports
 # -------
 
-. .\Tools\lib\Functions.ps1
-. .\Tools\lib\Hashes.ps1
+Add-Type -TypeDefinition (Get-Content "$($dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
+. "$($dir.tools)\lib\Functions.ps1"
+. "$($dir.tools)\lib\Hashes.ps1"
 
 
 # late variables

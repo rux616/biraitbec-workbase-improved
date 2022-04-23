@@ -21,7 +21,7 @@
 
 Write-Host "Loading functions..."
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 14, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 15, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -283,6 +283,15 @@ function Write-Custom {
         [switch] $KeepCursorPosition
     )
 
+    # break apart any multi-line strings contained in $Message and attach the given $Prefix
+    [System.Collections.ArrayList] $splitMessage = @()
+    foreach ($line in $Message) {
+        $line -split "`n" | ForEach-Object {
+            $splitMessage.Add("$Prefix$(if ($Prefix){$_.TrimStart()} else {$_})") | Out-Null
+        }
+    }
+    [System.Collections.ArrayList] $Message = $splitMessage
+
     if ($UseErrorStream) {
         $stream = [Console]::Error
     }
@@ -309,16 +318,16 @@ function Write-Custom {
             $formatString = "{0,$($LineWidth - $PreviousLineLength.Value)}"
         }
         elseif ($JustifyCenter) {
-            $formatString = "{0,$([int](($LineWidth - $PreviousLineLength.Value) / 2.0 + ($Prefix.Length + $line.Length) / 2.0))}"
+            $formatString = "{0,$([int](($LineWidth - $PreviousLineLength.Value) / 2.0 + $line.Length / 2.0))}"
         }
         else {
             $formatString = "{0}"
         }
         if ($TrimBeforeDisplay) {
-            $outputString = ($Prefix + $line).Trim()
+            $outputString = $line.Trim()
         }
         else {
-            $outputString = $Prefix + $line
+            $outputString = $line
         }
         if ($NoNewLine) {
             $stream.Write($formatString, $outputString)
@@ -339,7 +348,7 @@ function Write-Custom {
     }
 
     if (-not $BypassLog) {
-        Write-Log $($Message | ForEach-Object { "$Prefix$_" })
+        Write-Log $Message
     }
 }
 
@@ -394,22 +403,27 @@ function Write-Info {
 function Write-Log {
     [CmdletBinding()]
     param (
+        # note: having $Message be a PSObject type allows stdout and stderr output to be processed correctly
         [Parameter(Mandatory)] [AllowEmptyString()] [PSObject] $Message,
         [string] $Log = "install",
         [string] $LogStartTime = $RunStartTime,
-        [switch] $NoTimestamp
+        [string] $Prefix = $null
     )
+
+    $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+    [System.Collections.ArrayList] $splitMessage = @()
+    foreach ($line in $Message) {
+        $line -split "`n" | ForEach-Object {
+            $splitMessage.Add("[$timestamp] $Prefix$(if ($Prefix){$_.TrimStart()} else {$_})".TrimEnd()) | Out-Null
+        }
+    }
+    [System.Collections.ArrayList] $Message = $splitMessage
 
     if ($(Test-Path -LiteralPath $dir.logs) -eq $false) {
         New-Item $dir.logs -ItemType "directory" -ErrorAction Stop | Out-Null
     }
-    $(if ($NoTimestamp) {
-            Write-Output $Message
-        }
-        else {
-            Write-Output $Message |
-            ForEach-Object { "[$((Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))] $_".Trim() }
-        }) | Out-File -LiteralPath "$($dir.logs)\${Log}_$LogStartTime.log" -Append
+    Write-Output $Message | Out-File -LiteralPath "$($dir.logs)\${Log}_$LogStartTime.log" -Append
 }
 
 function Write-Success {

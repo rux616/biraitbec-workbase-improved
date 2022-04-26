@@ -33,7 +33,7 @@ param (
 # -----------------------
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 8, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "SHA256" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -621,114 +621,224 @@ else {
         Exit-Script 1
     }
 
+    # iterate through repack sets
     $firstIteration = $true
     :outerLoop foreach ($object in $repackFiles.GetEnumerator()) {
-        # pre-extraction
+        if (-not $repackFlags[$object.Key]) { continue }
+
         try {
-            if (-not $repackFlags[$object.Key]) { continue }
-            if ($firstIteration) { $firstIteration = $false } else { Write-Custom "  $("-" * ($LineWidth - 2))" }
-            Write-Custom "  $($object.Key) ($($object.Value.Count) archive$(if ($object.Value.Count -ne 1) {"s"})):"
+            $repackTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
-            # remove and create temp directory
-            if (Test-Path -LiteralPath $dir.temp) {
-                Remove-Item -LiteralPath $dir.temp -Force -Recurse -ErrorAction Stop
-            }
-            New-Item $dir.temp -ItemType "directory" -ErrorAction Stop | Out-Null
-
-            switch ($object.Key) {
-                # special case: if main is being used with performance, save texture from performance for later use
-                "Main" {
-                    if ($repackFlags.Performance) {
-                        Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
-                    }
-                }
-            }
-        }
-        catch {
-            Write-Error "  [ERROR]"
-            Write-Error $_ -Prefix "  ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
-            $extractRepackFailed = $true
-            break
-        }
-
-        # extract files
-        foreach ($file in $object.Value) {
+            # pre-extraction
             try {
-                $archiveTimer.Restart()
+                if ($firstIteration) { $firstIteration = $false } else { Write-Custom "  $("-" * ($LineWidth - 2))" }
+                Write-Custom "  $($object.Key) ($($object.Value.Count) archive$(if ($object.Value.Count -ne 1) {"s"})):", "    Extracting..."
 
-                $relFile = "$($dir.repack7z)\$file"
-                switch -wildcard ($object.Key) {
-                    "*" { $outDir = $dir.patchedFiles; $extra = @() }
-                    "Restyle" {
-                        $outDir = $dir.temp
-                        $extra = @(
-                            "Creatures\Dogmeat\2k Shadow The Dark Husky\Textures"
-                            "Environment\Evil Institute HD\2k\Textures"
-                            "Miscellaneous\Perk Grid Background Replacer\2k Silver White\Textures"
-                        )
-                    }
-                    "Vault Fix" {
-                        $outDir = $dir.temp
+                # remove and create temp directory
+                if (Test-Path -LiteralPath $dir.temp) {
+                    Remove-Item -LiteralPath $dir.temp -Force -Recurse -ErrorAction Stop
+                }
+                New-Item $dir.temp -ItemType "directory" -ErrorAction Stop | Out-Null
+
+                switch ($object.Key) {
+                    # special case: if main is being used with performance, save texture from performance for later use
+                    "Main" {
+                        if ($repackFlags.Performance) {
+                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
+                        }
                     }
                 }
-                Write-Custom "    $file" -NoNewLine
+            }
+            catch {
+                Write-Error "  [ERROR]"
+                Write-Error $_ -Prefix "  ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
+                $extractRepackFailed = $true
+                break
+            }
+
+            $repack7zFileRecords = @{}
+
+            # extract files
+            foreach ($file in $object.Value) {
+                try {
+                    $archiveTimer.Restart()
+
+                    $relFile = "$($dir.repack7z)\$file"
+                    switch -wildcard ($object.Key) {
+                        "*" { $outDir = $dir.patchedFiles; $extra = @() }
+                        "Restyle" {
+                            $outDir = $dir.temp
+                            $extra = @(
+                                "Creatures\Dogmeat\2k Shadow The Dark Husky\Textures"
+                                "Environment\Evil Institute HD\2k\Textures"
+                                "Miscellaneous\Perk Grid Background Replacer\2k Silver White\Textures"
+                            )
+                        }
+                        "Vault Fix" {
+                            $outDir = $dir.temp
+                        }
+                    }
+                    Write-Custom "      $file" -NoNewLine
+                    Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
+
+                    # do the actual extraction and save the command line used to the tool log
+                    Write-Log "`"$tool7za`" x -y -bb2 -bd -o`"$outDir`" `"$relFile`" `"$(if ($extra) {$extra -join '" "'})`"" -Log "tool"
+                    $toolTimer.Restart()
+                    $stdout, $stderr = (& "$tool7za" x -y -bb2 -bd -o"$outDir" "$relFile" "$(if ($extra) {$extra -join '" "'})" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
+                    Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
+                    Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
+
+                    # check if extracting the archive succeeded
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Extracting `"$relFile`" failed."
+                    }
+
+                    # get file details (checksums) from archive and process the results
+                    $archiveTechnicalInformation = & "$tool7za" l -slt "$relFile" "$(if ($extra) {$extra -join '" "'})"
+                    $isData = $false
+                    foreach ($line in $archiveTechnicalInformation) {
+                        if (-not $isData -or -not $line) {
+                            if ($line -eq "-" * 10) {
+                                $isData = $true
+                            }
+                            continue
+                        }
+                        $lhs = (($line -split " = ")[0] | Out-String).Trim()
+                        $rhs = (($line -split " = " | Select-Object -Skip 1) -join " = ").Trim()
+                        if ($lhs -eq "Path") {
+                            $currentKey = $rhs
+                            $repack7zFileRecords[$currentKey] = @{}
+                        }
+                        else {
+                            $repack7zFileRecords[$currentKey].$lhs = $rhs
+                        }
+                    }
+                    Write-Success "      [DONE]"
+                }
+                catch {
+                    Write-Error "      [ERROR]"
+                    if ($null -ne $stderr) {
+                        Write-Error $stderr -Prefix "      ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
+                    }
+                    Write-Error $_ -Prefix "      ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
+                    Write-Log $_.InvocationInfo.PositionMessage -Prefix "      ERROR: "
+                    $extractRepackFailed = $true
+                    break outerLoop
+                }
+                finally {
+                    $stdout = $null
+                    Write-Log "      Archive duration: $($archiveTimer.Elapsed.ToString())"
+                }
+            }
+
+            # post-extraction
+            try {
+                $toolTimer.Restart()
+
+                Write-Custom "    Performing post-extraction tasks..." -NoNewLine
                 Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
 
-                # do the actual extraction and save the command line used to the tool log
-                Write-Log "`"$tool7za`" x -y -bb2 -bd -o`"$outDir`" `"$relFile`" `"$(if ($extra) {$extra -join '" "'})`"" -Log "tool"
-                $toolTimer.Restart()
-                $stdout, $stderr = (& "$tool7za" x -y -bb2 -bd -o"$outDir" "$relFile" "$(if ($extra) {$extra -join '" "'})" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
-                Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-                Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool" -NoTimestamp
-
-                # check if extracting the archive succeeded
-                if ($LASTEXITCODE -ne 0) {
-                    throw "Extracting `"$relFile`" failed."
+                # remove records that don't have a CRC
+                foreach ($key in $($repack7zFileRecords.Keys)) {
+                    if (-not $repack7zFileRecords[$key].CRC) {
+                        $repack7zFileRecords.Remove($key)
+                    }
                 }
+
+                switch ($object.Key) {
+                    # special case: if on main and using performance, copy previously-saved texture
+                    "Main" {
+                        if ($repackFlags.Performance) {
+                            Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
+                            $repack7zFileRecords["Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds"].CRC = "4B0F2DCE"
+                        }
+                    }
+                    # special case: if on restyle, copy items to PatchedFiles folder
+                    "Restyle" {
+                        Copy-Item -LiteralPath $($extra | ForEach-Object { "$($dir.temp)\$_" }) -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
+                        foreach ($key in $($repack7zFileRecords.Keys)) {
+                            $newKey = ($key.Split("\") | Select-Object -Skip 3) -join "\"
+                            $repack7zFileRecords.Add($newKey, $repack7zFileRecords[$key])
+                            $repack7zFileRecords.Remove($key)
+                        }
+                    }
+                    # special case: if using vault fix, copy Textures subdirectory
+                    "Vault Fix" {
+                        Copy-Item -LiteralPath "$($dir.temp)\Data\Textures" -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
+                        foreach ($key in $($repack7zFileRecords.Keys)) {
+                            $newKey = ($key.Split("\") | Select-Object -Skip 1) -join "\"
+                            $repack7zFileRecords.Add($newKey, $repack7zFileRecords[$key])
+                            $repack7zFileRecords.Remove($key)
+                        }
+                    }
+                }
+
+                if (Test-Path -LiteralPath $dir.temp) {
+                    Remove-Item -LiteralPath $dir.temp -Force -Recurse
+                }
+
                 Write-Success "    [DONE]"
             }
             catch {
                 Write-Error "    [ERROR]"
-                if ($null -ne $stderr) {
-                    Write-Error $stderr -Prefix "    ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
-                }
-                Write-Error $_ -Prefix "    ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
+                Write-Error $_ -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+                Write-Log $_.InvocationInfo.PositionMessage -Prefix "    ERROR: "
                 $extractRepackFailed = $true
-                break outerLoop
+                break
             }
             finally {
-                $stdout = $null
-                Write-Log "    Archive duration: $($archiveTimer.Elapsed.ToString())"
+                Write-Log "    Post-extraction tasks duration: $($toolTimer.Elapsed.ToString())"
             }
-        }
 
-        # post-extraction
-        try {
-            switch ($object.Key) {
-                # special case: if on main and using performance, copy previously-saved texture
-                "Main" {
-                    if ($repackFlags.Performance) {
-                        Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
+            # validate extracted files
+            try {
+                $toolTimer.Restart()
+
+                Write-Custom "    Validating extracted files..." -NoNewLine
+                Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
+
+                # TODO parallelize this if possible
+                foreach ($object in $repack7zFileRecords.GetEnumerator()) {
+                    $hash = (Get-CRC32 "$($dir.patchedFiles)\$($object.Key)").Hash
+                    if ($hash -ne $object.Value.CRC) {
+                        $extraErrorText = @(
+                            "-" * 5
+                            "This could be caused by antivirus interference, failing hardware, or it could just be a fluke."
+                            ""
+                            "Try again and report this error if it happens again, especially if it happens with the same file."
+                        )
+                        $extraErrorLog = @(
+                            "-" * 5
+                            "$($object.Key) failed validation."
+                            "Expected CRC32: $($object.Value.CRC)"
+                            "Calculated CRC32: $hash"
+                        )
+                        throw "Validation of `"$($object.Key)`" has failed."
                     }
                 }
-                # special case: if on restyle, copy items to PatchedFiles folder
-                "Restyle" {
-                    Copy-Item -LiteralPath $($extra | ForEach-Object { "$($dir.temp)\$_" }) -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
-                }
-                # special case: if using vault fix, copy copy Textures subdirectory
-                "Vault Fix" {
-                    Copy-Item -LiteralPath "$($dir.temp)\Data\Textures" -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
-                }
+                Write-Success "    [VALID]"
             }
-
-            if (Test-Path -LiteralPath $dir.temp) {
-                Remove-Item -LiteralPath $dir.temp -Force -Recurse
+            catch {
+                Write-Error "    [FAIL]"
+                Write-Error @(
+                    $_
+                    $(if ($extraErrorText) { $extraErrorText })
+                ) -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+                Write-Log @(
+                    $(if ($extraErrorLog) { $extraErrorLog })
+                    $(if ($extraErrorLog) { "-" * 5 })
+                    $_.InvocationInfo.PositionMessage
+                ) -Prefix "    ERROR: "
+                $extractRepackFailed = $true
+                break
+            }
+            finally {
+                Write-Log "    Validation duration: $($toolTimer.Elapsed.ToString())"
             }
         }
-        catch {
-            Write-Error $_ -Prefix "  ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
-            $extractRepackFailed = $true
-            break
+        finally {
+            Write-Log "  Repack set duration: $($repackTimer.Elapsed.ToString())"
+            Remove-Variable repackTimer
         }
     }
 }
@@ -741,7 +851,7 @@ if ($extractRepackFailed) {
     }
     Exit-Script 1
 }
-
+exit # TODO remove me
 
 # remove known bad patched files
 # ------------------------------
@@ -762,7 +872,7 @@ for ($index = 0; $index -lt $potentiallyBadPatchedFilenames.Count; $index++) {
     if ($badPatchedFileHashes[$hash].FileName -eq $file) {
         try {
             Rename-Item -LiteralPath $file -NewName "$($file.Split("\")[-1]).bad_file" -ErrorAction Stop
-            Write-Warning "  [RENAMED]"
+            Write-Success "  [FIXED]"
         }
         catch {
             Write-Error "  [ERROR]"
@@ -855,7 +965,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         $stdout, $stderr = (& "$toolArchive2" "$originalBa2File" -extract="$($dir.workingFiles)" 2>&1).
         Where({ $_ -is [string] -and $_ -ne "" }, "Split")
         Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool" -NoTimestamp
+        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
         if ($LASTEXITCODE -ne 0) {
             throw "Extracting `"$originalBa2File`" failed."
         }
@@ -867,7 +977,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         $stdout, $stderr = (& "$toolBsab" -e -o -f "Textures\Shared\Cubemaps\*" "$originalBa2File" "$($dir.workingFiles)" 2>&1).
         Where({ $_ -is [string] -and $_ -ne "" }, "Split")
         Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool" -NoTimestamp
+        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
         if ($LASTEXITCODE -ne 0) {
             # because bsab doesn't use stderr, copy stdout to stderr, but check anyway just in case
             if ($stderr -eq "") {
@@ -889,7 +999,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         $stdout, $stderr = (& "$toolRobocopy" "$($dir.patchedFiles)" "$($dir.workingFiles)" /s /xl /np /njh 2>&1).
         Where({ $_ -is [string] -and $_ -ne "" }, "Split")
         Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool" -NoTimestamp
+        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
         if ($LASTEXITCODE -ge 8) {
             # because robocopy doesn't use stderr, copy stdout to stderr, but check anyway just in case
             if ($stderr -eq "") {
@@ -908,7 +1018,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         $stdout, $stderr = (& "$toolArchive2" "$($dir.workingFiles)" -format="DDS" -create="$patchedBa2File" -root="$(Resolve-Path $dir.workingFiles)" 2>&1).
         Where({ $_ -is [string] -and $_ -ne "" }, "Split")
         Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool" -NoTimestamp
+        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
         if ($LASTEXITCODE -ne 0) {
             throw "Creating `"$patchedBa2File`" failed."
         }

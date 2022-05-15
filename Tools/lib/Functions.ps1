@@ -19,9 +19,7 @@
 # functions
 # ---------
 
-Write-Host "Loading functions..."
-
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 15, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 15, 1))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -284,13 +282,13 @@ function Write-Custom {
     )
 
     # break apart any multi-line strings contained in $Message and attach the given $Prefix
-    [System.Collections.ArrayList] $splitMessage = @()
+    $splitMessage = New-Object Collections.Generic.List[String]
     foreach ($line in $Message) {
         $line -split "`n" | ForEach-Object {
             $splitMessage.Add("$Prefix$(if ($Prefix){$_.TrimStart()} else {$_})") | Out-Null
         }
     }
-    [System.Collections.ArrayList] $Message = $splitMessage
+    $Message = $splitMessage
 
     if ($UseErrorStream) {
         $stream = [Console]::Error
@@ -412,13 +410,13 @@ function Write-Log {
 
     $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
-    [System.Collections.ArrayList] $splitMessage = @()
+    $splitMessage = New-Object Collections.Generic.List[String]
     foreach ($line in $Message) {
         $line -split "`n" | ForEach-Object {
             $splitMessage.Add("[$timestamp] $Prefix$(if ($Prefix){$_.TrimStart()} else {$_})".TrimEnd()) | Out-Null
         }
     }
-    [System.Collections.ArrayList] $Message = $splitMessage
+    $Message = $splitMessage
 
     if ($(Test-Path -LiteralPath $dir.logs) -eq $false) {
         New-Item $dir.logs -ItemType "directory" -ErrorAction Stop | Out-Null

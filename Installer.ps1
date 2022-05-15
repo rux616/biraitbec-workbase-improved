@@ -33,7 +33,7 @@ param (
 # -----------------------
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 8, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 8, 1)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "SHA256" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -42,6 +42,7 @@ Set-Variable "TagJoiner" -Value "+" -Option Constant
 Set-Variable "OriginalBackgroundColor" -Value $Host.UI.RawUI.BackgroundColor -Option Constant
 
 $dir = @{}
+$dir.currentDirectory = (Get-Location).Path
 $dir.defaultPatchedBa2 = ".\PatchedBa2"
 $dir.fallout4DataRegistry = ""
 $dir.fallout4DataSteam = ""
@@ -129,8 +130,11 @@ $toolRobocopy = "robocopy"
 # imports
 # -------
 
+Import-Module -Name "$($dir.tools)\lib\Start-Parallel.psm1"
 Add-Type -TypeDefinition (Get-Content "$($dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
+Write-Host "Loading functions..."
 . "$($dir.tools)\lib\Functions.ps1"
+Write-Host "Loading hashes..."
 . "$($dir.tools)\lib\Hashes.ps1"
 
 
@@ -144,6 +148,18 @@ $currentDirectory = [IO.Path]::GetFullPath((Get-Location))
 
 $dir.fallout4DataRegistry = Get-Fallout4DataFolder -DiscoveryMethod Registry
 $dir.fallout4DataSteam = Get-Fallout4DataFolder -DiscoveryMethod Steam
+
+
+# >>>>>>>>>>>>>>>>>>
+# testing area start
+# >>>>>>>>>>>>>>>>>>
+# "begin test"
+# foo
+# "end test"
+# Exit-Script 0
+# <<<<<<<<<<<<<<<<
+# testing area end
+# <<<<<<<<<<<<<<<<
 
 
 # begin script
@@ -656,7 +672,7 @@ else {
                 break
             }
 
-            $repack7zFileRecords = @{}
+            $repack7zFileRecords = New-Object System.Collections.Generic.List[Hashtable]
 
             # extract files
             foreach ($file in $object.Value) {
@@ -695,22 +711,23 @@ else {
 
                     # get file details (checksums) from archive and process the results
                     $archiveTechnicalInformation = & "$tool7za" l -slt "$relFile" "$(if ($extra) {$extra -join '" "'})"
-                    $isData = $false
-                    foreach ($line in $archiveTechnicalInformation) {
-                        if (-not $isData -or -not $line) {
-                            if ($line -eq "-" * 10) {
-                                $isData = $true
+                    foreach ($line in $archiveTechnicalInformation |
+                            Select-Object -Skip 18 |
+                            Where-Object { $_ -match "^Path.*" -or $_ -match "^CRC.*" }) {
+                        $splitLine = $line -split " = "
+                        switch ($splitLine | Select-Object -First 1) {
+                            "Path" {
+                                $currentRecord = @{}
+                                $currentRecord.$_ = ($splitLine | Select-Object -Skip 1) -join " = "
                             }
-                            continue
-                        }
-                        $lhs = (($line -split " = ")[0] | Out-String).Trim()
-                        $rhs = (($line -split " = " | Select-Object -Skip 1) -join " = ").Trim()
-                        if ($lhs -eq "Path") {
-                            $currentKey = $rhs
-                            $repack7zFileRecords[$currentKey] = @{}
-                        }
-                        else {
-                            $repack7zFileRecords[$currentKey].$lhs = $rhs
+                            "CRC" {
+                                $hash = $splitLine | Select-Object -Skip 1
+                                # if an item has a hash, update the file record and add it to the list
+                                if ($hash) {
+                                    $currentRecord.$_ = $hash
+                                    $repack7zFileRecords.Add($currentRecord)
+                                }
+                            }
                         }
                     }
                     Write-Success "      [DONE]"
@@ -738,38 +755,37 @@ else {
                 Write-Custom "    Performing post-extraction tasks..." -NoNewLine
                 Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
 
-                # remove records that don't have a CRC
-                foreach ($key in $($repack7zFileRecords.Keys)) {
-                    if (-not $repack7zFileRecords[$key].CRC) {
-                        $repack7zFileRecords.Remove($key)
-                    }
-                }
-
                 switch ($object.Key) {
                     # special case: if on main and using performance, copy previously-saved texture
                     "Main" {
                         if ($repackFlags.Performance) {
-                            Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
-                            $repack7zFileRecords["Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds"].CRC = "4B0F2DCE"
+                            Copy-Item `
+                                -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" `
+                                -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" `
+                                -Force `
+                                -ErrorAction Stop
+                            ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" }).CRC = "4B0F2DCE"
                         }
                     }
                     # special case: if on restyle, copy items to PatchedFiles folder
                     "Restyle" {
-                        Copy-Item -LiteralPath $($extra | ForEach-Object { "$($dir.temp)\$_" }) -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
-                        foreach ($key in $($repack7zFileRecords.Keys)) {
-                            $newKey = ($key.Split("\") | Select-Object -Skip 3) -join "\"
-                            $repack7zFileRecords.Add($newKey, $repack7zFileRecords[$key])
-                            $repack7zFileRecords.Remove($key)
-                        }
+                        Copy-Item `
+                            -LiteralPath $($extra | ForEach-Object { "$($dir.temp)\$_" }) `
+                            -Destination "$($dir.patchedFiles)" `
+                            -Force `
+                            -Recurse `
+                            -ErrorAction Stop
+                        $repack7zFileRecords | ForEach-Object { $_.Path = ($_.Path.Split("\") | Select-Object -Skip 3) -join "\" }
                     }
                     # special case: if using vault fix, copy Textures subdirectory
                     "Vault Fix" {
-                        Copy-Item -LiteralPath "$($dir.temp)\Data\Textures" -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
-                        foreach ($key in $($repack7zFileRecords.Keys)) {
-                            $newKey = ($key.Split("\") | Select-Object -Skip 1) -join "\"
-                            $repack7zFileRecords.Add($newKey, $repack7zFileRecords[$key])
-                            $repack7zFileRecords.Remove($key)
-                        }
+                        Copy-Item `
+                            -LiteralPath "$($dir.temp)\Data\Textures" `
+                            -Destination "$($dir.patchedFiles)" `
+                            -Force `
+                            -Recurse `
+                            -ErrorAction Stop
+                        $repack7zFileRecords | ForEach-Object { $_.Path = ($_.Path.Split("\") | Select-Object -Skip 1) -join "\" }
                     }
                 }
 
@@ -797,25 +813,56 @@ else {
                 Write-Custom "    Validating extracted files..." -NoNewLine
                 Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
 
-                # TODO parallelize this if possible
-                foreach ($object in $repack7zFileRecords.GetEnumerator()) {
-                    $hash = (Get-CRC32 "$($dir.patchedFiles)\$($object.Key)").Hash
-                    if ($hash -ne $object.Value.CRC) {
-                        $extraErrorText = @(
-                            "-" * 5
-                            "This could be caused by antivirus interference, failing hardware, or it could just be a fluke."
-                            ""
-                            "Try again and report this error if it happens again, especially if it happens with the same file."
-                        )
-                        $extraErrorLog = @(
-                            "-" * 5
-                            "$($object.Key) failed validation."
-                            "Expected CRC32: $($object.Value.CRC)"
-                            "Calculated CRC32: $hash"
-                        )
-                        throw "Validation of `"$($object.Key)`" has failed."
-                    }
+                # set up a runspace pool; set max threads to the number of logical processors available
+                $maxThreads = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
+                $runspacePool = [RunspaceFactory]::CreateRunspacePool(1, $maxThreads)
+                $runspacePool.Open()
+
+                # engage all the threads and collect everything into $jobs
+                $jobs = $repack7zFileRecords | ForEach-Object {
+                    $powerShell = [PowerShell]::Create()
+                    $powerShell.RunspacePool = $runspacePool
+                    $powerShell.AddScript({
+                            param([string] $Dir, [Hashtable] $FileRecord)
+                            # enable capability to calculate CRC32 checksums
+                            Add-Type -TypeDefinition (Get-Content "$($Dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
+                            . "$($Dir.tools)\lib\Functions.ps1"
+                            # hash the file
+                            $hash = (Get-CRC32 "$($Dir.patchedFiles)\$($FileRecord.Path)").Hash
+                            # if the hash doesn't match, we want to know about it; emit an object
+                            # containing the file record and computed hash
+                            if ($hash -ne $fileRecord.CRC) { , @{ FileRecord = $FileRecord; CalculatedCRC = $hash } }
+                        }).AddParameters(@{ Dir = $Dir; FileRecord = $_ }) | Out-Null
+                    , @{ PowerShell = $powerShell; Handle = $powerShell.BeginInvoke() }
                 }
+                # check once per second if all the jobs are completed
+                while ($jobs.Handle.IsCompleted -contains $false) { Start-Sleep -Seconds 1 }
+
+                # collect the results of all the jobs (ideally this will be empty) and clean up the
+                # powershell instances
+                $results = $jobs | ForEach-Object {
+                    $_.PowerShell.EndInvoke($_.Handle)
+                    $_.PowerShell.Dispose()
+                }
+                # clean up the jobs array and runspace pool
+                $jobs.Clear()
+                $runspacePool.Close()
+
+                # if there is anything in $results, then validation failed on one or more files
+                if ($results) {
+                    $extraErrorText = @(
+                        "-" * 10
+                        "This could be caused by antivirus interference, failing hardware, or it could just be a fluke."
+                        ""
+                        "Try again and report this error if it happens again, especially if it happens with the same file$(if ($results.Count -gt 1) {"s"})."
+                    )
+                    $extraErrorLog = @(
+                        "-" * 10
+                        $results | ForEach-Object { "`"$($_.FileRecord.Path)`" (CRC32: $($_.FileRecord.CRC)) failed validation. Calculated CRC32: $($_.CalculatedCRC)" }
+                    )
+                    throw "Validation of $($results.count) extracted file$(if ($results.Count -gt 1) {"s"}) has failed. See log for details."
+                }
+
                 Write-Success "    [VALID]"
             }
             catch {
@@ -826,7 +873,7 @@ else {
                 ) -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
                 Write-Log @(
                     $(if ($extraErrorLog) { $extraErrorLog })
-                    $(if ($extraErrorLog) { "-" * 5 })
+                    $(if ($extraErrorLog) { "-" * 10 })
                     $_.InvocationInfo.PositionMessage
                 ) -Prefix "    ERROR: "
                 $extractRepackFailed = $true
@@ -851,7 +898,7 @@ if ($extractRepackFailed) {
     }
     Exit-Script 1
 }
-exit # TODO remove me
+
 
 # remove known bad patched files
 # ------------------------------

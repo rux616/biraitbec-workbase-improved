@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 15, 1))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 16, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -354,14 +354,21 @@ function Write-Error {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
+        [AllowEmptyString()] [string[]] $ExtraContext = $null,
         [switch] $BypassLog,
         [switch] $NoJustifyRight,
         [switch] $NoNewLine,
         [switch] $NoTrimBeforeDisplay,
-        [string]$Prefix = $null,
-        [int]$SnippetLength = 0
+        [string] $Prefix = $null,
+        [int] $SnippetLength = 0
     )
 
+    if ($ExtraContext) {
+        $Message = $Message + @(
+            "-" * 10
+            $ExtraContext
+        )
+    }
     $hashArguments = @{
         Message           = $Message
         BypassLog         = $BypassLog
@@ -403,12 +410,21 @@ function Write-Log {
     param (
         # note: having $Message be a PSObject type allows stdout and stderr output to be processed correctly
         [Parameter(Mandatory)] [AllowEmptyString()] [PSObject] $Message,
+        [AllowEmptyString()] [string[]] $ExtraContext = $null,
         [string] $Log = "install",
         [string] $LogStartTime = $RunStartTime,
         [string] $Prefix = $null
     )
 
     $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+    if ($ExtraContext) {
+        $Message = @(
+            "-" * 10
+            $ExtraContext
+            "-" * 10
+        ) + $Message
+    }
 
     $splitMessage = New-Object Collections.Generic.List[String]
     foreach ($line in $Message) {

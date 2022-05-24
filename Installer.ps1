@@ -33,7 +33,7 @@ param (
 # -----------------------
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 9, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 10, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "SHA256" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -42,7 +42,7 @@ Set-Variable "TagJoiner" -Value "+" -Option Constant
 Set-Variable "OriginalBackgroundColor" -Value $Host.UI.RawUI.BackgroundColor -Option Constant
 
 $dir = @{}
-$dir.currentDirectory = (Get-Location).Path
+$dir.currentDirectory = $pwd.Path
 $dir.defaultPatchedBa2 = ".\PatchedBa2"
 $dir.fallout4DataRegistry = ""
 $dir.fallout4DataSteam = ""
@@ -130,7 +130,6 @@ $toolRobocopy = "robocopy"
 # imports
 # -------
 
-Import-Module -Name "$($dir.tools)\lib\Start-Parallel.psm1"
 Add-Type -TypeDefinition (Get-Content "$($dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
 Write-Host "Loading functions..."
 . "$($dir.tools)\lib\Functions.ps1"
@@ -140,8 +139,6 @@ Write-Host "Loading hashes..."
 
 # late variables
 # --------------
-
-$currentDirectory = [IO.Path]::GetFullPath((Get-Location))
 
 # more complicated than simply using $ba2Files, but allows for easier testing
 [string[]] $ba2Filenames = @($originalBa2Hashes.Keys | ForEach-Object { $originalBa2Hashes[$_].FileName }) | Sort-Object -Unique
@@ -180,7 +177,7 @@ Write-Log @(
     "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) { "$msvcp110dllVersion (Hash: $msvcp110dllHash)" } else { "(Not Found)" })
     "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { "$msvcr110dllVersion (Hash: $msvcr110dllHash)" } else { "(Not Found)" })
     ""
-    "  Current Directory: $currentDirectory"
+    "  Current Directory: $($dir.currentDirectory)"
     ""
     "  Number of Repack archive hashes: $($repack7zHashes.Keys.Count)"
     "  Number of Original BA2 Hashes: $($originalBa2Hashes.Keys.Count)"
@@ -194,7 +191,7 @@ Write-Log @(
     "  Color DWORD Value (Red): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Red.value__).ToString("D2"))").ToString("X6"))"
     "  Color DWORD Value (Yellow): $((Get-ItemPropertyValue HKCU:\Console -Name "ColorTable$(([System.ConsoleColor]::Yellow.value__).ToString("D2"))").ToString("X6"))"
     ""
-    "  Fallout 4 Data directory (Registry method): " + $(if ($dir.fallout4DataRegistry) { $dir.fallout4DataSteam } else { "(Not Found)" })
+    "  Fallout 4 Data directory (Registry method): " + $(if ($dir.fallout4DataRegistry) { $dir.fallout4DataRegistry } else { "(Not Found)" })
     "  Fallout 4 Data directory (Steam method): " + $(if ($dir.fallout4DataSteam) { $dir.fallout4DataSteam } else { "(Not Found)" })
     ""
     "  Files in Repack7z directory:"
@@ -237,14 +234,13 @@ $problemDirs = @(
     (Get-Item $([IO.Path]::GetFullPath(${env:USERPROFILE}))).Parent.FullName
 )
 foreach ($problemDir in $problemDirs) {
-    if ($currentDirectory.StartsWith($problemDir, [System.StringComparison]::OrdinalIgnoreCase)) {
+    if ($dir.currentDirectory.StartsWith($problemDir, [System.StringComparison]::OrdinalIgnoreCase)) {
         Write-Custom ""
-        Write-Error @(
-            "Attempting to run script from `"$currentDirectory`"."
-            ""
-            "Problematic location detected. Please ensure this script is not anywhere inside the following folders:"
+        $extraErrorText = @(
+            "Attempting to run script from `"$($dir.currentDirectory)`". Please ensure this script is not anywhere inside the following folders:"
             $problemDirs | ForEach-Object { "  $_" }
-        ) -Prefix "ERROR: " -NoJustifyRight
+        )
+        Write-Error "Problematic script location detected." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
         Exit-Script 1
     }
 }
@@ -260,10 +256,11 @@ foreach ($problemDir in $problemDirs) {
 $vcrMinVersion = New-Object System.Version -ArgumentList @(11, 00, 51106, 1)
 if ($msvcp110dllVersion -lt $vcrMinVersion -or $msvcr110dllVersion -lt $vcrMinVersion) {
     Write-Custom ""
-    Write-Error @(
-        "Need 64-bit Visual C++ Redistributable for Visual Studio 2012 Update 4! Please download it from this link:"
+    $extraErrorText = @(
+        "Need 64-bit Visual C++ Redistributable for Visual Studio 2012 Update 4. Please download it from this link:"
         "https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe"
-    ) -Prefix "ERROR: " -NoJustifyRight
+    )
+    Write-Error "Visual C++ Redistributable files not found." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
     Exit-Script 1
 }
 
@@ -296,7 +293,12 @@ if ($null -eq $dir.patchedBa2) {
 }
 elseif ($dir.fallout4DataSteam -and $dir.fallout4DataSteam -eq $dir.patchedBa2) {
     Write-Error "[ERROR]"
-    Write-Error "Cannot choose the Fallout 4\Data folder from your Steam library." -Prefix "ERROR: " -NoJustifyRight
+    $extraErrorText = @(
+        "Cannot choose the `"Fallout 4\Data`" folder from your Steam library."
+        ""
+        "Keeping the patched BA2 archives separate from the base game files keeps the location clean and enables you to verify the vanilla files through Steam without losing these files."
+    )
+    Write-Error "Invalid folder." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
     Exit-Script 1
 }
 
@@ -397,9 +399,13 @@ if ($existingRepackFiles.Count -gt 0) {
 
                     # check size before checking hash
                     if (@($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem $relFile).Length }).Count -eq 0) {
-                        Write-Warning "    [SIZE MISMATCH]"
-                        $repackFlags[$object.Key] = $false
-                        continue
+                        $extraErrorText = @(
+                            "The size of this repack archive doesn't match any known archives."
+                            ""
+                            "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying."
+                        )
+                        $extraErrorLog = @("Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes")
+                        throw "Size mismatch."
                     }
 
                     $hash = (Get-FileHash -LiteralPath $relFile -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
@@ -408,23 +414,34 @@ if ($existingRepackFiles.Count -gt 0) {
                         Write-Success "    [VALID]"
                     }
                     else {
-                        Write-Warning "    [UNRECOGNIZED]"
-                        $repackFlags[$object.Key] = $false
+                        $extraErrorText = @(
+                            "The exact contents of this repack archive don't match any known archives."
+                            ""
+                            "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying."
+                        )
+                        $extraErrorLog = @("(No extra log info.)")
+                        throw "Unrecognized file."
                     }
                 }
             }
             else {
-                Write-Warning "    [NOT FOUND]"
-                $repackFlags[$object.Key] = $false
+                $extraErrorText = @(
+                    "The file can not be found in the `"$($dir.repack7z.Split("\")[-1])`" folder."
+                    ""
+                    "Please ensure you have placed all the repack archives from each repack set that you wish to use in the `"$($dir.repack7z.Split("\")[-1])`" folder, then run this script again."
+                )
+                $extraErrorLog = @("(No extra log info.)")
+                throw "Not found."
             }
         }
         catch {
-            Write-Error "    [ERROR]"
-            Write-Error $_ -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+            Write-Error "    [FAIL]"
+            Write-Error $_ -ExtraContext $extraErrorText -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+            Write-Log $_.InvocationInfo.PositionMessage -ExtraContext $extraErrorLog -Prefix "    ERROR: "
             $validateRepacksFailed = $true
-            break outerLoop
         }
         finally {
+            $extraErrorText, $extraErrorLog = $null
             Write-Log "    Archive duration: $($archiveTimer.Elapsed.ToString())"
         }
     }
@@ -739,6 +756,13 @@ else {
 
                     # check if extracting the archive succeeded
                     if ($LASTEXITCODE -ne 0) {
+                        $extraErrorText = @(
+                            "The program used to extract repack archives (7za.exe) has indicated that an error occurred while extracting one of said archives. Unfortunately, 7za.exe doesn't output an error that can be interpreted by this script."
+                        )
+                        $extraErrorLog = @(
+                            $stderr
+                            "Exit code: $LASTEXITCODE"
+                        )
                         throw "Extracting `"$relFile`" failed."
                     }
 
@@ -767,16 +791,14 @@ else {
                 }
                 catch {
                     Write-Error "      [ERROR]"
-                    if ($null -ne $stderr) {
-                        Write-Error $stderr -Prefix "      ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
-                    }
-                    Write-Error $_ -Prefix "      ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
-                    Write-Log $_.InvocationInfo.PositionMessage -Prefix "      ERROR: "
+                    Write-Error $_ -ExtraContext $extraErrorText -Prefix "      ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
+                    Write-Log $_.InvocationInfo.PositionMessage -ExtraContext $extraErrorText -Prefix "      ERROR: "
                     $extractRepackFailed = $true
                     break outerLoop
                 }
                 finally {
-                    $stdout = $null
+                    $stdout, $stderr = $null
+                    $extraErrorText, $extraErrorLog = $null
                     Write-Log "      Archive duration: $($archiveTimer.Elapsed.ToString())"
                 }
             }
@@ -884,35 +906,27 @@ else {
                 # if there is anything in $results, then validation failed on one or more files
                 if ($results) {
                     $extraErrorText = @(
-                        "-" * 10
-                        "This could be caused by antivirus interference, failing hardware, or it could just be a fluke."
+                        "The exact contents of one or more files extracted from a repack archive set don't match any known files."
                         ""
-                        "Try again and report this error if it happens again, especially if it happens with the same file$(if ($results.Count -gt 1) {"s"})."
+                        "See the most recent `"install`" log file in the `"$($dir.Logs.Split("\")[-1])`" folder for the list of files which failed validation."
                     )
                     $extraErrorLog = @(
-                        "-" * 10
                         $results | ForEach-Object { "`"$($_.FileRecord.Path)`" (CRC32: $($_.CalculatedCRC)) failed validation. Expected CRC32: $($_.FileRecord.CRC)" }
                     )
-                    throw "Validation of $($results.count) extracted file$(if ($results.Count -gt 1) {"s"}) has failed. See log for details."
+                    throw "Validation of $($results.Count) extracted file$(if ($results.Count -gt 1) {"s"}) has failed."
                 }
 
                 Write-Success "    [VALID]"
             }
             catch {
                 Write-Error "    [FAIL]"
-                Write-Error @(
-                    $_
-                    $(if ($extraErrorText) { $extraErrorText })
-                ) -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
-                Write-Log @(
-                    $(if ($extraErrorLog) { $extraErrorLog })
-                    $(if ($extraErrorLog) { "-" * 10 })
-                    $_.InvocationInfo.PositionMessage
-                ) -Prefix "    ERROR: "
+                Write-Error $_ -ExtraContext $extraErrorText -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+                Write-Log $_.InvocationInfo.PositionMessage -ExtraContext $extraErrorLog -Prefix "    ERROR: "
                 $extractRepackFailed = $true
                 break
             }
             finally {
+                $extraErrorText, $extraErrorLog = $null
                 Write-Log "    Validation duration: $($toolTimer.Elapsed.ToString())"
             }
         }
@@ -1013,6 +1027,14 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             ($alternateOriginalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length }).Count -eq 0 -and
             ($oldAlternateOriginalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length }).Count -eq 0
         ) {
+            $extraErrorText = @(
+                "The size of this original archive doesn't match any known archives."
+                ""
+                "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
+                ""
+                "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying."
+            )
+            $extraErrorLog = @("Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length) bytes")
             throw "Size mismatch."
         }
         $hash = (Get-FileHash -LiteralPath $originalBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
@@ -1025,9 +1047,23 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         }
         elseif ($repackFlags.Custom -and $oldAlternateOriginalBa2Hashes[$hash].FileName -eq $file) {
             Write-Log "      Tags: $($oldAlternateOriginalBa2Hashes[$hash].Tags -join ", ")"
+            $extraErrorText = @(
+                "If using alternate original BA2 archives (i.e. PhyOp or Luxor), this script only allows the latest versions."
+                ""
+                "Check the readme and update the archive in question to the version that's needed."
+            )
+            $extraErrorLog = @("(No extra log info.)")
             throw "Old version of an alternate original archive detected."
         }
         else {
+            $extraErrorText = @(
+                "The exact contents of this archive don't match any known archives."
+                ""
+                "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
+                ""
+                "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying."
+            )
+            $extraErrorLog = @("(No extra log info.)")
             throw "Unrecognized archive file."
         }
         Write-Log "      Tags: $($originalBa2Hashes[$hash].Tags -join ", ")$($alternateOriginalBa2Hashes[$hash].Tags -join ", ")"
@@ -1046,6 +1082,13 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
         Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
         if ($LASTEXITCODE -ne 0) {
+            $extraErrorText = @(
+                "The program used to extract BA2 archives (archive2.exe) has indicated that an error occurred while extracting one of said archives. Unfortunately, archive2.exe doesn't output an error that can be interpreted by this script."
+            )
+            $extraErrorLog = @(
+                $stderr
+                "Exit code: $LASTEXITCODE"
+            )
             throw "Extracting `"$originalBa2File`" failed."
         }
         $stdout, $stderr = $null
@@ -1062,7 +1105,14 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             if ($stderr -eq "") {
                 $stderr = $stdout
             }
-            throw "Extracting cubemaps from `"$originalBa2File`" failed."
+            $extraErrorText = @(
+                "The program used to extract cube maps from archives (bsab.exe) has indicated that an error occurred while extracting cube maps from one of said archives. Unfortunately, bsab.exe doesn't output an error that can be interpreted by this script."
+            )
+            $extraErrorLog = @(
+                $stderr
+                "Exit code: $LASTEXITCODE"
+            )
+            throw "Extracting cube maps from `"$originalBa2File`" failed."
         }
         $stdout, $stderr = $null
         Write-Success "      [DONE]"
@@ -1084,6 +1134,13 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             if ($stderr -eq "") {
                 $stderr = $stdout
             }
+            $extraErrorText = @(
+                "The program used to copy patched files (robocopy.exe) has indicated that an error occurred while copying said files. Unfortunately, robocopy.exe doesn't output an error that can be interpreted by this script."
+            )
+            $extraErrorLog = @(
+                $stderr
+                "Exit code: $LASTEXITCODE"
+            )
             throw "Copying patched files failed."
         }
         $stdout, $stderr = $null
@@ -1099,6 +1156,13 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
         Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
         if ($LASTEXITCODE -ne 0) {
+            $extraErrorText = @(
+                "The program used to create BA2 archives (archive2.exe) has indicated that an error occurred while creating one of said archives. Unfortunately, archive2.exe doesn't output an error that can be interpreted by this script."
+            )
+            $extraErrorLog = @(
+                $stderr
+                "Exit code: $LASTEXITCODE"
+            )
             throw "Creating `"$patchedBa2File`" failed."
         }
         $stdout, $stderr = $null
@@ -1114,8 +1178,15 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
         if (
             -not $repackFlags.Custom -and
-             ($patchedBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $patchedBa2File).Length }).Count -eq 0
+            # get patched BA2 hash records where the file name matches, the tag is present, and the file size matches
+            ($patchedBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.Tags -contains $repackTag -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $patchedBa2File).Length }).Count -eq 0
         ) {
+            $extraErrorText = @(
+                "The size of this patched archive doesn't match any known archives."
+            )
+            $extraErrorLog = @(
+                "Size: $((Get-ChildItem -LiteralPath $patchedBa2File).Length) bytes"
+            )
             throw "Size mismatch."
         }
         $hash = $(Get-FileHash -LiteralPath $patchedBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
@@ -1125,26 +1196,33 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             continue
         }
         elseif ($patchedBa2Hashes[$hash].FileName -ne $file) {
-            throw "Unrecognized file. The file's SHA256 hash doesn't match any known outputs."
+            $extraErrorText = @(
+                "The exact contents of this patched archive don't match any known archives."
+            )
+            $extraErrorLog = @("(No extra log info.)")
+            throw "Unrecognized file."
         }
         Write-Log "      Tags: $($patchedBa2Hashes[$hash].Tags -join ", ")"
         if ($patchedBa2Hashes[$hash].Tags -contains $repackTag) {
             Write-Success "      [VALID]"
         }
         else {
-            throw "Tag mismatch. Metadata for the hash of this archive does not contain tag `"$repackTag`"."
+            $extraErrorText = @(
+                "Because some combinations of repack sets generate the same patched BA2 archive, patched archives have 'tags' associated with them, so that not only do the size and contents of the newly-created patched archive need to match the data associated with said archive, the tags do as well. In this case, they did not match."
+            )
+            $extraErrorLog = @("(No extra log info.)")
+            throw "Tag mismatch."
         }
     }
     catch {
         Write-Error "      [FAIL]"
-        if ($null -ne $stderr) {
-            Write-Error $stderr -Prefix "      ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
-            $stdout, $stderr = $null
-        }
-        Write-Error $_ -Prefix "      ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
+        Write-Error $_ -ExtraContext $extraErrorText -Prefix "      ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+        Write-Log $_.InvocationInfo.PositionMessage -ExtraContext $extraErrorLog -Prefix "      ERROR: "
         $processingFailed = $true
     }
     finally {
+        $stdout, $stderr = $null
+        $extraErrorText, $extraErrorLog = $null
         if (Test-Path -LiteralPath $dir.workingFiles) {
             Remove-Item -LiteralPath $dir.workingFiles -Recurse -Force
         }

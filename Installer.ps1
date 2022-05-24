@@ -33,9 +33,9 @@ param (
 # -----------------------
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 10, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 11, 0)) -Option Constant
 
-Set-Variable "FileHashAlgorithm" -Value "SHA256" -Option Constant
+Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
 Set-Variable "LineWidth" -Value ($Host.UI.RawUI.WindowSize.Width - 1) -Option Constant
 Set-Variable "TagJoiner" -Value "+" -Option Constant
@@ -94,10 +94,10 @@ $ba2Files.fallout4Textures9 = "Fallout4 - Textures9.ba2"
 
 $msvcp110dllPath = "${env:windir}\System32\msvcp110.dll"
 $msvcp110dllVersion = (Get-Command $msvcp110dllPath -ErrorAction SilentlyContinue).Version
-$msvcp110dllHash = (Get-FileHash $msvcp110dllPath -ErrorAction SilentlyContinue).Hash
+$msvcp110dllHash = (Get-FileHash -LiteralPath $msvcp110dllPath -Algorithm $FileHashAlgorithm -ErrorAction SilentlyContinue).Hash
 $msvcr110dllPath = "${env:windir}\System32\msvcr110.dll"
 $msvcr110dllVersion = (Get-Command $msvcr110dllPath -ErrorAction SilentlyContinue).Version
-$msvcr110dllHash = (Get-FileHash $msvcr110dllPath -ErrorAction SilentlyContinue).Hash
+$msvcr110dllHash = (Get-FileHash -LiteralPath $msvcr110dllPath -Algorithm $FileHashAlgorithm -ErrorAction SilentlyContinue).Hash
 
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 $sectionTimer = New-Object System.Diagnostics.Stopwatch
@@ -125,6 +125,10 @@ $toolBsab = "$($dir.tools)\BSA Browser\bsab.exe"
 # robocopy by Microsoft
 # included with Windows
 $toolRobocopy = "robocopy"
+
+# xxhsum v0.8.1 by cyan4973
+# https://cyan4973.github.io/xxHash/
+$toolXxhsum = "$($dir.tools)\xxHash\xxhsum.exe"
 
 
 # imports
@@ -883,7 +887,7 @@ else {
                             Add-Type -TypeDefinition (Get-Content "$($Dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
                             . "$($Dir.tools)\lib\Functions.ps1"
                             # hash the file
-                            $hash = (Get-CRC32 "$($Dir.patchedFiles)\$($FileRecord.Path)").Hash
+                            $hash = (Get-FileHash -LiteralPath "$($Dir.patchedFiles)\$($FileRecord.Path)" -Algorithm CRC32 -ErrorAction Stop).Hash
                             # if the hash doesn't match, we want to know about it; emit an object
                             # containing the file record and computed hash
                             if ($hash -ne $fileRecord.CRC) { , @{ FileRecord = $FileRecord; CalculatedCRC = $hash } }

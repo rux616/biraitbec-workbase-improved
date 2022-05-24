@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 16, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 17, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -81,37 +81,6 @@ function Exit-Script {
     exit $ExitCode
 }
 
-# adapted from https://gist.github.com/r3t3ch/86c944ac14a69bccbd81bff698050b83
-function Get-CRC32 {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)] [String] $Path
-    )
-
-    $ErrorActionPreference = "Stop"
-    $Path = Resolve-Path $Path
-    $crc32 = New-Object DamienG.Security.Cryptography.Crc32
-
-    $stream = New-Object System.IO.FileStream($Path, [System.IO.FileMode]::Open)
-    try {
-        $rawHash = $crc32.ComputeHash($stream)
-    }
-    finally {
-        $stream.Close()
-    }
-
-    $hash = ""
-    foreach ($byte in $rawHash) {
-        $hash += $byte.toString('x2').toUpper()
-    }
-
-    return [PSCustomObject] @{
-        Algorithm = "CRC32"
-        Hash      = "$hash"
-        Path      = "$Path"
-    }
-}
-
 function Get-Fallout4DataFolder {
     [CmdletBinding()]
     param (
@@ -168,6 +137,83 @@ function Get-Fallout4DataFolder {
     if (-not (Test-Path $fallout4DataFolder)) { return "" }
     # if it exists, return the location of the fallout 4 data folder
     return $fallout4DataFolder
+}
+
+function Get-FileHash {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)] [string] $LiteralPath,
+        [Parameter()] [string] $Algorithm = "SHA256"
+    )
+
+    # check the path to make sure it exists and if it doesn't, throw an error
+    if (-not (Test-Path -LiteralPath $LiteralPath)) {
+        throw "File not found."
+    }
+
+    # resolve the path to its full path (remove relative directories, etc)
+    $LiteralPath = Resolve-Path -LiteralPath $LiteralPath
+
+    # actually do the hashing
+    switch ($Algorithm) {
+        # the built-in Get-FileHash cmdlet handles SHA{1,256,384,512} and MD5 hashing
+        { @("SHA1", "SHA256", "SHA384", "SHA512", "MD5") -contains $_ } {
+            return Microsoft.PowerShell.Utility\Get-FileHash -LiteralPath $LiteralPath -Algorithm $_ -ErrorAction Stop
+        }
+        # CRC32 hashing is handled by an bundled C# script
+        "CRC32" {
+            # adapted from https://gist.github.com/r3t3ch/86c944ac14a69bccbd81bff698050b83
+            # create a new instance of a crc32 object
+            $crc32 = New-Object DamienG.Security.Cryptography.Crc32
+
+            # open the file and have the crc32 object hash it, closing the file when done or an error is encountered
+            $stream = New-Object System.IO.FileStream($LiteralPath, [System.IO.FileMode]::Open)
+            try {
+                $rawHash = $crc32.ComputeHash($stream)
+            }
+            finally {
+                $stream.Close()
+            }
+
+            # format the raw hash into one fit for display or consumption
+            $hash = ""
+            foreach ($byte in $rawHash) {
+                $hash += $byte.toString('x2')
+            }
+
+            return [PSCustomObject] @{
+                Algorithm = "CRC32"
+                Hash      = "$($hash.ToUpper())"
+                Path      = "$LiteralPath"
+            }
+        }
+        # xxHashing is handled by the bundled xxhsum.exe program
+        { @("XXH3", "XXH32", "XXH64", "XXH128") -contains $_ } {
+            # remove the first two characters from $_ and set that as the algorithm
+            $xxhAlgorithm = $_[2..$($_.Length)] -join ''
+            $stdout, $stderr = (& "$toolXxhsum" -$xxhAlgorithm "$LiteralPath" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
+            if ($LASTEXITCODE -ne 0) {
+                throw $stderr
+            }
+
+            # hashing done with the XXH3 algorithm has a slightly different output format compared to the other algorithms
+            if ($switch -eq "XXH3") {
+                # format: "XXH3 (<path>) = <hash>"
+                $hash = $stdout.Split(" ") | Select-Object -Last 1
+            }
+            else {
+                # format: "<hash>  <path>"
+                $hash = $stdout.Split(" ") | Select-Object -First 1
+            }
+
+            return [PSCustomObject]@{
+                Algorithm = "$($_.ToUpper())"
+                Hash      = "$($hash.ToUpper())"
+                Path      = "$LiteralPath"
+            }
+        }
+        Default { throw "Unknown hash algorithm." }
+    }
 }
 
 function Get-Folder {

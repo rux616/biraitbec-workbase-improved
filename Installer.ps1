@@ -20,12 +20,15 @@
 # ----------
 
 param (
-    [switch] $SkipRepackHashing,
-    [switch] $SkipExistingPatchedHashing,
-    [switch] $SkipChoosingPatchedBa2Dir,
-    [switch] $NoPauseOnExit,
     [switch] $NoClearScreen,
-    [switch] $AllowUnchanged
+    [switch] $SkipChoosingPatchedBa2Dir,
+    [switch] $SkipRepackValidation,
+    [switch] $SkipExistingPatchedValidation,
+    [switch] $SkipExtractedRepackValidation,
+    [switch] $SkipOriginalBa2Validation,
+    [switch] $ForcePatchedBa2Hashing,
+    [switch] $AllowUnchanged,
+    [switch] $NoPauseOnExit
 )
 
 
@@ -35,7 +38,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 13, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 14, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -183,17 +186,21 @@ Write-CustomLog @(
     "  Hashes Version: $HashesVersion"
     ""
     "  Windows Version: $(Get-WindowsVersion)"
+    "  PowerShell Version: $($PSVersionTable.PSVersion)"
     "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) { "$msvcp110dllVersion (Hash: $msvcp110dllHash)" } else { "(Not Found)" })
     "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { "$msvcr110dllVersion (Hash: $msvcr110dllHash)" } else { "(Not Found)" })
     ""
     "  Current Directory: $($dir.currentDirectory)"
     "  Drive Size Info:"
-    "    Free: $(Write-PrettySize $driveBytesFree) ($(($driveBytesFree / $driveBytesTotal * 100).ToString('f1'))%)"
-    "    Used: $(Write-PrettySize $driveBytesUsed) ($(($driveBytesUsed / $driveBytesTotal * 100).ToString('f1'))%)"
-    "    Total: $(Write-PrettySize $driveBytesTotal)"
+    "      Free: $(Write-PrettySize $driveBytesFree) ($(($driveBytesFree / $driveBytesTotal * 100).ToString('f1'))%)"
+    "      Used: $(Write-PrettySize $driveBytesUsed) ($(($driveBytesUsed / $driveBytesTotal * 100).ToString('f1'))%)"
+    "      Total: $(Write-PrettySize $driveBytesTotal)"
     ""
     "  Number of Repack archive hashes: $($repack7zHashes.Keys.Count)"
     "  Number of Original BA2 Hashes: $($originalBa2Hashes.Keys.Count)"
+    "  Number of Alternate Original BA2 Hashes: $($alternateOriginalBa2Hashes.Keys.Count)"
+    "  Number of Old Alternate Original BA2 Hashes: $($oldAlternateOriginalBa2Hashes.Keys.Count)"
+    "  Number of Bad Patched File Hashes: $($badPatchedFileHashes.Keys.Count)"
     "  Number of Patched BA2 Hashes: $($patchedBa2Hashes.Keys.Count)"
     ""
     "  Line Width: $LineWidth"
@@ -245,6 +252,20 @@ Write-Custom @(
     "|___| |_| |_| |_| | .__/  |_|     \___/    \_/    \___|  \__,_|"
     "                  |_|                                          "
 ) -JustifyCenter -BypassLog
+
+
+# # check to make sure that this is being run with PowerShell 5.1
+# # -------------------------------------------------------------
+# if ($PSVersionTable.PSVersion.Major -ne 5 -and $PSVersionTable.PSVersion.Minor -ne 1) {
+#     Write-Custom ""
+#     $extraErrorText = @(
+#         "This script will not function properly if it is not run with PowerShell version 5.1."
+#         ""
+#         "Make sure to run this script by opening the folder where it resides, right-clicking the script, and choosing `"Run with PowerShell`" from the menu."
+#     )
+#     Write-CustomError "Invalid PowerShell version." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
+#     Exit-Script 1
+# }
 
 
 # check location to ensure the script is not located in a problematic directory
@@ -416,7 +437,7 @@ if ($existingRepackFiles.Count -gt 0) {
             Write-Custom "    $altFile" -NoNewLine
 
             if (Test-Path -LiteralPath $relFile) {
-                if ($SkipRepackHashing) {
+                if ($SkipRepackValidation) {
                     Write-CustomWarning "    [SKIPPED]"
                 }
                 else {
@@ -609,7 +630,7 @@ $existingPatchedArchives = foreach ($object in $ba2Files.GetEnumerator()) {
 if ($existingPatchedArchives.Count -gt 0) {
     Write-Custom ""
     Write-Custom "Validating existing patched BA2 archives:" -NoNewLine
-    if ($SkipExistingPatchedHashing) {
+    if ($SkipExistingPatchedValidation) {
         Write-CustomWarning "[SKIPPED]"
     }
     elseif ($repackFlags.Custom) {
@@ -950,59 +971,64 @@ else {
                 $toolTimer.Restart()
 
                 Write-Custom "    Validating extracted files..." -NoNewLine
-                Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
-
-                # set up a runspace pool; set max threads to the number of logical processors available
-                $maxThreads = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
-                $runspacePool = [RunspaceFactory]::CreateRunspacePool(1, $maxThreads)
-                $runspacePool.Open()
-
-                # engage all the threads and collect everything into $jobs
-                $jobs = $repack7zFileRecords | ForEach-Object {
-                    $powerShell = [PowerShell]::Create()
-                    $powerShell.RunspacePool = $runspacePool
-                    $powerShell.AddScript(
-                        {
-                            param([Hashtable] $Dir, [Hashtable] $FileRecord)
-                            # enable capability to calculate CRC32 checksums
-                            Add-Type -TypeDefinition (Get-Content "$($Dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
-                            . "$($Dir.tools)\lib\Functions.ps1"
-                            # hash the file
-                            $hash = (Get-FileHash -LiteralPath "$($Dir.patchedFiles)\$($FileRecord.Path)" -Algorithm CRC32 -ErrorAction Stop).Hash
-                            # if the hash doesn't match, we want to know about it; emit an object
-                            # containing the file record and computed hash
-                            if ($hash -ne $fileRecord.CRC) { , @{ FileRecord = $FileRecord; CalculatedCRC = $hash } }
-                        }
-                    ).AddParameters(@{ Dir = $Dir; FileRecord = $_ }) | Out-Null
-                    , @{ PowerShell = $powerShell; Handle = $powerShell.BeginInvoke() }
+                if ($SkipExtractedRepackValidation) {
+                    Write-CustomWarning "    [SKIPPED]"
                 }
-                # check once per second if all the jobs are completed
-                while ($jobs.Handle.IsCompleted -contains $false) { Start-Sleep -Seconds 1 }
+                else {
+                    Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
 
-                # collect the results of all the jobs (ideally this will be empty) and clean up the
-                # powershell instances
-                $results = $jobs | ForEach-Object {
-                    $_.PowerShell.EndInvoke($_.Handle)
-                    $_.PowerShell.Dispose()
+                    # set up a runspace pool; set max threads to the number of logical processors available
+                    $maxThreads = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
+                    $runspacePool = [RunspaceFactory]::CreateRunspacePool(1, $maxThreads)
+                    $runspacePool.Open()
+
+                    # engage all the threads and collect everything into $jobs
+                    $jobs = $repack7zFileRecords | ForEach-Object {
+                        $powerShell = [PowerShell]::Create()
+                        $powerShell.RunspacePool = $runspacePool
+                        $powerShell.AddScript(
+                            {
+                                param([Hashtable] $Dir, [Hashtable] $FileRecord)
+                                # enable capability to calculate CRC32 checksums
+                                Add-Type -TypeDefinition (Get-Content "$($Dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
+                                . "$($Dir.tools)\lib\Functions.ps1"
+                                # hash the file
+                                $hash = (Get-FileHash -LiteralPath "$($Dir.patchedFiles)\$($FileRecord.Path)" -Algorithm CRC32 -ErrorAction Stop).Hash
+                                # if the hash doesn't match, we want to know about it; emit an object
+                                # containing the file record and computed hash
+                                if ($hash -ne $fileRecord.CRC) { , @{ FileRecord = $FileRecord; CalculatedCRC = $hash } }
+                            }
+                        ).AddParameters(@{ Dir = $Dir; FileRecord = $_ }) | Out-Null
+                        , @{ PowerShell = $powerShell; Handle = $powerShell.BeginInvoke() }
+                    }
+                    # check once per second if all the jobs are completed
+                    while ($jobs.Handle.IsCompleted -contains $false) { Start-Sleep -Seconds 1 }
+
+                    # collect the results of all the jobs (ideally this will be empty) and clean up the
+                    # powershell instances
+                    $results = $jobs | ForEach-Object {
+                        $_.PowerShell.EndInvoke($_.Handle)
+                        $_.PowerShell.Dispose()
+                    }
+                    # clean up the jobs array and runspace pool
+                    $jobs.Clear()
+                    $runspacePool.Close()
+
+                    # if there is anything in $results, then validation failed on one or more files
+                    if ($results) {
+                        $extraErrorText = @(
+                            "The exact contents of one or more files extracted from a repack archive set don't match any known files."
+                            ""
+                            "See the most recent `"install`" log file in the `"$($dir.Logs.Split("\")[-1])`" folder for the list of files which failed validation."
+                        )
+                        $extraErrorLog = @(
+                            $results | ForEach-Object { "`"$($_.FileRecord.Path)`" (CRC32: $($_.CalculatedCRC)) failed validation. Expected CRC32: $($_.FileRecord.CRC)" }
+                        )
+                        throw "Validation of $($results.Count) extracted file$(if ($results.Count -gt 1) {"s"}) has failed."
+                    }
+
+                    Write-CustomSuccess "    [VALID]"
                 }
-                # clean up the jobs array and runspace pool
-                $jobs.Clear()
-                $runspacePool.Close()
-
-                # if there is anything in $results, then validation failed on one or more files
-                if ($results) {
-                    $extraErrorText = @(
-                        "The exact contents of one or more files extracted from a repack archive set don't match any known files."
-                        ""
-                        "See the most recent `"install`" log file in the `"$($dir.Logs.Split("\")[-1])`" folder for the list of files which failed validation."
-                    )
-                    $extraErrorLog = @(
-                        $results | ForEach-Object { "`"$($_.FileRecord.Path)`" (CRC32: $($_.CalculatedCRC)) failed validation. Expected CRC32: $($_.FileRecord.CRC)" }
-                    )
-                    throw "Validation of $($results.Count) extracted file$(if ($results.Count -gt 1) {"s"}) has failed."
-                }
-
-                Write-CustomSuccess "    [VALID]"
             }
             catch {
                 Write-CustomError "    [FAIL]"
@@ -1097,6 +1123,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         if ($firstIteration) { $firstIteration = $false } else { Write-Custom "  $("-" * ($LineWidth - 2))" }
 
         $stdout, $stderr = $null
+        $throwDelayedSizeMismatchError = $false
         $file = $ba2Filenames[$index]
         Write-Custom "  Archive $($index + 1) of $($ba2Filenames.Count) ($file):"
         $originalBa2File = Get-OriginalBa2File $file
@@ -1107,54 +1134,59 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
 
         # validate original archive
         Write-Custom "      Validating original archive..." -NoNewline
-        Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
-        Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length) bytes"
-        if (
+        if ($SkipOriginalBa2Validation) {
+            Write-CustomWarning "      [SKIPPED]"
+        }
+        else {
+            Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
+            Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length) bytes"
+            if (
             ($originalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length }).Count -eq 0 -and
             ($alternateOriginalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length }).Count -eq 0 -and
             ($oldAlternateOriginalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length }).Count -eq 0
-        ) {
-            $extraErrorText = @(
-                "The size of this original archive doesn't match any known archives."
-                ""
-                "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
-                ""
-                "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying."
-            )
-            $extraErrorLog = @("Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length) bytes")
-            throw "Size mismatch."
+            ) {
+                $extraErrorText = @(
+                    "The size of this original archive doesn't match any known archives."
+                    ""
+                    "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
+                    ""
+                    "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying."
+                )
+                $extraErrorLog = @("Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length) bytes")
+                throw "Size mismatch."
+            }
+            $hash = (Get-FileHash -LiteralPath $originalBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
+            Write-CustomLog "      Hash: $hash"
+            if ($originalBa2Hashes[$hash].FileName -eq $file) {
+                $validOriginalText = "[VALID]"
+            }
+            elseif ($repackFlags.Custom -and $alternateOriginalBa2Hashes[$hash].FileName -eq $file) {
+                $validOriginalText = "[VALID - ALTERNATE]"
+            }
+            elseif ($repackFlags.Custom -and $oldAlternateOriginalBa2Hashes[$hash].FileName -eq $file) {
+                Write-CustomLog "      Tags: $($oldAlternateOriginalBa2Hashes[$hash].Tags -join ", ")"
+                $extraErrorText = @(
+                    "If using alternate original BA2 archives (i.e. PhyOp or Luxor), this script only allows the latest versions."
+                    ""
+                    "Check the readme and update the archive in question to the version that's needed."
+                )
+                $extraErrorLog = @("(No extra log info.)")
+                throw "Old version of an alternate original archive detected."
+            }
+            else {
+                $extraErrorText = @(
+                    "The exact contents of this archive don't match any known archives."
+                    ""
+                    "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
+                    ""
+                    "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying."
+                )
+                $extraErrorLog = @("(No extra log info.)")
+                throw "Unrecognized archive file."
+            }
+            Write-CustomLog "      Tags: $($originalBa2Hashes[$hash].Tags -join ", ")$($alternateOriginalBa2Hashes[$hash].Tags -join ", ")"
+            Write-CustomSuccess "      $validOriginalText"
         }
-        $hash = (Get-FileHash -LiteralPath $originalBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
-        Write-CustomLog "      Hash: $hash"
-        if ($originalBa2Hashes[$hash].FileName -eq $file) {
-            $validOriginalText = "[VALID]"
-        }
-        elseif ($repackFlags.Custom -and $alternateOriginalBa2Hashes[$hash].FileName -eq $file) {
-            $validOriginalText = "[VALID - ALTERNATE]"
-        }
-        elseif ($repackFlags.Custom -and $oldAlternateOriginalBa2Hashes[$hash].FileName -eq $file) {
-            Write-CustomLog "      Tags: $($oldAlternateOriginalBa2Hashes[$hash].Tags -join ", ")"
-            $extraErrorText = @(
-                "If using alternate original BA2 archives (i.e. PhyOp or Luxor), this script only allows the latest versions."
-                ""
-                "Check the readme and update the archive in question to the version that's needed."
-            )
-            $extraErrorLog = @("(No extra log info.)")
-            throw "Old version of an alternate original archive detected."
-        }
-        else {
-            $extraErrorText = @(
-                "The exact contents of this archive don't match any known archives."
-                ""
-                "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
-                ""
-                "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying."
-            )
-            $extraErrorLog = @("(No extra log info.)")
-            throw "Unrecognized archive file."
-        }
-        Write-CustomLog "      Tags: $($originalBa2Hashes[$hash].Tags -join ", ")$($alternateOriginalBa2Hashes[$hash].Tags -join ", ")"
-        Write-CustomSuccess "      $validOriginalText"
 
         # create working files directory
         New-Item $dir.workingFiles -ItemType "directory" -ErrorAction Stop | Out-Null
@@ -1275,10 +1307,18 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             $extraErrorLog = @(
                 "Size: $((Get-ChildItem -LiteralPath $patchedBa2File).Length) bytes"
             )
-            throw "Size mismatch."
+            if (-not $ForcePatchedBa2Hashing) {
+                $throwDelayedSizeMismatchError = $true
+            }
+            else {
+                throw "Size mismatch."
+            }
         }
         $hash = $(Get-FileHash -LiteralPath $patchedBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
         Write-CustomLog "      Hash: $hash"
+        if ($throwDelayedSizeMismatchError) {
+            throw "Size mismatch."
+        }
         if ($repackFlags.Custom) {
             Write-CustomInfo "      [Hash: $hash]" -BypassLog
             continue
@@ -1311,6 +1351,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
     finally {
         $stdout, $stderr = $null
         $extraErrorText, $extraErrorLog = $null
+        $throwDelayedSizeMismatchError = $false
         if (Test-Path -LiteralPath $dir.workingFiles) {
             Remove-Item -LiteralPath $dir.workingFiles -Recurse -Force
         }

@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 17, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 18, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -70,13 +70,13 @@ function Exit-Script {
     $ScriptTimer.Stop()
     Write-Custom ""
     Write-Custom "Elapsed time: " -NoNewLine
-    Write-Info "$(Write-TimeSpan $ScriptTimer.Elapsed)" -NoJustifyRight
+    Write-CustomInfo "$(Write-PrettyTimeSpan $ScriptTimer.Elapsed)" -NoJustifyRight
 
     if (-not $Immediate) {
         Write-Custom "" -BypassLog
         Wait-KeyPress
     }
-    Write-Log "", "Exit Code: $ExitCode"
+    Write-CustomLog "", "Exit Code: $ExitCode"
     $Host.UI.RawUI.BackgroundColor = $OriginalBackgroundColor
     exit $ExitCode
 }
@@ -143,7 +143,7 @@ function Get-FileHash {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)] [string] $LiteralPath,
-        [Parameter()] [string] $Algorithm = "SHA256"
+        [ValidateSet("SHA1", "SHA256", "SHA384", "SHA512", "MD5", "CRC32", "XXH3", "XXH32", "XXH64", "XXH128")] [string] $Algorithm = "SHA256"
     )
 
     # check the path to make sure it exists and if it doesn't, throw an error
@@ -155,10 +155,10 @@ function Get-FileHash {
     $LiteralPath = Resolve-Path -LiteralPath $LiteralPath
 
     # actually do the hashing
-    switch ($Algorithm) {
+    switch ($Algorithm.ToUpper()) {
         # the built-in Get-FileHash cmdlet handles SHA{1,256,384,512} and MD5 hashing
         { @("SHA1", "SHA256", "SHA384", "SHA512", "MD5") -contains $_ } {
-            return Microsoft.PowerShell.Utility\Get-FileHash -LiteralPath $LiteralPath -Algorithm $_ -ErrorAction Stop
+            return Microsoft.PowerShell.Utility\Get-FileHash -LiteralPath $LiteralPath -Algorithm $_ -ErrorAction $ErrorActionPreference
         }
         # CRC32 hashing is handled by an bundled C# script
         "CRC32" {
@@ -191,13 +191,19 @@ function Get-FileHash {
         { @("XXH3", "XXH32", "XXH64", "XXH128") -contains $_ } {
             # remove the first two characters from $_ and set that as the algorithm
             $xxhAlgorithm = $_[2..$($_.Length)] -join ''
+            # if the xxhsum command completes successfully, the .Where portion of the command may generate an error.
+            # as such, whatever the current error action preference is is stored, changed to silently continue,
+            # the xxhsum command is ran, then the error action preference is changed back to the stored value
+            $errorActionPreferenceSaved = $ErrorActionPreference
+            $ErrorActionPreference = "SilentlyContinue"
             $stdout, $stderr = (& "$toolXxhsum" -$xxhAlgorithm "$LiteralPath" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
+            $ErrorActionPreference = $errorActionPreferenceSaved
             if ($LASTEXITCODE -ne 0) {
                 throw $stderr
             }
 
             # hashing done with the XXH3 algorithm has a slightly different output format compared to the other algorithms
-            if ($switch -eq "XXH3") {
+            if ($_ -eq "XXH3") {
                 # format: "XXH3 (<path>) = <hash>"
                 $hash = $stdout.Split(" ") | Select-Object -Last 1
             }
@@ -309,10 +315,46 @@ function Wait-KeyPress {
     }
 }
 
+function Wrap-Line {
+    [CmdletBinding()]
+    param (
+        [Parameter(ValueFromPipeline)] [string[]] $Message = "",
+        [char[]] $Delimiters = [char[]] @(" ", "`t", "-", ",", ".", ":", "/", "\"),
+        [int] $Width = $LineWidth,
+        [switch] $NoTrim
+    )
+
+    begin {}
+
+    process {
+        $toReturn = New-Object System.Collections.Generic.List[string]
+        $Message | ForEach-Object {
+            $_ -split "`n" | ForEach-Object {
+                while ($_.Length -gt $Width) {
+                    $wrapPoint = $_.LastIndexOfAny($Delimiters, $Width - 1)
+                    # if a delimiter isn't found to the left of the wrap width, check to the right
+                    if ($wrapPoint -lt 0) { $wrapPoint = $_.IndexOfAny($Delimiters, $Width - 1) }
+                    # if a delimiter still isn't found, break and just add the whole line
+                    if ($wrapPoint -lt 0) { break }
+                    $tempString = $_.Substring(0, $wrapPoint + 1)
+                    if (-not $NoTrim) { $tempString = $tempString.TrimEnd() }
+                    $toReturn.Add($tempString) | Out-Null
+                    $_ = $_.Substring($wrapPoint + 1)
+                    if (-not $NoTrim) { $_ = $_.TrimStart() }
+                }
+                $toReturn.Add($_) | Out-Null
+            }
+        }
+        $toReturn
+    }
+
+    end {}
+}
+
 function Write-Custom {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
+        [Parameter(Mandatory, ValueFromPipeline)] [AllowEmptyString()] [string[]] $Message,
         [switch] $NoNewLine,
         [switch] $BypassLog,
         [string] $Prefix = $null,
@@ -327,76 +369,80 @@ function Write-Custom {
         [switch] $KeepCursorPosition
     )
 
-    # break apart any multi-line strings contained in $Message and attach the given $Prefix
-    $splitMessage = New-Object Collections.Generic.List[String]
-    foreach ($line in $Message) {
-        $line -split "`n" | ForEach-Object {
-            $splitMessage.Add("$Prefix$(if ($Prefix){$_.TrimStart()} else {$_})") | Out-Null
+    begin {}
+
+    process {
+        # break apart any multi-line strings contained in $Message and attach the given $Prefix
+        $splitMessage = New-Object Collections.Generic.List[String]
+        $Message | Wrap-Line -Width ($LineWidth - $Prefix.Length) | ForEach-Object {
+            $splitMessage.Add("$Prefix$_") | Out-Null
         }
-    }
-    $Message = $splitMessage
+        $Message = $splitMessage
 
-    if ($UseErrorStream) {
-        $stream = [Console]::Error
-    }
-    else {
-        $stream = [Console]::Out
-    }
-
-    if ($null -ne $Color -and $Color.GetType().FullName -eq "System.ConsoleColor") {
-        [Console]::ForegroundColor = $Color
-    }
-
-    $savedCursorPosition = $Host.UI.RawUI.CursorPosition
-    $savedLineLength = $PreviousLineLength.Value
-
-    $doSnip = $Message.Count -gt $SnippetLength * 2 -and $SnippetLength -gt 0
-
-    for ($index = 0; $index -lt $Message.Count; $index++) {
-        $line = $Message[$index]
-        if ($doSnip -and $index -eq $SnippetLength) {
-            $line = "--- snip ---"
-            $index = $Message.Count - $SnippetLength - 1
-        }
-        if ($JustifyRight) {
-            $formatString = "{0,$($LineWidth - $PreviousLineLength.Value)}"
-        }
-        elseif ($JustifyCenter) {
-            $formatString = "{0,$([int](($LineWidth - $PreviousLineLength.Value) / 2.0 + $line.Length / 2.0))}"
+        if ($UseErrorStream) {
+            $stream = [Console]::Error
         }
         else {
-            $formatString = "{0}"
+            $stream = [Console]::Out
         }
-        if ($TrimBeforeDisplay) {
-            $outputString = $line.Trim()
+
+        if ($null -ne $Color -and $Color.GetType().FullName -eq "System.ConsoleColor") {
+            [Console]::ForegroundColor = $Color
         }
-        else {
-            $outputString = $line
+
+        $savedCursorPosition = $Host.UI.RawUI.CursorPosition
+        $savedLineLength = $PreviousLineLength.Value
+
+        $doSnip = $Message.Count -gt $SnippetLength * 2 -and $SnippetLength -gt 0
+
+        for ($index = 0; $index -lt $Message.Count; $index++) {
+            $line = $Message[$index]
+            if ($doSnip -and $index -eq $SnippetLength) {
+                $line = "--- snip ---"
+                $index = $Message.Count - $SnippetLength - 1
+            }
+            if ($JustifyRight) {
+                $formatString = "{0,$($LineWidth - $PreviousLineLength.Value)}"
+            }
+            elseif ($JustifyCenter) {
+                $formatString = "{0,$([int](($LineWidth - $PreviousLineLength.Value) / 2.0 + $line.Length / 2.0))}"
+            }
+            else {
+                $formatString = "{0}"
+            }
+            if ($TrimBeforeDisplay) {
+                $outputString = $line.Trim()
+            }
+            else {
+                $outputString = $line
+            }
+            if ($NoNewLine) {
+                $stream.Write($formatString, $outputString)
+                $PreviousLineLength.Value = $Host.UI.RawUI.CursorPosition.X
+            }
+            else {
+                $stream.WriteLine($formatString, $outputString)
+                $PreviousLineLength.Value = 0
+            }
+            if ($KeepCursorPosition) {
+                $Host.UI.RawUI.CursorPosition = $savedCursorPosition
+                $PreviousLineLength.Value = $savedLineLength
+            }
         }
-        if ($NoNewLine) {
-            $stream.Write($formatString, $outputString)
-            $PreviousLineLength.Value = $Host.UI.RawUI.CursorPosition.X
+
+        if ($null -ne $Color -and $Color.GetType().FullName -eq "System.ConsoleColor") {
+            [Console]::ResetColor()
         }
-        else {
-            $stream.WriteLine($formatString, $outputString)
-            $PreviousLineLength.Value = 0
-        }
-        if ($KeepCursorPosition) {
-            $Host.UI.RawUI.CursorPosition = $savedCursorPosition
-            $PreviousLineLength.Value = $savedLineLength
+
+        if (-not $BypassLog) {
+            Write-CustomLog $Message
         }
     }
 
-    if ($null -ne $Color -and $Color.GetType().FullName -eq "System.ConsoleColor") {
-        [Console]::ResetColor()
-    }
-
-    if (-not $BypassLog) {
-        Write-Log $Message
-    }
+    end {}
 }
 
-function Write-Error {
+function Write-CustomError {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
@@ -428,7 +474,7 @@ function Write-Error {
     Write-Custom @hashArguments
 }
 
-function Write-Info {
+function Write-CustomInfo {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
@@ -451,7 +497,7 @@ function Write-Info {
     Write-Custom @hashArguments
 }
 
-function Write-Log {
+function Write-CustomLog {
     [CmdletBinding()]
     param (
         # note: having $Message be a PSObject type allows stdout and stderr output to be processed correctly
@@ -486,7 +532,7 @@ function Write-Log {
     Write-Output $Message | Out-File -LiteralPath "$($dir.logs)\${Log}_$LogStartTime.log" -Append
 }
 
-function Write-Success {
+function Write-CustomSuccess {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
@@ -509,7 +555,7 @@ function Write-Success {
     Write-Custom @hashArguments
 }
 
-function Write-TimeSpan {
+function Write-PrettyTimeSpan {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)] [System.TimeSpan] $TimeSpan
@@ -524,7 +570,19 @@ function Write-TimeSpan {
     return [System.TimeSpan]::FromSeconds([Math]::Round($TimeSpan.TotalSeconds, 1)).ToString($formatString)
 }
 
-function Write-Warning {
+function Write-PrettySize {
+    param ([parameter(mandatory)] [long] $Size)
+    switch ($Size) {
+        { $_ -ge 1PB } { "$(($_ / 1PB).ToString('f2')) PiB"; break }
+        { $_ -ge 1TB } { "$(($_ / 1TB).ToString('f2')) TiB"; break }
+        { $_ -ge 1GB } { "$(($_ / 1GB).ToString('f2')) GiB"; break }
+        { $_ -ge 1MB } { "$(($_ / 1MB).ToString('f2')) MiB"; break }
+        { $_ -ge 1KB } { "$(($_ / 1KB).ToString('f2')) KiB"; break }
+        Default { "$_ bytes" }
+    }
+}
+
+function Write-CustomWarning {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,

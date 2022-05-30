@@ -35,7 +35,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 12, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 13, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -173,7 +173,7 @@ $msvcr110dllHash = (Get-FileHash -LiteralPath $msvcr110dllPath -Algorithm $FileH
 
 $Host.UI.RawUI.BackgroundColor = 'black'
 if (-not $NoClearScreen) { Clear-Host }
-Write-Log @(
+Write-CustomLog @(
     ">" * $LineWidth
     "Diagnostic Information:"
     "  BiRaitBec WorkBase Improved Version: $BRBWIVersion"
@@ -265,7 +265,7 @@ foreach ($problemDir in $problemDirs) {
             "Please ensure this script is not anywhere inside the following folders:"
             $problemDirs | ForEach-Object { "  $_" }
         )
-        Write-Error "Problematic script location detected." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
+        Write-CustomError "Problematic script location detected." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
         Exit-Script 1
     }
 }
@@ -285,7 +285,7 @@ if ($msvcp110dllVersion -lt $vcrMinVersion -or $msvcr110dllVersion -lt $vcrMinVe
         "Need 64-bit Visual C++ Redistributable for Visual Studio 2012 Update 4. Please download it from this link:"
         "https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe"
     )
-    Write-Error "Visual C++ Redistributable files not found." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
+    Write-CustomError "Visual C++ Redistributable files not found." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
     Exit-Script 1
 }
 
@@ -302,7 +302,7 @@ try {
     }
 }
 catch {
-    Write-Error $_ -Prefix "ERROR: " -SnippetLength 3 -NoJustifyRight
+    Write-CustomError $_ -Prefix "ERROR: " -SnippetLength 3 -NoJustifyRight
     Exit-Script 1
 }
 
@@ -312,18 +312,18 @@ if (-not $SkipChoosingPatchedBa2Dir) {
     $dir.patchedBa2 = Get-Folder -Description "Select patched BA2 output folder:" -InitialDirectory $([IO.Path]::GetFullPath("$(Get-Location)\$($dir.patchedBa2)"))
 }
 if ($null -eq $dir.patchedBa2) {
-    Write-Error "[CANCELLED]"
-    Write-Error "Cancelled by user." -NoJustifyRight
+    Write-CustomError "[CANCELLED]"
+    Write-CustomError "Cancelled by user." -NoJustifyRight
     Exit-Script 1
 }
 elseif ($dir.fallout4DataSteam -and $dir.fallout4DataSteam -eq $dir.patchedBa2) {
-    Write-Error "[ERROR]"
+    Write-CustomError "[ERROR]"
     $extraErrorText = @(
         "Cannot choose the `"Fallout 4\Data`" folder from your Steam library."
         ""
         "Keeping the patched BA2 archives separate from the base game files keeps the location clean and enables you to verify the vanilla files through Steam without losing these files."
     )
-    Write-Error "Invalid folder." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
+    Write-CustomError "Invalid folder." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
     Exit-Script 1
 }
 
@@ -335,9 +335,9 @@ if (
     $dir.patchedBa2 = $dir.defaultPatchedBa2
 }
 
-Write-Info $dir.patchedBa2
+Write-CustomInfo $dir.patchedBa2
 
-Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())"
 
 
 # check for repack archives
@@ -399,8 +399,8 @@ if ($existingRepackFiles.Count -gt 0) {
             }
             if ($potentialRepackFiles.Count -gt 0) {
                 if ($potentialRepackFiles.Count -gt 1) {
-                    Write-Log "    Found multiple candidate files for ${file}:"
-                    foreach ($potentialFile in $potentialRepackFiles) { Write-Log "      $($potentialFile.Name) ($($potentialFile.Length) bytes)" }
+                    Write-CustomLog "    Found multiple candidate files for ${file}:"
+                    foreach ($potentialFile in $potentialRepackFiles) { Write-CustomLog "      $($potentialFile.Name) ($($potentialFile.Length) bytes)" }
                 }
                 $altFile = $potentialRepackFiles[-1].Name
                 $altRelFile = "$($dir.repack7z)\$($potentialRepackFiles[-1].Name)"
@@ -409,7 +409,7 @@ if ($existingRepackFiles.Count -gt 0) {
             $foundFiles += $altFile
 
             if ($null -ne $altRelFile -and $altRelFile -ne $relFile) {
-                Write-Log "    `"$file`" not found; using `"$altFile`" instead"
+                Write-CustomLog "    `"$file`" not found; using `"$altFile`" instead"
                 $relFile = $altRelFile
             }
 
@@ -417,12 +417,12 @@ if ($existingRepackFiles.Count -gt 0) {
 
             if (Test-Path -LiteralPath $relFile) {
                 if ($SkipRepackHashing) {
-                    Write-Warning "    [SKIPPED]"
+                    Write-CustomWarning "    [SKIPPED]"
                 }
                 else {
                     Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
 
-                    Write-Log "    Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
+                    Write-CustomLog "    Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
                     # check size before checking hash
                     if (@($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem $relFile).Length }).Count -eq 0) {
                         $extraErrorText = @(
@@ -435,9 +435,9 @@ if ($existingRepackFiles.Count -gt 0) {
                     }
 
                     $hash = (Get-FileHash -LiteralPath $relFile -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
-                    Write-Log "    Hash: $hash"
+                    Write-CustomLog "    Hash: $hash"
                     if ($repack7zHashes[$hash].FileName -eq $file) {
-                        Write-Success "    [VALID]"
+                        Write-CustomSuccess "    [VALID]"
                     }
                     else {
                         $extraErrorText = @(
@@ -461,20 +461,20 @@ if ($existingRepackFiles.Count -gt 0) {
             }
         }
         catch {
-            Write-Error "    [FAIL]"
-            Write-Error $_ -ExtraContext $extraErrorText -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
-            Write-Log $_.InvocationInfo.PositionMessage -ExtraContext $extraErrorLog -Prefix "    ERROR: "
+            Write-CustomError "    [FAIL]"
+            Write-CustomError $_ -ExtraContext $extraErrorText -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+            Write-CustomLog $_.InvocationInfo.PositionMessage -ExtraContext $extraErrorLog -Prefix "    ERROR: "
             $validateRepacksFailed = $true
         }
         finally {
             $extraErrorText, $extraErrorLog = $null
-            Write-Log "    Archive duration: $($archiveTimer.Elapsed.ToString())"
+            Write-CustomLog "    Archive duration: $($archiveTimer.Elapsed.ToString())"
         }
     }
     $foundRepackFiles."$($object.Key)" = $foundFiles
 }
 
-Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())"
 
 if ($validateRepacksFailed) {
     Exit-Script 1
@@ -550,7 +550,7 @@ if (-not $repackTag) { $repackTag = "Unchanged" }
 $firstIteration = $true
 Write-Custom "", "Using repack set:"
 foreach ($object in $repackFlags.GetEnumerator()) {
-    if ($firstIteration) { $firstIteration = $false } else { Write-Log "  $("-" * ($LineWidth - 2))" }
+    if ($firstIteration) { $firstIteration = $false } else { Write-CustomLog "  $("-" * ($LineWidth - 2))" }
     Write-Custom "  $($object.Key)" -NoNewLine
     switch -wildcard ($object.Key) {
         "*" { $flagSetText = "  [YES]"; $flagUnsetText = "  [NO]" }
@@ -559,38 +559,38 @@ foreach ($object in $repackFlags.GetEnumerator()) {
         }
     }
     if ($object.Value) {
-        Write-Success $flagSetText
+        Write-CustomSuccess $flagSetText
     }
     else {
-        Write-Warning $flagUnsetText
+        Write-CustomWarning $flagUnsetText
     }
 }
 
-Write-Log "", "Repack tag: $repackTag"
+Write-CustomLog "", "Repack tag: $repackTag"
 if ($repackFlags.Custom) {
-    Write-Log @(
+    Write-CustomLog @(
         "Original BA2 size mismatches: $($originalBa2SizeMismatches.Count)"
         @($originalBa2SizeMismatches | ForEach-Object { "  $(Get-OriginalBa2File $_.Value.FileName) ($($_.Value.Tags -join ", "))" })
         "Original BA2 size mismatches that match alternate original BA2 sizes: $($alternateOriginalBa2SizeMatches.Count)"
         @($alternateOriginalBa2SizeMatches | ForEach-Object { "  $($_.Value.FileName) ($($_.Value.Tags -join ", "))" })
     )
 }
-Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())"
 
 if ($repackFlags.Custom -eq 1) {
-    Write-Warning "", "Existing assets found in `"$($dir.patchedFiles)`" and possible alternative original BA2 archive$(if ($alternateOriginalBa2SizeMatches.Count -ne 1) {"s"}) detected.", "Mode switched to `"Custom`"." -NoJustifyRight
+    Write-CustomWarning "", "Existing assets found in `"$($dir.patchedFiles)`" and possible alternative original BA2 archive$(if ($alternateOriginalBa2SizeMatches.Count -ne 1) {"s"}) detected.", "Mode switched to `"Custom`"." -NoJustifyRight
 }
 elseif ($repackFlags.Custom -eq 2) {
-    Write-Warning "", "Existing assets found in `"$($dir.patchedFiles)`" and no repack sets detected.", "Mode switched to `"Custom`"." -NoJustifyRight
+    Write-CustomWarning "", "Existing assets found in `"$($dir.patchedFiles)`" and no repack sets detected.", "Mode switched to `"Custom`"." -NoJustifyRight
 }
 elseif ($repackTag -eq "Unchanged") {
     $message = "No repack sets found and no custom assets exist."
     Write-Custom ""
     if ($AllowUnchanged) {
-        Write-Warning $message -Prefix "WARNING: " -NoJustifyRight
+        Write-CustomWarning $message -Prefix "WARNING: " -NoJustifyRight
     }
     else {
-        Write-Error $message -Prefix "ERROR: " -NoJustifyRight
+        Write-CustomError $message -Prefix "ERROR: " -NoJustifyRight
         Exit-Script 1
     }
 }
@@ -610,10 +610,10 @@ if ($existingPatchedArchives.Count -gt 0) {
     Write-Custom ""
     Write-Custom "Validating existing patched BA2 archives:" -NoNewLine
     if ($SkipExistingPatchedHashing) {
-        Write-Warning "[SKIPPED]"
+        Write-CustomWarning "[SKIPPED]"
     }
     elseif ($repackFlags.Custom) {
-        Write-Warning "[CUSTOM - SKIPPED]"
+        Write-CustomWarning "[CUSTOM - SKIPPED]"
     }
     else {
         $firstIteration = $true
@@ -626,53 +626,53 @@ if ($existingPatchedArchives.Count -gt 0) {
                 $relFile = "$($dir.patchedBa2)\$file"
 
                 if (Test-Path -LiteralPath $relFile) {
-                    if ($firstIteration) { $firstIteration = $false } else { Write-Log "  $("-" * ($LineWidth - 2))" }
+                    if ($firstIteration) { $firstIteration = $false } else { Write-CustomLog "  $("-" * ($LineWidth - 2))" }
                     Write-Custom "  $file" -NoNewLine
                     Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
 
                     if (($patchedBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $relFile).Length }).Count -eq 0) {
-                        Write-Warning "  [SIZE MISMATCH]"
+                        Write-CustomWarning "  [SIZE MISMATCH]"
                         continue
                     }
-                    Write-Log "  Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
+                    Write-CustomLog "  Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
                     $hash = (Get-FileHash -LiteralPath $relFile -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
-                    Write-Log "  Hash: $hash"
+                    Write-CustomLog "  Hash: $hash"
                     if ($patchedBa2Hashes[$hash].FileName -eq $file) {
-                        Write-Log "  Tags: $($patchedBa2Hashes[$hash].Tags -join ", ")"
+                        Write-CustomLog "  Tags: $($patchedBa2Hashes[$hash].Tags -join ", ")"
                         if ($patchedBa2Hashes[$hash].Tags -contains $repackTag) {
-                            Write-Success "  [VALID]"
+                            Write-CustomSuccess "  [VALID]"
                             $ba2Filenames = $ba2Filenames.Where({ $_ -ne $file })
                         }
                         else {
-                            Write-Warning "  [REPACK SET MISMATCH]"
+                            Write-CustomWarning "  [REPACK SET MISMATCH]"
                         }
                     }
                     else {
-                        Write-Warning "  [UNRECOGNIZED]"
+                        Write-CustomWarning "  [UNRECOGNIZED]"
                     }
                 }
             }
             catch {
-                Write-Error "  [ERROR]"
-                Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+                Write-CustomError "  [ERROR]"
+                Write-CustomError $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
                 $validateArchivesFailed = $true
                 break
             }
             finally {
-                Write-Log "  Archive duration: $($archiveTimer.Elapsed.ToString())"
+                Write-CustomLog "  Archive duration: $($archiveTimer.Elapsed.ToString())"
             }
         }
     }
 }
 
-Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())"
 
 if ($validateArchivesFailed) {
     Exit-Script 1
 }
 
 if (-not $ba2Filenames.Count) {
-    Write-Success "", "Existing patched archives validated successfully; nothing to do!" -NoJustifyRight
+    Write-CustomSuccess "", "Existing patched archives validated successfully; nothing to do!" -NoJustifyRight
     Exit-Script 0
 }
 
@@ -685,7 +685,7 @@ $sectionTimer.Restart()
 Write-Custom ""
 Write-Custom "Extracting repack archives:" -NoNewLine
 if ($repackFlags.Custom) {
-    Write-Warning "[CUSTOM - SKIPPED]"
+    Write-CustomWarning "[CUSTOM - SKIPPED]"
 }
 else {
     Write-Custom "" -BypassLog
@@ -697,11 +697,11 @@ else {
             Rename-Item -LiteralPath $dir.patchedFiles -NewName "$($dir.patchedFiles).backup.$RunStartTime" -ErrorAction Stop
         }
         catch {
-            Write-Error "  [ERROR]"
-            Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+            Write-CustomError "  [ERROR]"
+            Write-CustomError $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
             Exit-Script 1
         }
-        Write-Info "  $($dir.patchedFiles).backup.$RunStartTime"
+        Write-CustomInfo "  $($dir.patchedFiles).backup.$RunStartTime"
     }
 
     # create PatchedFiles directory
@@ -709,7 +709,7 @@ else {
         New-Item $dir.patchedFiles -ItemType "directory" -ErrorAction Stop | Out-Null
     }
     catch {
-        Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+        Write-CustomError $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
         Exit-Script 1
     }
 
@@ -762,8 +762,8 @@ else {
                 }
             }
             catch {
-                Write-Error "  [ERROR]"
-                Write-Error $_ -Prefix "  ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
+                Write-CustomError "  [ERROR]"
+                Write-CustomError $_ -Prefix "  ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
                 $extractRepackFailed = $true
                 break
             }
@@ -794,11 +794,11 @@ else {
                     Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
 
                     # do the actual extraction and save the command line used to the tool log
-                    Write-Log "`"$tool7za`" x -y -bb2 -bd -o`"$outDir`" `"$relFile`" `"$(if ($extra) {$extra -join '" "'})`"" -Log "tool"
+                    Write-CustomLog "`"$tool7za`" x -y -bb2 -bd -o`"$outDir`" `"$relFile`" `"$(if ($extra) {$extra -join '" "'})`"" -Log "tool"
                     $toolTimer.Restart()
                     $stdout, $stderr = (& "$tool7za" x -y -bb2 -bd -o"$outDir" "$relFile" "$(if ($extra) {$extra -join '" "'})" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
-                    Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-                    Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
+                    Write-CustomLog "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
+                    Write-CustomLog "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
 
                     # check if extracting the archive succeeded
                     if ($LASTEXITCODE -ne 0) {
@@ -833,19 +833,19 @@ else {
                             }
                         }
                     }
-                    Write-Success "      [DONE]"
+                    Write-CustomSuccess "      [DONE]"
                 }
                 catch {
-                    Write-Error "      [ERROR]"
-                    Write-Error $_ -ExtraContext $extraErrorText -Prefix "      ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
-                    Write-Log $_.InvocationInfo.PositionMessage -ExtraContext $extraErrorText -Prefix "      ERROR: "
+                    Write-CustomError "      [ERROR]"
+                    Write-CustomError $_ -ExtraContext $extraErrorText -Prefix "      ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
+                    Write-CustomLog $_.InvocationInfo.PositionMessage -ExtraContext $extraErrorText -Prefix "      ERROR: "
                     $extractRepackFailed = $true
                     break outerLoop
                 }
                 finally {
                     $stdout, $stderr = $null
                     $extraErrorText, $extraErrorLog = $null
-                    Write-Log "      Archive duration: $($archiveTimer.Elapsed.ToString())"
+                    Write-CustomLog "      Archive duration: $($archiveTimer.Elapsed.ToString())"
                 }
             }
 
@@ -932,17 +932,17 @@ else {
                     Remove-Item -LiteralPath $dir.temp -Force -Recurse
                 }
 
-                Write-Success "    [DONE]"
+                Write-CustomSuccess "    [DONE]"
             }
             catch {
-                Write-Error "    [ERROR]"
-                Write-Error $_ -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
-                Write-Log $_.InvocationInfo.PositionMessage -Prefix "    ERROR: "
+                Write-CustomError "    [ERROR]"
+                Write-CustomError $_ -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+                Write-CustomLog $_.InvocationInfo.PositionMessage -Prefix "    ERROR: "
                 $extractRepackFailed = $true
                 break
             }
             finally {
-                Write-Log "    Post-extraction tasks duration: $($toolTimer.Elapsed.ToString())"
+                Write-CustomLog "    Post-extraction tasks duration: $($toolTimer.Elapsed.ToString())"
             }
 
             # validate extracted files
@@ -1002,28 +1002,28 @@ else {
                     throw "Validation of $($results.Count) extracted file$(if ($results.Count -gt 1) {"s"}) has failed."
                 }
 
-                Write-Success "    [VALID]"
+                Write-CustomSuccess "    [VALID]"
             }
             catch {
-                Write-Error "    [FAIL]"
-                Write-Error $_ -ExtraContext $extraErrorText -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
-                Write-Log $_.InvocationInfo.PositionMessage -ExtraContext $extraErrorLog -Prefix "    ERROR: "
+                Write-CustomError "    [FAIL]"
+                Write-CustomError $_ -ExtraContext $extraErrorText -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+                Write-CustomLog $_.InvocationInfo.PositionMessage -ExtraContext $extraErrorLog -Prefix "    ERROR: "
                 $extractRepackFailed = $true
                 break
             }
             finally {
                 $extraErrorText, $extraErrorLog = $null
-                Write-Log "    Validation duration: $($toolTimer.Elapsed.ToString())"
+                Write-CustomLog "    Validation duration: $($toolTimer.Elapsed.ToString())"
             }
         }
         finally {
-            Write-Log "  Repack set duration: $($repackTimer.Elapsed.ToString())"
+            Write-CustomLog "  Repack set duration: $($repackTimer.Elapsed.ToString())"
             Remove-Variable repackTimer
         }
     }
 }
 
-Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())"
 
 if ($extractRepackFailed) {
     if (Test-Path -LiteralPath $dir.temp) {
@@ -1042,30 +1042,30 @@ Write-Custom ""
 Write-Custom "Checking for known bad patched files:" -NoNewLine
 
 $potentiallyBadPatchedFilenames = @($badPatchedFileHashes.GetEnumerator() | ForEach-Object { $_.Value.FileName } | Where-Object { Test-Path -LiteralPath $_ } | Sort-Object -Unique)
-Write-Info "  $($potentiallyBadPatchedFilenames.Count) potential file$(if ($potentiallyBadPatchedFilenames.Count -ne 1) {"s"}) found"
+Write-CustomInfo "  $($potentiallyBadPatchedFilenames.Count) potential file$(if ($potentiallyBadPatchedFilenames.Count -ne 1) {"s"}) found"
 
 for ($index = 0; $index -lt $potentiallyBadPatchedFilenames.Count; $index++) {
     $file = $potentiallyBadPatchedFilenames[$index]
     Write-Custom "  File $($index + 1) of $($potentiallyBadPatchedFilenames.Count): " -NoNewLine
-    Write-Info "  $(($file.Split("\") | Select-Object -Skip 2) -join "\")" -NoJustifyRight -NoNewLine
+    Write-CustomInfo "  $(($file.Split("\") | Select-Object -Skip 2) -join "\")" -NoJustifyRight -NoNewLine
     $hash = (Get-FileHash -LiteralPath $file -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
     if ($badPatchedFileHashes[$hash].FileName -eq $file) {
         try {
             Rename-Item -LiteralPath $file -NewName "$($file.Split("\")[-1]).bad_file" -ErrorAction Stop
-            Write-Success "  [FIXED]"
+            Write-CustomSuccess "  [FIXED]"
         }
         catch {
-            Write-Error "  [ERROR]"
-            Write-Error $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+            Write-CustomError "  [ERROR]"
+            Write-CustomError $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
             Exit-Script 1
         }
     }
     else {
-        Write-Success "  [GOOD FILE]"
+        Write-CustomSuccess "  [GOOD FILE]"
     }
 }
 
-Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())"
 
 
 # process archives
@@ -1084,7 +1084,7 @@ try {
     }
 }
 catch {
-    Write-Error $_ -Prefix "ERROR: " -SnippetLength 3
+    Write-CustomError $_ -Prefix "ERROR: " -SnippetLength 3
     Exit-Script 1
 }
 
@@ -1103,12 +1103,12 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         $patchedBa2File = "$($dir.patchedBa2)\$file"
 
         Write-Custom "    Original BA2: " -NoNewLine
-        Write-Info "    $originalBa2File"
+        Write-CustomInfo "    $originalBa2File"
 
         # validate original archive
         Write-Custom "      Validating original archive..." -NoNewline
         Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
-        Write-Log "      Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length) bytes"
+        Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length) bytes"
         if (
             ($originalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length }).Count -eq 0 -and
             ($alternateOriginalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length }).Count -eq 0 -and
@@ -1125,7 +1125,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             throw "Size mismatch."
         }
         $hash = (Get-FileHash -LiteralPath $originalBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
-        Write-Log "      Hash: $hash"
+        Write-CustomLog "      Hash: $hash"
         if ($originalBa2Hashes[$hash].FileName -eq $file) {
             $validOriginalText = "[VALID]"
         }
@@ -1133,7 +1133,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             $validOriginalText = "[VALID - ALTERNATE]"
         }
         elseif ($repackFlags.Custom -and $oldAlternateOriginalBa2Hashes[$hash].FileName -eq $file) {
-            Write-Log "      Tags: $($oldAlternateOriginalBa2Hashes[$hash].Tags -join ", ")"
+            Write-CustomLog "      Tags: $($oldAlternateOriginalBa2Hashes[$hash].Tags -join ", ")"
             $extraErrorText = @(
                 "If using alternate original BA2 archives (i.e. PhyOp or Luxor), this script only allows the latest versions."
                 ""
@@ -1153,8 +1153,8 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             $extraErrorLog = @("(No extra log info.)")
             throw "Unrecognized archive file."
         }
-        Write-Log "      Tags: $($originalBa2Hashes[$hash].Tags -join ", ")$($alternateOriginalBa2Hashes[$hash].Tags -join ", ")"
-        Write-Success "      $validOriginalText"
+        Write-CustomLog "      Tags: $($originalBa2Hashes[$hash].Tags -join ", ")$($alternateOriginalBa2Hashes[$hash].Tags -join ", ")"
+        Write-CustomSuccess "      $validOriginalText"
 
         # create working files directory
         New-Item $dir.workingFiles -ItemType "directory" -ErrorAction Stop | Out-Null
@@ -1162,12 +1162,12 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         # extract original archive
         Write-Custom "      Extracting original archive..." -NoNewline
         Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
-        Write-Log "`"$toolArchive2`" `"$originalBa2File`" -extract=`"$($dir.workingFiles)`"" -Log "tool"
+        Write-CustomLog "`"$toolArchive2`" `"$originalBa2File`" -extract=`"$($dir.workingFiles)`"" -Log "tool"
         $toolTimer.Restart()
         $stdout, $stderr = (& "$toolArchive2" "$originalBa2File" -extract="$($dir.workingFiles)" 2>&1).
         Where({ $_ -is [string] -and $_ -ne "" }, "Split")
-        Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
+        Write-CustomLog "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
+        Write-CustomLog "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
         if ($LASTEXITCODE -ne 0) {
             $extraErrorText = @(
                 "The program used to extract BA2 archives (archive2.exe) has indicated that an error occurred while extracting one of said archives. Unfortunately, archive2.exe doesn't output an error that can be interpreted by this script."
@@ -1181,12 +1181,12 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         $stdout, $stderr = $null
 
         # correctly extract cubemaps
-        Write-Log "`"$toolBsab`" -e -o -f `"Textures\Shared\Cubemaps\*`" `"$originalBa2File`" `"$($dir.workingFiles)`"" -Log "tool"
+        Write-CustomLog "`"$toolBsab`" -e -o -f `"Textures\Shared\Cubemaps\*`" `"$originalBa2File`" `"$($dir.workingFiles)`"" -Log "tool"
         $toolTimer.Restart()
         $stdout, $stderr = (& "$toolBsab" -e -o -f "Textures\Shared\Cubemaps\*" "$originalBa2File" "$($dir.workingFiles)" 2>&1).
         Where({ $_ -is [string] -and $_ -ne "" }, "Split")
-        Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
+        Write-CustomLog "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
+        Write-CustomLog "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
         if ($LASTEXITCODE -ne 0) {
             # because bsab doesn't use stderr, copy stdout to stderr, but check anyway just in case
             if ($stderr -eq "") {
@@ -1202,20 +1202,20 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             throw "Extracting cube maps from `"$originalBa2File`" failed."
         }
         $stdout, $stderr = $null
-        Write-Success "      [DONE]"
+        Write-CustomSuccess "      [DONE]"
 
         Write-Custom "    Patched BA2: " -NoNewLine
-        Write-Info "    $patchedBa2File"
+        Write-CustomInfo "    $patchedBa2File"
 
         # copy patched files
         Write-Custom "      Copying patched files..." -NoNewline
         Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
-        Write-Log "`"$toolRobocopy`" `"$($dir.patchedFiles)`" `"$($dir.workingFiles)`" /s /xl /np /njh" -Log "tool"
+        Write-CustomLog "`"$toolRobocopy`" `"$($dir.patchedFiles)`" `"$($dir.workingFiles)`" /s /xl /np /njh" -Log "tool"
         $toolTimer.Restart()
         $stdout, $stderr = (& "$toolRobocopy" "$($dir.patchedFiles)" "$($dir.workingFiles)" /s /xl /np /njh 2>&1).
         Where({ $_ -is [string] -and $_ -ne "" }, "Split")
-        Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
+        Write-CustomLog "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
+        Write-CustomLog "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
         if ($LASTEXITCODE -ge 8) {
             # because robocopy doesn't use stderr, copy stdout to stderr, but check anyway just in case
             if ($stderr -eq "") {
@@ -1231,17 +1231,17 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             throw "Copying patched files failed."
         }
         $stdout, $stderr = $null
-        Write-Success "      [DONE]"
+        Write-CustomSuccess "      [DONE]"
 
         # create patched archive
         Write-Custom "      Creating patched archive..." -NoNewline
         Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
-        Write-Log "`"$toolArchive2`" `"$($dir.workingFiles)`" -format=`"DDS`" -create=`"$patchedBa2File`" -root=`"$(Resolve-Path $dir.workingFiles)`"" -Log "tool"
+        Write-CustomLog "`"$toolArchive2`" `"$($dir.workingFiles)`" -format=`"DDS`" -create=`"$patchedBa2File`" -root=`"$(Resolve-Path $dir.workingFiles)`"" -Log "tool"
         $toolTimer.Restart()
         $stdout, $stderr = (& "$toolArchive2" "$($dir.workingFiles)" -format="DDS" -create="$patchedBa2File" -root="$(Resolve-Path $dir.workingFiles)" 2>&1).
         Where({ $_ -is [string] -and $_ -ne "" }, "Split")
-        Write-Log "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-Log "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
+        Write-CustomLog "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
+        Write-CustomLog "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
         if ($LASTEXITCODE -ne 0) {
             $extraErrorText = @(
                 "The program used to create BA2 archives (archive2.exe) has indicated that an error occurred while creating one of said archives. Unfortunately, archive2.exe doesn't output an error that can be interpreted by this script."
@@ -1253,7 +1253,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             throw "Creating `"$patchedBa2File`" failed."
         }
         $stdout, $stderr = $null
-        Write-Success "      [DONE]"
+        Write-CustomSuccess "      [DONE]"
 
         # validate patched archive
         if ($repackFlags.Custom) {
@@ -1263,7 +1263,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             Write-Custom "      Validating patched archive..." -NoNewline
         }
         Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
-        Write-Log "      Size: $((Get-ChildItem -LiteralPath $patchedBa2File).Length) bytes"
+        Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $patchedBa2File).Length) bytes"
         if (
             -not $repackFlags.Custom -and
             # get patched BA2 hash records where the file name matches, the tag is present, and the file size matches
@@ -1278,9 +1278,9 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             throw "Size mismatch."
         }
         $hash = $(Get-FileHash -LiteralPath $patchedBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
-        Write-Log "      Hash: $hash"
+        Write-CustomLog "      Hash: $hash"
         if ($repackFlags.Custom) {
-            Write-Info "      [Hash: $hash]" -BypassLog
+            Write-CustomInfo "      [Hash: $hash]" -BypassLog
             continue
         }
         elseif ($patchedBa2Hashes[$hash].FileName -ne $file) {
@@ -1290,9 +1290,9 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             $extraErrorLog = @("(No extra log info.)")
             throw "Unrecognized file."
         }
-        Write-Log "      Tags: $($patchedBa2Hashes[$hash].Tags -join ", ")"
+        Write-CustomLog "      Tags: $($patchedBa2Hashes[$hash].Tags -join ", ")"
         if ($patchedBa2Hashes[$hash].Tags -contains $repackTag) {
-            Write-Success "      [VALID]"
+            Write-CustomSuccess "      [VALID]"
         }
         else {
             $extraErrorText = @(
@@ -1303,9 +1303,9 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         }
     }
     catch {
-        Write-Error "      [FAIL]"
-        Write-Error $_ -ExtraContext $extraErrorText -Prefix "      ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
-        Write-Log $_.InvocationInfo.PositionMessage -ExtraContext $extraErrorLog -Prefix "      ERROR: "
+        Write-CustomError "      [FAIL]"
+        Write-CustomError $_ -ExtraContext $extraErrorText -Prefix "      ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+        Write-CustomLog $_.InvocationInfo.PositionMessage -ExtraContext $extraErrorLog -Prefix "      ERROR: "
         $processingFailed = $true
     }
     finally {
@@ -1314,11 +1314,11 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         if (Test-Path -LiteralPath $dir.workingFiles) {
             Remove-Item -LiteralPath $dir.workingFiles -Recurse -Force
         }
-        Write-Log "  Archive duration: $($archiveTimer.Elapsed.ToString())"
+        Write-CustomLog "  Archive duration: $($archiveTimer.Elapsed.ToString())"
     }
 }
 
-Write-Log "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())"
 
 if (-not $repackFlags.Custom) {
     Write-Custom ""
@@ -1333,17 +1333,17 @@ if (-not $repackFlags.Custom) {
         }
     }
     catch {
-        Write-Error "[ERROR]"
-        Write-Error $_ -Prefix "ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
+        Write-CustomError "[ERROR]"
+        Write-CustomError $_ -Prefix "ERROR: " -SnippetLength 3 -NoJustifyRight -NoTrimBeforeDisplay
     }
-    Write-Success "[DONE]"
+    Write-CustomSuccess "[DONE]"
 }
 
 Write-Custom ""
 if ($processingFailed) {
-    Write-Error "Processing archives failed." -NoJustifyRight
+    Write-CustomError "Processing archives failed." -NoJustifyRight
     Exit-Script 1
 }
 
-Write-Success "Processing archives succeeded." -NoJustifyRight
+Write-CustomSuccess "Processing archives succeeded." -NoJustifyRight
 Exit-Script 0

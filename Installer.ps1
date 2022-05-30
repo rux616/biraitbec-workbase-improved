@@ -32,8 +32,10 @@ param (
 # constants and variables
 # -----------------------
 
+$scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
+
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 11, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 12, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -92,14 +94,10 @@ $ba2Files.fallout4Textures7 = "Fallout4 - Textures7.ba2"
 $ba2Files.fallout4Textures8 = "Fallout4 - Textures8.ba2"
 $ba2Files.fallout4Textures9 = "Fallout4 - Textures9.ba2"
 
-$msvcp110dllPath = "${env:windir}\System32\msvcp110.dll"
-$msvcp110dllVersion = (Get-Command $msvcp110dllPath -ErrorAction SilentlyContinue).Version
-$msvcp110dllHash = (Get-FileHash -LiteralPath $msvcp110dllPath -Algorithm $FileHashAlgorithm -ErrorAction SilentlyContinue).Hash
-$msvcr110dllPath = "${env:windir}\System32\msvcr110.dll"
-$msvcr110dllVersion = (Get-Command $msvcr110dllPath -ErrorAction SilentlyContinue).Version
-$msvcr110dllHash = (Get-FileHash -LiteralPath $msvcr110dllPath -Algorithm $FileHashAlgorithm -ErrorAction SilentlyContinue).Hash
+$driveBytesUsed = (Get-Item $dir.currentDirectory).PSDrive.Used
+$driveBytesFree = (Get-Item $dir.currentDirectory).PSDrive.Free
+$driveBytesTotal = $driveBytesUsed + $driveBytesFree
 
-$scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 $sectionTimer = New-Object System.Diagnostics.Stopwatch
 $archiveTimer = New-Object System.Diagnostics.Stopwatch
 $toolTimer = New-Object System.Diagnostics.Stopwatch
@@ -150,6 +148,13 @@ Write-Host "Loading hashes..."
 $dir.fallout4DataRegistry = Get-Fallout4DataFolder -DiscoveryMethod Registry
 $dir.fallout4DataSteam = Get-Fallout4DataFolder -DiscoveryMethod Steam
 
+$msvcp110dllPath = "${env:windir}\System32\msvcp110.dll"
+$msvcp110dllVersion = (Get-Command $msvcp110dllPath -ErrorAction SilentlyContinue).Version
+$msvcp110dllHash = (Get-FileHash -LiteralPath $msvcp110dllPath -Algorithm $FileHashAlgorithm -ErrorAction SilentlyContinue).Hash
+$msvcr110dllPath = "${env:windir}\System32\msvcr110.dll"
+$msvcr110dllVersion = (Get-Command $msvcr110dllPath -ErrorAction SilentlyContinue).Version
+$msvcr110dllHash = (Get-FileHash -LiteralPath $msvcr110dllPath -Algorithm $FileHashAlgorithm -ErrorAction SilentlyContinue).Hash
+
 
 # >>>>>>>>>>>>>>>>>>
 # testing area start
@@ -182,6 +187,10 @@ Write-Log @(
     "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { "$msvcr110dllVersion (Hash: $msvcr110dllHash)" } else { "(Not Found)" })
     ""
     "  Current Directory: $($dir.currentDirectory)"
+    "  Drive Size Info:"
+    "    Free: $(Write-PrettySize $driveBytesFree) ($(($driveBytesFree / $driveBytesTotal * 100).ToString('f1'))%)"
+    "    Used: $(Write-PrettySize $driveBytesUsed) ($(($driveBytesUsed / $driveBytesTotal * 100).ToString('f1'))%)"
+    "    Total: $(Write-PrettySize $driveBytesTotal)"
     ""
     "  Number of Repack archive hashes: $($repack7zHashes.Keys.Count)"
     "  Number of Original BA2 Hashes: $($originalBa2Hashes.Keys.Count)"
@@ -199,10 +208,20 @@ Write-Log @(
     "  Fallout 4 Data directory (Steam method): " + $(if ($dir.fallout4DataSteam) { $dir.fallout4DataSteam } else { "(Not Found)" })
     ""
     "  Files in Repack7z directory:"
-    Get-ChildItem $dir.repack7z -File | ForEach-Object { "    `"$($_.Name)`" ($($_.Length) bytes)" }
+    if (Test-Path -LiteralPath $dir.repack7z) {
+        Get-ChildItem $dir.repack7z -File | ForEach-Object { "    `"$($_.Name)`" ($($_.Length) bytes)" }
+    }
+    else {
+        "    (Directory Not Found)"
+    }
     ""
     "  Files in OriginalBa2 directory:"
-    Get-ChildItem $dir.originalBa2 -File | ForEach-Object { "    `"$($_.Name)`" ($($_.Length) bytes)" }
+    if (Test-Path -LiteralPath $dir.originalBa2) {
+        Get-ChildItem $dir.originalBa2 -File | ForEach-Object { "    `"$($_.Name)`" ($($_.Length) bytes)" }
+    }
+    else {
+        "    (Directory Not Found)"
+    }
     "<" * $LineWidth
 )
 
@@ -241,7 +260,9 @@ foreach ($problemDir in $problemDirs) {
     if ($dir.currentDirectory.StartsWith($problemDir, [System.StringComparison]::OrdinalIgnoreCase)) {
         Write-Custom ""
         $extraErrorText = @(
-            "Attempting to run script from `"$($dir.currentDirectory)`". Please ensure this script is not anywhere inside the following folders:"
+            "Attempting to run script from `"$($dir.currentDirectory)`"."
+            ""
+            "Please ensure this script is not anywhere inside the following folders:"
             $problemDirs | ForEach-Object { "  $_" }
         )
         Write-Error "Problematic script location detected." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
@@ -401,6 +422,7 @@ if ($existingRepackFiles.Count -gt 0) {
                 else {
                     Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
 
+                    Write-Log "    Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
                     # check size before checking hash
                     if (@($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem $relFile).Length }).Count -eq 0) {
                         $extraErrorText = @(
@@ -408,7 +430,7 @@ if ($existingRepackFiles.Count -gt 0) {
                             ""
                             "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying."
                         )
-                        $extraErrorLog = @("Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes")
+                        $extraErrorLog = @("(No extra log info.)")
                         throw "Size mismatch."
                     }
 
@@ -518,7 +540,6 @@ if (
         foreach ($key in $($repackFlags.Keys)) { $repackFlags[$key] = $false }
         $repackFlags.Custom = $customReason
         $repackTag = "Custom"
-        $repackFlags
     }
 }
 
@@ -613,6 +634,7 @@ if ($existingPatchedArchives.Count -gt 0) {
                         Write-Warning "  [SIZE MISMATCH]"
                         continue
                     }
+                    Write-Log "  Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
                     $hash = (Get-FileHash -LiteralPath $relFile -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
                     Write-Log "  Hash: $hash"
                     if ($patchedBa2Hashes[$hash].FileName -eq $file) {
@@ -711,10 +733,30 @@ else {
                 New-Item $dir.temp -ItemType "directory" -ErrorAction Stop | Out-Null
 
                 switch ($object.Key) {
-                    # special case: if main is being used with performance, save texture from performance for later use
                     "Main" {
                         if ($repackFlags.Performance) {
+                            # special case: if main is being used with performance but not quality, save textures from performance for later use
+                            if (-not $repackFlags.Quality) {
+                                Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\Buildings\RoofMetal02_d.DDS" -Destination "$($dir.temp)\RoofMetal02_d.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondMetalTrims01.DDS" -Destination "$($dir.temp)\DiamondMetalTrims01.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondMetalTrims01_d.DDS" -Destination "$($dir.temp)\DiamondMetalTrims01_d.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondMetalTrims01_n.DDS" -Destination "$($dir.temp)\DiamondMetalTrims01_n.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondMetalTrims01_s.DDS" -Destination "$($dir.temp)\DiamondMetalTrims01_s.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondRVPanel02.DDS" -Destination "$($dir.temp)\DiamondRVPanel02.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondRVPanel02_d.DDS" -Destination "$($dir.temp)\DiamondRVPanel02_d.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondRVPanel02_n.DDS" -Destination "$($dir.temp)\DiamondRVPanel02_n.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondRVPanel02_s.DDS" -Destination "$($dir.temp)\DiamondRVPanel02_s.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondWood01.DDS" -Destination "$($dir.temp)\DiamondWood01.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondWood01_d.DDS" -Destination "$($dir.temp)\DiamondWood01_d.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondWood01_n.DDS" -Destination "$($dir.temp)\DiamondWood01_n.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondWood01_s.DDS" -Destination "$($dir.temp)\DiamondWood01_s.DDS" -ErrorAction Stop
+                            }
+                            # special case: if main is being used with performance, save textures from performance for later use
+                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled02Clinic_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled02Clinic_Damage_d.dds" -ErrorAction Stop
+                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria01_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria01_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
+                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria03_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria03_Damage_d.dds" -ErrorAction Stop
+                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltSecretWindow01_d.dds" -Destination "$($dir.temp)\VltSecretWindow01_d.dds" -ErrorAction Stop
                         }
                     }
                 }
@@ -818,12 +860,50 @@ else {
                     # special case: if on main and using performance, copy previously-saved texture
                     "Main" {
                         if ($repackFlags.Performance) {
-                            Copy-Item `
-                                -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" `
-                                -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" `
-                                -Force `
-                                -ErrorAction Stop
+                            Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Force -ErrorAction Stop
                             ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" }).CRC = "4B0F2DCE"
+                        }
+                        if ($repackFlags.Performance) {
+                            # special case: if on main and using performance but not quality, copy previously-saved textures
+                            if (-not $repackFlags.Quality) {
+                                Copy-Item -LiteralPath "$($dir.temp)\RoofMetal02_d.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\Buildings\RoofMetal02_d.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.temp)\DiamondMetalTrims01.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondMetalTrims01.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.temp)\DiamondMetalTrims01_d.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondMetalTrims01_d.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.temp)\DiamondMetalTrims01_n.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondMetalTrims01_n.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.temp)\DiamondMetalTrims01_s.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondMetalTrims01_s.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.temp)\DiamondRVPanel02.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondRVPanel02.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.temp)\DiamondRVPanel02_d.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondRVPanel02_d.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.temp)\DiamondRVPanel02_n.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondRVPanel02_n.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.temp)\DiamondRVPanel02_s.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondRVPanel02_s.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.temp)\DiamondWood01.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondWood01.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.temp)\DiamondWood01_d.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondWood01_d.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.temp)\DiamondWood01_n.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondWood01_n.DDS" -ErrorAction Stop
+                                Copy-Item -LiteralPath "$($dir.temp)\DiamondWood01_s.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondWood01_s.DDS" -ErrorAction Stop
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\Buildings\RoofMetal02_d.DDS" }).CRC = "7B3D09AB"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondMetalTrims01.DDS" }).CRC = "3699752D"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondMetalTrims01_d.DDS" }).CRC = "380060B9"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondMetalTrims01_n.DDS" }).CRC = "7A18AF3D"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondMetalTrims01_s.DDS" }).CRC = "837A7203"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondRVPanel02.DDS" }).CRC = "78D926EE"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondRVPanel02_d.DDS" }).CRC = "3E986B45"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondRVPanel02_n.DDS" }).CRC = "E80E73F4"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondRVPanel02_s.DDS" }).CRC = "1DB6762D"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondWood01.DDS" }).CRC = "B5C1A134"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondWood01_d.DDS" }).CRC = "EE4A20AD"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondWood01_n.DDS" }).CRC = "5053F59A"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondWood01_s.DDS" }).CRC = "6E6EFFA4"
+                            }
+                            # special case: if on main and using performance, copy previously-saved textures
+                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled02Clinic_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled02Clinic_Damage_d.dds" -ErrorAction Stop
+                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria01_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria01_Damage_d.dds" -ErrorAction Stop
+                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
+                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria03_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria03_Damage_d.dds" -ErrorAction Stop
+                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltSecretWindow01_d.dds" -Destination "$($dir.temp)\VltSecretWindow01_d.dds" -ErrorAction Stop
+                            ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled02Clinic_Damage_d.dds" }).CRC = "81F209CA"
+                            ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria01_Damage_d.dds" }).CRC = "3E8ABAF8"
+                            ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" }).CRC = "4B0F2DCE"
+                            ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria03_Damage_d.dds" }).CRC = "E289DD52"
+                            ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltSecretWindow01_d.dds" }).CRC = "27950FEB"
                         }
                     }
                     # special case: if on restyle, copy items to PatchedFiles folder
@@ -881,7 +961,8 @@ else {
                 $jobs = $repack7zFileRecords | ForEach-Object {
                     $powerShell = [PowerShell]::Create()
                     $powerShell.RunspacePool = $runspacePool
-                    $powerShell.AddScript({
+                    $powerShell.AddScript(
+                        {
                             param([Hashtable] $Dir, [Hashtable] $FileRecord)
                             # enable capability to calculate CRC32 checksums
                             Add-Type -TypeDefinition (Get-Content "$($Dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
@@ -891,7 +972,8 @@ else {
                             # if the hash doesn't match, we want to know about it; emit an object
                             # containing the file record and computed hash
                             if ($hash -ne $fileRecord.CRC) { , @{ FileRecord = $FileRecord; CalculatedCRC = $hash } }
-                        }).AddParameters(@{ Dir = $Dir; FileRecord = $_ }) | Out-Null
+                        }
+                    ).AddParameters(@{ Dir = $Dir; FileRecord = $_ }) | Out-Null
                     , @{ PowerShell = $powerShell; Handle = $powerShell.BeginInvoke() }
                 }
                 # check once per second if all the jobs are completed
@@ -1026,6 +1108,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         # validate original archive
         Write-Custom "      Validating original archive..." -NoNewline
         Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
+        Write-Log "      Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length) bytes"
         if (
             ($originalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length }).Count -eq 0 -and
             ($alternateOriginalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length }).Count -eq 0 -and
@@ -1180,6 +1263,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             Write-Custom "      Validating patched archive..." -NoNewline
         }
         Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
+        Write-Log "      Size: $((Get-ChildItem -LiteralPath $patchedBa2File).Length) bytes"
         if (
             -not $repackFlags.Custom -and
             # get patched BA2 hash records where the file name matches, the tag is present, and the file size matches

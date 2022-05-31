@@ -38,7 +38,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 15, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 16, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -321,6 +321,7 @@ if ($msvcp110dllVersion -lt $vcrMinVersion -or $msvcr110dllVersion -lt $vcrMinVe
 # -------------------------
 
 $sectionTimer.Restart()
+Write-CustomLog "Section: select patched BA2 folder"
 
 # create the PatchedBa2 folder and error out if it fails
 try {
@@ -364,13 +365,14 @@ if (
 
 Write-CustomInfo $dir.patchedBa2
 
-Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
 
 
 # check for repack archives
 # -------------------------
 
 $sectionTimer.Restart()
+Write-CustomLog "Section: check for repack archives"
 
 $repackFlags = [ordered]@{}
 $repackFiles.Keys | ForEach-Object { $repackFlags.$_ = $false }
@@ -501,7 +503,7 @@ if ($existingRepackFiles.Count -gt 0) {
     $foundRepackFiles."$($object.Key)" = $foundFiles
 }
 
-Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
 
 if ($validateRepacksFailed) {
     Exit-Script 1
@@ -515,6 +517,7 @@ $repackFiles = $foundRepackFiles
 # ----------------------------------
 
 $sectionTimer.Restart()
+Write-CustomLog "Section: check if custom run and create tag"
 
 # if not using Performance, Main, or Quality, don't need to install the Vault Fix
 $vaultFixNeeded = $true
@@ -602,7 +605,7 @@ if ($repackFlags.Custom) {
         @($alternateOriginalBa2SizeMatches | ForEach-Object { "  $($_.Value.FileName) ($($_.Value.Tags -join ", "))" })
     )
 }
-Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
 
 if ($repackFlags.Custom -eq 1) {
     Write-CustomWarning "", "Existing assets found in `"$($dir.patchedFiles)`" and possible alternative original BA2 archive$(if ($alternateOriginalBa2SizeMatches.Count -ne 1) {"s"}) detected.", "Mode switched to `"Custom`"." -NoJustifyRight
@@ -627,6 +630,7 @@ elseif ($repackTag -eq "Unchanged") {
 # --------------------------------------
 
 $sectionTimer.Restart()
+Write-CustomLog "Section: validate any existing patched archives"
 
 $existingPatchedArchives = foreach ($object in $ba2Files.GetEnumerator()) {
     $file = $object.Value
@@ -646,13 +650,13 @@ if ($existingPatchedArchives.Count -gt 0) {
         $firstIteration = $true
         Write-Custom "" -BypassLog
         foreach ($object in $ba2Files.GetEnumerator()) {
-            try {
-                $archiveTimer.Restart()
+            if (Test-Path -LiteralPath $relFile) {
+                try {
+                    $archiveTimer.Restart()
 
-                $file = $object.Value
-                $relFile = "$($dir.patchedBa2)\$file"
+                    $file = $object.Value
+                    $relFile = "$($dir.patchedBa2)\$file"
 
-                if (Test-Path -LiteralPath $relFile) {
                     if ($firstIteration) { $firstIteration = $false } else { Write-CustomLog "  $("-" * ($LineWidth - 2))" }
                     Write-Custom "  $file" -NoNewLine
                     Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
@@ -678,21 +682,21 @@ if ($existingPatchedArchives.Count -gt 0) {
                         Write-CustomWarning "  [UNRECOGNIZED]"
                     }
                 }
-            }
-            catch {
-                Write-CustomError "  [ERROR]"
-                Write-CustomError $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
-                $validateArchivesFailed = $true
-                break
-            }
-            finally {
-                Write-CustomLog "  Archive duration: $($archiveTimer.Elapsed.ToString())"
+                catch {
+                    Write-CustomError "  [ERROR]"
+                    Write-CustomError $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+                    $validateArchivesFailed = $true
+                    break
+                }
+                finally {
+                    Write-CustomLog "  Archive duration: $($archiveTimer.Elapsed.ToString())"
+                }
             }
         }
     }
 }
 
-Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
 
 if ($validateArchivesFailed) {
     Exit-Script 1
@@ -708,6 +712,7 @@ if (-not $ba2Filenames.Count) {
 # -----------------------
 
 $sectionTimer.Restart()
+Write-CustomLog "Section: extract repack archives"
 
 Write-Custom ""
 Write-Custom "Extracting repack archives:" -NoNewLine
@@ -1055,7 +1060,7 @@ else {
     }
 }
 
-Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
 
 if ($extractRepackFailed) {
     if (Test-Path -LiteralPath $dir.temp) {
@@ -1069,6 +1074,7 @@ if ($extractRepackFailed) {
 # ------------------------------
 
 $sectionTimer.Restart()
+Write-CustomLog "Section: remove known bad patched files"
 
 Write-Custom ""
 Write-Custom "Checking for known bad patched files:" -NoNewLine
@@ -1097,13 +1103,15 @@ for ($index = 0; $index -lt $potentiallyBadPatchedFilenames.Count; $index++) {
     }
 }
 
-Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
 
 
 # process archives
 # ----------------
 
 $sectionTimer.Restart()
+Write-CustomLog "Section: process archives"
+
 Write-Custom "", "Archives to build:"
 Write-Custom $ba2Filenames -Prefix "  "
 
@@ -1365,7 +1373,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
     }
 }
 
-Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())"
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
 
 if (-not $repackFlags.Custom) {
     Write-Custom ""

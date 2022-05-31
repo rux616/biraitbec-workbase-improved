@@ -38,7 +38,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 14, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 15, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -174,8 +174,14 @@ $msvcr110dllHash = (Get-FileHash -LiteralPath $msvcr110dllPath -Algorithm $FileH
 # begin script
 # ------------
 
+# clear the *.current.log files
+Remove-Item "$($dir.Logs)\current.*.log" -ErrorAction SilentlyContinue
+
+# set the console background to a more appealing color and clear the background so it takes effect
 $Host.UI.RawUI.BackgroundColor = 'black'
 if (-not $NoClearScreen) { Clear-Host }
+
+# write some diagnostic information to the log
 Write-CustomLog @(
     ">" * $LineWidth
     "Diagnostic Information:"
@@ -1019,7 +1025,7 @@ else {
                         $extraErrorText = @(
                             "The exact contents of one or more files extracted from a repack archive set don't match any known files."
                             ""
-                            "See the most recent `"install`" log file in the `"$($dir.Logs.Split("\")[-1])`" folder for the list of files which failed validation."
+                            "See the `"current.install`" log file in the `"$($dir.Logs.Split("\")[-1])`" folder for the list of files which failed validation."
                         )
                         $extraErrorLog = @(
                             $results | ForEach-Object { "`"$($_.FileRecord.Path)`" (CRC32: $($_.CalculatedCRC)) failed validation. Expected CRC32: $($_.FileRecord.CRC)" }

@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 18, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 19, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -530,6 +530,7 @@ function Write-CustomLog {
         New-Item $dir.logs -ItemType "directory" -ErrorAction Stop | Out-Null
     }
     Write-Output $Message | Out-File -LiteralPath "$($dir.logs)\${Log}_$LogStartTime.log" -Append
+    Write-Output $Message | Out-File -LiteralPath "$($dir.logs)\current.${Log}.log" -Append
 }
 
 function Write-CustomSuccess {

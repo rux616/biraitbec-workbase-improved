@@ -38,7 +38,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 16, 1)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 17, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -153,9 +153,11 @@ $dir.fallout4DataSteam = Get-Fallout4DataFolder -DiscoveryMethod Steam
 
 $msvcp110dllPath = "${env:windir}\System32\msvcp110.dll"
 $msvcp110dllVersion = (Get-Command $msvcp110dllPath -ErrorAction SilentlyContinue).Version
+$msvcp110dllSize = (Get-Item $msvcp110dllPath -ErrorAction SilentlyContinue).Length
 $msvcp110dllHash = (Get-FileHash -LiteralPath $msvcp110dllPath -Algorithm $FileHashAlgorithm -ErrorAction SilentlyContinue).Hash
 $msvcr110dllPath = "${env:windir}\System32\msvcr110.dll"
 $msvcr110dllVersion = (Get-Command $msvcr110dllPath -ErrorAction SilentlyContinue).Version
+$msvcr110dllSize = (Get-Item $msvcr110dllPath -ErrorAction SilentlyContinue).Length
 $msvcr110dllHash = (Get-FileHash -LiteralPath $msvcr110dllPath -Algorithm $FileHashAlgorithm -ErrorAction SilentlyContinue).Hash
 
 
@@ -182,7 +184,7 @@ $Host.UI.RawUI.BackgroundColor = 'black'
 if (-not $NoClearScreen) { Clear-Host }
 
 # write some diagnostic information to the log
-Write-CustomLog @(
+Write-Custom @(
     ">" * $LineWidth
     "Diagnostic Information:"
     "  BiRaitBec WorkBase Improved Version: $BRBWIVersion"
@@ -191,23 +193,28 @@ Write-CustomLog @(
     "  Functions Version: $FunctionsVersion"
     "  Hashes Version: $HashesVersion"
     ""
+    "  Parameters:"
+    foreach ($key in (Get-Command -Name $MyInvocation.InvocationName).Parameters.Keys) {
+        "    $($key): $((Get-Variable -Name $key -ErrorAction SilentlyContinue).Value)"
+    }
+    ""
     "  Windows Version: $(Get-WindowsVersion)"
     "  PowerShell Version: $($PSVersionTable.PSVersion)"
-    "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) { "$msvcp110dllVersion (Hash: $msvcp110dllHash)" } else { "(Not Found)" })
-    "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { "$msvcr110dllVersion (Hash: $msvcr110dllHash)" } else { "(Not Found)" })
+    "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) { "$msvcp110dllVersion (Hash: $msvcp110dllHash, Size: $msvcp110dllSize bytes)" } else { "(Not Found)" })
+    "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { "$msvcr110dllVersion (Hash: $msvcr110dllHash, Size: $msvcr110dllSize bytes)" } else { "(Not Found)" })
     ""
     "  Current Directory: $($dir.currentDirectory)"
     "  Drive Size Info:"
-    "      Free: $(Write-PrettySize $driveBytesFree) ($(($driveBytesFree / $driveBytesTotal * 100).ToString('f1'))%)"
-    "      Used: $(Write-PrettySize $driveBytesUsed) ($(($driveBytesUsed / $driveBytesTotal * 100).ToString('f1'))%)"
-    "      Total: $(Write-PrettySize $driveBytesTotal)"
+    "    Free: $(Write-PrettySize $driveBytesFree) ($(($driveBytesFree / $driveBytesTotal * 100).ToString('f1'))%)"
+    "    Used: $(Write-PrettySize $driveBytesUsed) ($(($driveBytesUsed / $driveBytesTotal * 100).ToString('f1'))%)"
+    "    Total: $(Write-PrettySize $driveBytesTotal)"
     ""
-    "  Number of Repack archive hashes: $($repack7zHashes.Keys.Count)"
-    "  Number of Original BA2 Hashes: $($originalBa2Hashes.Keys.Count)"
-    "  Number of Alternate Original BA2 Hashes: $($alternateOriginalBa2Hashes.Keys.Count)"
-    "  Number of Old Alternate Original BA2 Hashes: $($oldAlternateOriginalBa2Hashes.Keys.Count)"
-    "  Number of Bad Patched File Hashes: $($badPatchedFileHashes.Keys.Count)"
-    "  Number of Patched BA2 Hashes: $($patchedBa2Hashes.Keys.Count)"
+    "  Number of repack archive hashes: $($repack7zHashes.Keys.Count)"
+    "  Number of original BA2 hashes: $($originalBa2Hashes.Keys.Count)"
+    "  Number of alternate original BA2 hashes: $($alternateOriginalBa2Hashes.Keys.Count)"
+    "  Number of old alternate original BA2 hashes: $($oldAlternateOriginalBa2Hashes.Keys.Count)"
+    "  Number of bad patched File hashes: $($badPatchedFileHashes.Keys.Count)"
+    "  Number of patched BA2 hashes: $($patchedBa2Hashes.Keys.Count)"
     ""
     "  Line Width: $LineWidth"
     "  Original Console Background Color: $OriginalBackgroundColor"
@@ -260,18 +267,19 @@ Write-Custom @(
 ) -JustifyCenter -BypassLog
 
 
-# # check to make sure that this is being run with PowerShell 5.1
-# # -------------------------------------------------------------
-# if ($PSVersionTable.PSVersion.Major -ne 5 -and $PSVersionTable.PSVersion.Minor -ne 1) {
-#     Write-Custom ""
-#     $extraErrorText = @(
-#         "This script will not function properly if it is not run with PowerShell version 5.1."
-#         ""
-#         "Make sure to run this script by opening the folder where it resides, right-clicking the script, and choosing `"Run with PowerShell`" from the menu."
-#     )
-#     Write-CustomError "Invalid PowerShell version." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
-#     Exit-Script 1
-# }
+# check to make sure that this is being run with PowerShell 5.1.x or 7.2.x
+# ------------------------------------------------------------------------
+if (($PSVersionTable.PSVersion.Major -ne 5 -and $PSVersionTable.PSVersion.Minor -ne 1) -and
+    ($PSVersionTable.PSVersion.Major -ne 7 -and $PSVersionTable.PSVersion.Minor -ne 2)) {
+    Write-Custom ""
+    $extraErrorText = @(
+        "This script will not function properly if it is not run with PowerShell version 5.1.x or 7.2.x."
+        ""
+        "Make sure to run this script by opening the folder where it resides, right-clicking the script, and choosing `"Run with PowerShell`" from the menu."
+    )
+    Write-CustomError "Invalid PowerShell version." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
+    Exit-Script 1
+}
 
 
 # check location to ensure the script is not located in a problematic directory
@@ -940,22 +948,12 @@ else {
                     }
                     # special case: if on restyle, copy items to PatchedFiles folder
                     "Restyle" {
-                        Copy-Item `
-                            -LiteralPath $($extra | ForEach-Object { "$($dir.temp)\$_" }) `
-                            -Destination "$($dir.patchedFiles)" `
-                            -Force `
-                            -Recurse `
-                            -ErrorAction Stop
+                        Copy-Item -LiteralPath $($extra | ForEach-Object { "$($dir.temp)\$_" }) -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
                         $repack7zFileRecords | ForEach-Object { $_.Path = ($_.Path.Split("\") | Select-Object -Skip 3) -join "\" }
                     }
                     # special case: if using vault fix, copy Textures subdirectory
                     "Vault Fix" {
-                        Copy-Item `
-                            -LiteralPath "$($dir.temp)\Data\Textures" `
-                            -Destination "$($dir.patchedFiles)" `
-                            -Force `
-                            -Recurse `
-                            -ErrorAction Stop
+                        Copy-Item -LiteralPath "$($dir.temp)\Data\Textures" -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
                         $repack7zFileRecords | ForEach-Object { $_.Path = ($_.Path.Split("\") | Select-Object -Skip 1) -join "\" }
                     }
                 }
@@ -988,42 +986,62 @@ else {
                 else {
                     Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
 
-                    # set up a runspace pool; set max threads to the number of logical processors available
+                    # set max threads to the number of logical processors available
                     $maxThreads = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
-                    $runspacePool = [RunspaceFactory]::CreateRunspacePool(1, $maxThreads)
-                    $runspacePool.Open()
 
-                    # engage all the threads and collect everything into $jobs
-                    $jobs = $repack7zFileRecords | ForEach-Object {
-                        $powerShell = [PowerShell]::Create()
-                        $powerShell.RunspacePool = $runspacePool
-                        $powerShell.AddScript(
-                            {
-                                param([Hashtable] $Dir, [Hashtable] $FileRecord)
-                                # enable capability to calculate CRC32 checksums
-                                Add-Type -TypeDefinition (Get-Content "$($Dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
-                                . "$($Dir.tools)\lib\Functions.ps1"
-                                # hash the file
-                                $hash = (Get-FileHash -LiteralPath "$($Dir.patchedFiles)\$($FileRecord.Path)" -Algorithm CRC32 -ErrorAction Stop).Hash
-                                # if the hash doesn't match, we want to know about it; emit an object
-                                # containing the file record and computed hash
-                                if ($hash -ne $fileRecord.CRC) { , @{ FileRecord = $FileRecord; CalculatedCRC = $hash } }
-                            }
-                        ).AddParameters(@{ Dir = $Dir; FileRecord = $_ }) | Out-Null
-                        , @{ PowerShell = $powerShell; Handle = $powerShell.BeginInvoke() }
-                    }
-                    # check once per second if all the jobs are completed
-                    while ($jobs.Handle.IsCompleted -contains $false) { Start-Sleep -Seconds 1 }
+                    # this particular code for parallelization doesn't work in PowerShell 7.2.x,
+                    # so it's gated to PowerShell 5.1.x
+                    if ($PSVersionTable.PSVersion.Major -eq 5 -and $PSVersionTable.PSVersion.Minor -eq 1) {
+                        # set up a runspace pool
+                        $runspacePool = [RunspaceFactory]::CreateRunspacePool(1, $maxThreads)
+                        $runspacePool.Open()
 
-                    # collect the results of all the jobs (ideally this will be empty) and clean up the
-                    # powershell instances
-                    $results = $jobs | ForEach-Object {
-                        $_.PowerShell.EndInvoke($_.Handle)
-                        $_.PowerShell.Dispose()
+                        # engage all the threads and collect everything into $jobs
+                        $jobs = $repack7zFileRecords | ForEach-Object {
+                            $powerShell = [PowerShell]::Create()
+                            $powerShell.RunspacePool = $runspacePool
+                            $powerShell.AddScript(
+                                {
+                                    param([Hashtable] $Dir, [Hashtable] $FileRecord)
+                                    # enable capability to calculate CRC32 checksums
+                                    Add-Type -TypeDefinition (Get-Content "$($Dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
+                                    . "$($Dir.tools)\lib\Functions.ps1"
+                                    # hash the file
+                                    $hash = (Get-FileHash -LiteralPath "$($Dir.patchedFiles)\$($FileRecord.Path)" -Algorithm CRC32 -ErrorAction SilentlyContinue).Hash
+                                    # if the hash doesn't match, we want to know about it; emit an object
+                                    # containing the file record and computed hash
+                                    if ($hash -ne $FileRecord.CRC) { , @{ FileRecord = $FileRecord; CalculatedCRC = $hash } }
+                                }
+                            ).AddParameters(@{ Dir = $Dir; FileRecord = $_ }) | Out-Null
+                            , @{ PowerShell = $powerShell; Handle = $powerShell.BeginInvoke() }
+                        }
+                        # check once per second if all the jobs are completed
+                        while ($jobs.Handle.IsCompleted -contains $false) { Start-Sleep -Seconds 1 }
+
+                        # collect the results of all the jobs (ideally this will be empty) and clean up the
+                        # powershell instances
+                        $results = $jobs | ForEach-Object {
+                            $_.PowerShell.EndInvoke($_.Handle)
+                            $_.PowerShell.Dispose()
+                        }
+                        # clean up the jobs array and runspace pool
+                        $jobs.Clear()
+                        $runspacePool.Close()
                     }
-                    # clean up the jobs array and runspace pool
-                    $jobs.Clear()
-                    $runspacePool.Close()
+                    # ForEach-Object -Parallel is new to PowerShell 7, so gate it
+                    elseif ($PSVersionTable.PSVersion.Major -eq 7 -and $PSVersionTable.PSVersion.Minor -eq 2) {
+                        $results = $repack7zFileRecords | ForEach-Object -ThrottleLimit $maxThreads -Parallel {
+                            $dir = $using:dir
+                            # enable capability to calculate CRC32 checksums
+                            Add-Type -TypeDefinition (Get-Content "$($dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
+                            . "$($dir.tools)\lib\Functions.ps1"
+                            # hash the file
+                            $hash = (Get-FileHash -LiteralPath "$($dir.patchedFiles)\$($_.Path)" -Algorithm CRC32 -ErrorAction SilentlyContinue).Hash
+                            # if the hash doesn't match, we want to know about it; emit an object
+                            # containing the file record and computed hash
+                            if ($hash -ne $_.CRC) { , @{ FileRecord = $_; CalculatedCRC = $hash } }
+                        }
+                    }
 
                     # if there is anything in $results, then validation failed on one or more files
                     if ($results) {
@@ -1033,7 +1051,7 @@ else {
                             "See the `"current.install`" log file in the `"$($dir.Logs.Split("\")[-1])`" folder for the list of files which failed validation."
                         )
                         $extraErrorLog = @(
-                            $results | ForEach-Object { "`"$($_.FileRecord.Path)`" (CRC32: $($_.CalculatedCRC)) failed validation. Expected CRC32: $($_.FileRecord.CRC)" }
+                            $results | Sort-Object { $_.FileRecord.Path } | ForEach-Object { "`"$($_.FileRecord.Path)`" (CRC32: $($_.CalculatedCRC)) failed validation. Expected CRC32: $($_.FileRecord.CRC)" }
                         )
                         throw "Validation of $($results.Count) extracted file$(if ($results.Count -gt 1) {"s"}) has failed."
                     }

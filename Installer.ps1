@@ -38,7 +38,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 17, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 17, 1)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -184,7 +184,7 @@ $Host.UI.RawUI.BackgroundColor = 'black'
 if (-not $NoClearScreen) { Clear-Host }
 
 # write some diagnostic information to the log
-Write-Custom @(
+Write-CustomLog @(
     ">" * $LineWidth
     "Diagnostic Information:"
     "  BiRaitBec WorkBase Improved Version: $BRBWIVersion"

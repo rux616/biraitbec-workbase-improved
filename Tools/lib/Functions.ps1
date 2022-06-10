@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 20, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 21, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -140,91 +140,137 @@ function Get-Fallout4DataFolder {
 }
 
 function Get-FileHash {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = "Path")]
     param (
-        [Parameter(Mandatory, ValueFromPipeline)] [System.IO.FileInfo[]] $LiteralPath,
-        [ValidateSet("SHA1", "SHA256", "SHA384", "SHA512", "MD5", "CRC32", "XXH3", "XXH32", "XXH64", "XXH128")] [string] $Algorithm = "SHA256"
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Path", Position = 0)]
+        [PSObject] $Path,
+
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = "LiteralPath", Position = 0)]
+        [PSObject] $LiteralPath,
+
+        [ValidateSet("SHA1", "SHA256", "SHA384", "SHA512", "MD5", "CRC32", "XXH3", "XXH32", "XXH64", "XXH128")]
+        [string] $Algorithm = "SHA256"
     )
 
-    begin {}
-
     process {
-        # resolve the path to its full path (remove relative directories, etc)
-        $resolvedPath = Resolve-Path -LiteralPath $LiteralPath.FullName
-        if ($null -eq $resolvedPath) { return }
+        # do a bit of pre-processing
+        $files = if ($Path) {
+            $Path
+        }
+        elseif ($LiteralPath) {
+            $LiteralPath
+        }
 
-        # actually do the hashing
-        switch ($Algorithm.ToUpper()) {
-            # the built-in Get-FileHash cmdlet handles SHA{1,256,384,512} and MD5 hashing
-            { @("SHA1", "SHA256", "SHA384", "SHA512", "MD5") -contains $_ } {
-                return Microsoft.PowerShell.Utility\Get-FileHash -LiteralPath $resolvedPath -Algorithm $_
+        # process any directories and wildcards and build a list of actual files to hash
+        $filesActual = foreach ($file in $files) {
+            if ($file -is [System.IO.FileSystemInfo]) {
+                $file = $file.FullName
             }
-            # CRC32 hashing is handled by a bundled C# script
-            "CRC32" {
-                # adapted from https://gist.github.com/r3t3ch/86c944ac14a69bccbd81bff698050b83
-                # create a new instance of a crc32 object
-                $crc32 = New-Object DamienG.Security.Cryptography.Crc32
-                if ($null -eq $crc32) { return }
-
-                # open the file and have the crc32 object hash it, closing the file when done or an error is encountered
-                $stream = New-Object System.IO.FileStream($resolvedPath, [System.IO.FileMode]::Open)
-                if ($null -eq $stream) { return }
-
-                try {
-                    $rawHash = $crc32.ComputeHash($stream)
+            if ($Path) {
+                if (Test-Path $file -PathType Container) {
+                    $file += "\*"
                 }
-                finally {
-                    $stream.Close()
-                }
-
-                # format the raw hash into one fit for display or consumption
-                $hash = ""
-                foreach ($byte in $rawHash) {
-                    $hash += $byte.toString('x2')
-                }
-
-                return [PSCustomObject] @{
-                    Algorithm = "CRC32"
-                    Hash      = "$($hash.ToUpper())"
-                    Path      = "$resolvedPath"
-                }
+                Resolve-Path -Path $file
             }
-            # xxHashing is handled by the bundled xxhsum.exe program
-            { @("XXH3", "XXH32", "XXH64", "XXH128") -contains $_ } {
-                # remove the first two characters from $_ and set that as the algorithm
-                $xxhAlgorithm = $_[2..$($_.Length)] -join ''
-                # if the xxhsum command completes successfully, the .Where portion of the command may generate an error.
-                # as such, whatever the current error action preference is is stored, changed to silently continue,
-                # the xxhsum command is ran, then the error action preference is changed back to the stored value
-                $errorActionPreferenceSaved = $ErrorActionPreference
-                $ErrorActionPreference = "SilentlyContinue"
-                $stdout, $stderr = (& "$toolXxhsum" -$xxhAlgorithm "$resolvedPath" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
-                $ErrorActionPreference = $errorActionPreferenceSaved
-                if ($LASTEXITCODE -ne 0) {
-                    Write-Error $stderr
-                }
-
-                # hashing done with the XXH3 algorithm has a slightly different output format compared to the other algorithms
-                if ($_ -eq "XXH3") {
-                    # format: "XXH3 (<path>) = <hash>"
-                    $hash = $stdout.Split(" ") | Select-Object -Last 1
-                }
-                else {
-                    # format: "<hash>  <path>"
-                    $hash = $stdout.Split(" ") | Select-Object -First 1
-                }
-
-                return [PSCustomObject]@{
-                    Algorithm = "$($_.ToUpper())"
-                    Hash      = "$($hash.ToUpper())"
-                    Path      = "$resolvedPath"
-                }
+            elseif ($LiteralPath -and -not (Test-Path $file -PathType Container)) {
+                Resolve-Path -LiteralPath $file
             }
-            Default { Write-Error "Unknown hashing algorithm: `"$_`"." }
+        }
+        # sort and remove duplicates
+        $filesActual = $filesActual | Sort-Object -Unique
+
+        # provided there are files to work on, do the hashing
+        if ($filesActual) {
+            switch ($Algorithm.ToUpper()) {
+                # the built-in Get-FileHash cmdlet handles SHA{1,256,384,512} and MD5 hashing
+                { @("SHA1", "SHA256", "SHA384", "SHA512", "MD5") -contains $_ } {
+                    # collect results
+                    $results = if ($LiteralPath) {
+                        Microsoft.PowerShell.Utility\Get-FileHash -LiteralPath $filesActual -Algorithm $_
+                    }
+                    elseif ($Path) {
+                        Microsoft.PowerShell.Utility\Get-FileHash -Path $filesActual -Algorithm $_
+                    }
+                    # repackage the results into basic PSCustomObjects
+                    $results | ForEach-Object {
+                        [PSCustomObject]@{
+                            Algorithm = $_.Algorithm
+                            Hash      = $_.Hash
+                            Path      = $_.Path
+                        }
+                    }
+                }
+                # CRC32 hashing is handled by a bundled C# script
+                "CRC32" {
+                    foreach ($file in $filesActual) {
+                        # adapted from https://gist.github.com/r3t3ch/86c944ac14a69bccbd81bff698050b83
+                        # create a new instance of a crc32 object
+                        $crc32 = New-Object DamienG.Security.Cryptography.Crc32
+                        if ($null -eq $crc32) { continue }
+
+                        # open the file and have the crc32 object hash it, closing the file when done or an error is encountered
+                        $stream = New-Object System.IO.FileStream($file, [System.IO.FileMode]::Open)
+                        if ($null -eq $stream) { continue }
+
+                        try {
+                            $rawHash = $crc32.ComputeHash($stream)
+                        }
+                        finally {
+                            $stream.Close()
+                        }
+
+                        # format the raw hash into one fit for display or consumption
+                        $hash = foreach ($byte in $rawHash) {
+                            $byte.toString('X2')
+                        }
+                        $hash = $hash -join ""
+
+                        [PSCustomObject] @{
+                            Algorithm = "$_"
+                            Hash      = "$hash"
+                            Path      = "$file"
+                        }
+                    }
+                }
+                # xxHashing is handled by the bundled xxhsum.exe program
+                { @("XXH3", "XXH32", "XXH64", "XXH128") -contains $_ } {
+                    # remove the first two characters from $_ and set that as the algorithm
+                    $xxhAlgorithm = $_[2..$($_.Length)] -join ''
+                    # if the xxhsum command completes successfully, the .Where portion of the command may generate an error.
+                    # as such, whatever the current error action preference is is stored, changed to silently continue,
+                    # the xxhsum command is ran, then the error action preference is changed back to the stored value
+                    $errorActionPreferenceSaved = $ErrorActionPreference
+                    $ErrorActionPreference = "SilentlyContinue"
+                    $stdout, $stderr = (& "$toolXxhsum" -$xxhAlgorithm $filesActual 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
+                    $ErrorActionPreference = $errorActionPreferenceSaved
+                    if ($LASTEXITCODE -ne 0) {
+                        Write-Error $stderr
+                    }
+
+                    foreach ($line in $stdout) {
+                        # hashing done with the XXH3 algorithm has a slightly different output format compared to the other algorithms
+                        if ($_ -eq "XXH3") {
+                            # format: "XXH3 (<path>) = <hash>"
+                            $hash = $line.Split(" ") | Select-Object -Last 1
+                            $file = $line.Substring(6, $line.Length - 20 - 6)
+                        }
+                        else {
+                            # format: "<hash>  <path>"
+                            $hash = $line.Split(" ") | Select-Object -First 1
+                            $file = ($line.Split(" ") | Select-Object -Skip 2) -join " "
+                        }
+
+                        [PSCustomObject]@{
+                            Algorithm = "$_"
+                            Hash      = "$($hash.ToUpper())"
+                            Path      = "$file"
+                        }
+                    }
+                }
+                Default { Write-Error "Unknown hashing algorithm: `"$_`"." }
+            }
         }
     }
-
-    end {}
 }
 
 function Get-Folder {
@@ -329,8 +375,6 @@ function Wrap-Line {
         [switch] $NoTrim
     )
 
-    begin {}
-
     process {
         $toReturn = New-Object System.Collections.Generic.List[string]
         $Message | ForEach-Object {
@@ -352,8 +396,6 @@ function Wrap-Line {
         }
         $toReturn
     }
-
-    end {}
 }
 
 function Write-Custom {
@@ -373,8 +415,6 @@ function Write-Custom {
         [switch] $TrimBeforeDisplay,
         [switch] $KeepCursorPosition
     )
-
-    begin {}
 
     process {
         # break apart any multi-line strings contained in $Message and attach the given $Prefix
@@ -443,8 +483,6 @@ function Write-Custom {
             Write-CustomLog $Message
         }
     }
-
-    end {}
 }
 
 function Write-CustomError {

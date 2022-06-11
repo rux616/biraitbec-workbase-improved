@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 21, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 22, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -353,20 +353,7 @@ function Invoke-HashActions {
     }
 }
 
-function Wait-KeyPress {
-    [CmdletBinding()]
-    param (
-        [Parameter()] [string] $Message = "Press any key to continue . . . ",
-        [switch] $NoPadding
-    )
-    Write-Custom $Message -NoNewLine -BypassLog
-    [Void][System.Console]::ReadKey($true)
-    if (-not $NoPadding) {
-        Write-Custom "", "" -BypassLog
-    }
-}
-
-function Wrap-Line {
+function Out-WrapLine {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)] [string[]] $Message = "",
@@ -379,22 +366,36 @@ function Wrap-Line {
         $toReturn = New-Object System.Collections.Generic.List[string]
         $Message | ForEach-Object {
             $_ -split "`n" | ForEach-Object {
+                $temp = $_
                 while ($_.Length -gt $Width) {
-                    $wrapPoint = $_.LastIndexOfAny($Delimiters, $Width - 1)
+                    $wrapPoint = $temp.LastIndexOfAny($Delimiters, $Width - 1)
                     # if a delimiter isn't found to the left of the wrap width, check to the right
-                    if ($wrapPoint -lt 0) { $wrapPoint = $_.IndexOfAny($Delimiters, $Width - 1) }
+                    if ($wrapPoint -lt 0) { $wrapPoint = $temp.IndexOfAny($Delimiters, $Width - 1) }
                     # if a delimiter still isn't found, break and just add the whole line
                     if ($wrapPoint -lt 0) { break }
-                    $tempString = $_.Substring(0, $wrapPoint + 1)
+                    $tempString = $temp.Substring(0, $wrapPoint + 1)
                     if (-not $NoTrim) { $tempString = $tempString.TrimEnd() }
                     $toReturn.Add($tempString) | Out-Null
-                    $_ = $_.Substring($wrapPoint + 1)
-                    if (-not $NoTrim) { $_ = $_.TrimStart() }
+                    $temp = $temp.Substring($wrapPoint + 1)
+                    if (-not $NoTrim) { $temp = $temp.TrimStart() }
                 }
                 $toReturn.Add($_) | Out-Null
             }
         }
         $toReturn
+    }
+}
+
+function Wait-KeyPress {
+    [CmdletBinding()]
+    param (
+        [Parameter()] [string] $Message = "Press any key to continue . . . ",
+        [switch] $NoPadding
+    )
+    Write-Custom $Message -NoNewLine -BypassLog
+    [Void][System.Console]::ReadKey($true)
+    if (-not $NoPadding) {
+        Write-Custom "", "" -BypassLog
     }
 }
 
@@ -419,7 +420,7 @@ function Write-Custom {
     process {
         # break apart any multi-line strings contained in $Message and attach the given $Prefix
         $splitMessage = New-Object Collections.Generic.List[String]
-        $Message | Wrap-Line -Width ($LineWidth - $Prefix.Length) | ForEach-Object {
+        $Message | Out-WrapLine -Width ($LineWidth - $Prefix.Length) | ForEach-Object {
             $splitMessage.Add("$Prefix$_") | Out-Null
         }
         $Message = $splitMessage

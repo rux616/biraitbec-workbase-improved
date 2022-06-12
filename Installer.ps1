@@ -21,10 +21,10 @@
 
 param (
     [switch] $NoClearScreen,
+    [switch] $ExtendedValidationMode,
     [switch] $SkipChoosingPatchedBa2Dir,
     [switch] $SkipRepackValidation,
     [switch] $SkipExistingPatchedValidation,
-    [switch] $SkipExtractedRepackValidation,
     [switch] $SkipOriginalBa2Validation,
     [switch] $ForcePatchedBa2Hashing,
     [switch] $AllowUnchanged,
@@ -38,7 +38,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 17, 1)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 18, 1)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -852,23 +852,25 @@ else {
                         throw "Extracting `"$relFile`" failed."
                     }
 
-                    # get file details (checksums) from archive and process the results
-                    $archiveTechnicalInformation = & "$tool7za" l -slt "$relFile" "$(if ($extra) {$extra -join '" "'})"
-                    foreach ($line in $archiveTechnicalInformation |
-                            Select-Object -Skip 18 |
-                            Where-Object { $_ -match "^Path.*" -or $_ -match "^CRC.*" }) {
-                        $splitLine = $line -split " = "
-                        switch ($splitLine | Select-Object -First 1) {
-                            "Path" {
-                                $currentRecord = @{}
-                                $currentRecord.$_ = ($splitLine | Select-Object -Skip 1) -join " = "
-                            }
-                            "CRC" {
-                                $hash = $splitLine | Select-Object -Skip 1
-                                # if an item has a hash, update the file record and add it to the list
-                                if ($hash) {
-                                    $currentRecord.$_ = $hash
-                                    $repack7zFileRecords.Add($currentRecord)
+                    # if using extended validation mode, get file details (checksums) from archive and process the results
+                    if ($ExtendedValidationMode) {
+                        $archiveTechnicalInformation = & "$tool7za" l -slt "$relFile" "$(if ($extra) {$extra -join '" "'})"
+                        foreach ($line in $archiveTechnicalInformation |
+                                Select-Object -Skip 18 |
+                                Where-Object { $_ -match "^Path.*" -or $_ -match "^CRC.*" }) {
+                            $splitLine = $line -split " = "
+                            switch ($splitLine | Select-Object -First 1) {
+                                "Path" {
+                                    $currentRecord = @{}
+                                    $currentRecord.$_ = ($splitLine | Select-Object -Skip 1) -join " = "
+                                }
+                                "CRC" {
+                                    $hash = $splitLine | Select-Object -Skip 1
+                                    # if an item has a hash, update the file record and add it to the list
+                                    if ($hash) {
+                                        $currentRecord.$_ = $hash
+                                        $repack7zFileRecords.Add($currentRecord)
+                                    }
                                 }
                             }
                         }
@@ -899,10 +901,6 @@ else {
                 switch ($object.Key) {
                     # special case: if on main and using performance, copy previously-saved texture
                     "Main" {
-                        if ($repackFlags.Performance) {
-                            Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Force -ErrorAction Stop
-                            ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" }).CRC = "4B0F2DCE"
-                        }
                         if ($repackFlags.Performance) {
                             # special case: if on main and using performance but not quality, copy previously-saved textures
                             if (-not $repackFlags.Quality) {
@@ -975,15 +973,12 @@ else {
                 Write-CustomLog "    Post-extraction tasks duration: $($toolTimer.Elapsed.ToString())"
             }
 
-            # validate extracted files
-            try {
-                $toolTimer.Restart()
+            # if using extended validation mode, validate extracted files
+            if ($ExtendedValidationMode) {
+                try {
+                    $toolTimer.Restart()
 
-                Write-Custom "    Validating extracted files..." -NoNewLine
-                if ($SkipExtractedRepackValidation) {
-                    Write-CustomWarning "    [SKIPPED]"
-                }
-                else {
+                    Write-Custom "    Validating extracted files..." -NoNewLine
                     Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
 
                     # set max threads to the number of logical processors available
@@ -1058,17 +1053,17 @@ else {
 
                     Write-CustomSuccess "    [VALID]"
                 }
-            }
-            catch {
-                Write-CustomError "    [FAIL]"
-                Write-CustomError $_ -ExtraContext $extraErrorText -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
-                Write-CustomLog $_.InvocationInfo.PositionMessage -ExtraContext $extraErrorLog -Prefix "    ERROR: "
-                $extractRepackFailed = $true
-                break
-            }
-            finally {
-                $extraErrorText, $extraErrorLog = $null
-                Write-CustomLog "    Validation duration: $($toolTimer.Elapsed.ToString())"
+                catch {
+                    Write-CustomError "    [FAIL]"
+                    Write-CustomError $_ -ExtraContext $extraErrorText -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+                    Write-CustomLog $_.InvocationInfo.PositionMessage -ExtraContext $extraErrorLog -Prefix "    ERROR: "
+                    $extractRepackFailed = $true
+                    break
+                }
+                finally {
+                    $extraErrorText, $extraErrorLog = $null
+                    Write-CustomLog "    Validation duration: $($toolTimer.Elapsed.ToString())"
+                }
             }
         }
         finally {
@@ -1113,6 +1108,7 @@ for ($index = 0; $index -lt $potentiallyBadPatchedFilenames.Count; $index++) {
         catch {
             Write-CustomError "  [ERROR]"
             Write-CustomError $_ -Prefix "  ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+            Write-CustomLog $("-" * 20), $_.InvocationInfo.PositionMessage -Prefix "  ERROR: "
             Exit-Script 1
         }
     }
@@ -1143,6 +1139,7 @@ try {
 }
 catch {
     Write-CustomError $_ -Prefix "ERROR: " -SnippetLength 3
+    Write-CustomLog $("-" * 20), $_.InvocationInfo.PositionMessage -Prefix "ERROR: "
     Exit-Script 1
 }
 
@@ -1274,9 +1271,9 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         # copy patched files
         Write-Custom "      Copying patched files..." -NoNewline
         Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
-        Write-CustomLog "`"$toolRobocopy`" `"$($dir.patchedFiles)`" `"$($dir.workingFiles)`" /s /xl /np /njh" -Log "tool"
+        Write-CustomLog "`"$toolRobocopy`" `"$($dir.patchedFiles)`" `"$($dir.workingFiles)`" /s /xl /np /njh /r:3 /w:10" -Log "tool"
         $toolTimer.Restart()
-        $stdout, $stderr = (& "$toolRobocopy" "$($dir.patchedFiles)" "$($dir.workingFiles)" /s /xl /np /njh 2>&1).
+        $stdout, $stderr = (& "$toolRobocopy" "$($dir.patchedFiles)" "$($dir.workingFiles)" /s /xl /np /njh /r:3 /w:10 2>&1).
         Where({ $_ -is [string] -and $_ -ne "" }, "Split")
         Write-CustomLog "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
         Write-CustomLog "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"

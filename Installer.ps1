@@ -38,7 +38,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "BRBWIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 18, 1)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 19, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -122,10 +122,6 @@ $toolArchive2 = "$($dir.tools)\Archive2\Archive2.exe"
 # BSA Browser v1.14.1 by AlexxEG
 # https://www.nexusmods.com/skyrimspecialedition/mods/1756
 $toolBsab = "$($dir.tools)\BSA Browser\bsab.exe"
-
-# robocopy by Microsoft
-# included with Windows
-$toolRobocopy = "robocopy"
 
 # xxhsum v0.8.1 by cyan4973
 # https://cyan4973.github.io/xxHash/
@@ -465,7 +461,7 @@ if ($existingRepackFiles.Count -gt 0) {
                         $extraErrorText = @(
                             "The size of this repack archive doesn't match any known archives."
                             ""
-                            "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying."
+                            "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
                         )
                         $extraErrorLog = @("(No extra log info.)")
                         throw "Size mismatch."
@@ -480,7 +476,7 @@ if ($existingRepackFiles.Count -gt 0) {
                         $extraErrorText = @(
                             "The exact contents of this repack archive don't match any known archives."
                             ""
-                            "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying."
+                            "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
                         )
                         $extraErrorLog = @("(No extra log info.)")
                         throw "Unrecognized file."
@@ -1179,7 +1175,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
                     ""
                     "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
                     ""
-                    "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying."
+                    "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
                 )
                 $extraErrorLog = @("Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length) bytes")
                 throw "Size mismatch."
@@ -1208,7 +1204,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
                     ""
                     "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
                     ""
-                    "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying."
+                    "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
                 )
                 $extraErrorLog = @("(No extra log info.)")
                 throw "Unrecognized archive file."
@@ -1271,27 +1267,27 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         # copy patched files
         Write-Custom "      Copying patched files..." -NoNewline
         Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
-        Write-CustomLog "`"$toolRobocopy`" `"$($dir.patchedFiles)`" `"$($dir.workingFiles)`" /s /xl /np /njh /r:3 /w:10" -Log "tool"
-        $toolTimer.Restart()
-        $stdout, $stderr = (& "$toolRobocopy" "$($dir.patchedFiles)" "$($dir.workingFiles)" /s /xl /np /njh /r:3 /w:10 2>&1).
-        Where({ $_ -is [string] -and $_ -ne "" }, "Split")
-        Write-CustomLog "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-CustomLog "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
-        if ($LASTEXITCODE -ge 8) {
-            # because robocopy doesn't use stderr, copy stdout to stderr, but check anyway just in case
-            if ($stderr -eq "") {
-                $stderr = $stdout
+        Push-Location $dir.workingFiles
+        $relativeFileList = (Get-ChildItem -File -Recurse | Resolve-Path -Relative).Substring(2)
+        Pop-Location
+        $relativeFileList = $relativeFileList | Where-Object { Test-Path "$($dir.patchedFiles)\$_" }
+        $relativeFileList | ForEach-Object {
+            try {
+                Copy-Item -LiteralPath "$($dir.patchedFiles)\$_" -Destination "$($dir.workingFiles)\$_" -Force -ErrorAction Stop
             }
-            $extraErrorText = @(
-                "The program used to copy patched files (robocopy.exe) has indicated that an error occurred while copying said files. Unfortunately, robocopy.exe doesn't output an error that can be interpreted by this script."
-            )
-            $extraErrorLog = @(
-                $stderr
-                "Exit code: $LASTEXITCODE"
-            )
-            throw "Copying patched files failed."
+            catch {
+                $script:extraErrorText = @(
+                    "The following error occurred when attempting to copy the files:"
+                    ""
+                    $_
+                )
+                $script:extraErrorLog = @(
+                    $_.InvocationInfo.PositionMessage
+                )
+                throw "Copying patched files failed."
+            }
         }
-        $stdout, $stderr = $null
+
         Write-CustomSuccess "      [DONE]"
 
         # create patched archive

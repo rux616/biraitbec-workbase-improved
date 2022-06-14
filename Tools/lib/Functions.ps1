@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 22, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 23, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -256,8 +256,9 @@ function Get-FileHash {
                         }
                         else {
                             # format: "<hash>  <path>"
-                            $hash = $line.Split(" ") | Select-Object -First 1
-                            $file = ($line.Split(" ") | Select-Object -Skip 2) -join " "
+                            $splitLine = $line.Split(" ")
+                            $hash = $splitLine | Select-Object -First 1
+                            $file = ($splitLine | Select-Object -Skip 2) -join " "
                         }
 
                         [PSCustomObject]@{
@@ -367,7 +368,7 @@ function Out-WrapLine {
         $Message | ForEach-Object {
             $_ -split "`n" | ForEach-Object {
                 $temp = $_
-                while ($_.Length -gt $Width) {
+                while ($temp.Length -gt $Width) {
                     $wrapPoint = $temp.LastIndexOfAny($Delimiters, $Width - 1)
                     # if a delimiter isn't found to the left of the wrap width, check to the right
                     if ($wrapPoint -lt 0) { $wrapPoint = $temp.IndexOfAny($Delimiters, $Width - 1) }
@@ -379,10 +380,108 @@ function Out-WrapLine {
                     $temp = $temp.Substring($wrapPoint + 1)
                     if (-not $NoTrim) { $temp = $temp.TrimStart() }
                 }
-                $toReturn.Add($_) | Out-Null
+                $toReturn.Add($temp) | Out-Null
             }
         }
         $toReturn
+    }
+}
+
+<#
+.SYNOPSIS
+    Run the specified script block over each object in $InputObject in parallel
+#>
+function Invoke-Parallel {
+    [CmdletBinding()]
+    param (
+        # This is the object containing the objects that will be worked on in parallel
+        [Parameter(Mandatory, ValueFromPipeline)] [PSObject] $InputObject,
+        # This is the script block that will run in parallel
+        [Parameter(Mandatory, Position = 0)] [ScriptBlock] $ScriptBlock,
+        # This is the hashtable of parameters for the script block
+        [Parameter()] [hashtable] $ParameterTable,
+        # This is the name of the variable used to reference the particular input object being operated on in the script block
+        [Parameter()] [string] $InputObjectParameterName = 'Object',
+        # The minimum number of threads
+        [Parameter()] [ValidateRange(1, 255)] [int] $MinThreads = 1,
+        # The maximum number of threads
+        [Parameter()] [ValidateRange(1, 255)] [int] $MaxThreads = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
+    )
+
+    begin {
+        # if the minimum number of threads is greater than the maximum number of threads, swap them
+        if ($MinThreads -gt $MaxThreads) {
+            $temp = $MinThreads
+            $MinThreads = $MaxThreads
+            $MaxThreads = $temp
+        }
+
+        # set up a runspace pool
+        $runspacePool = [RunspaceFactory]::CreateRunspacePool($MinThreads, $MaxThreads)
+        $runspacePool.Open()
+
+        # set up a variable to collect all the jobs
+        $jobs = New-Object System.Collections.Generic.List[hashtable]
+    }
+
+    process {
+        # engage all the threads and collect everything into $jobs
+        $InputObject | ForEach-Object {
+            $powerShell = [PowerShell]::Create()
+            $powerShell.RunspacePool = $runspacePool
+            # set the location of the powershell object to the current directory so relative paths work
+            $powerShell.AddCommand("Set-Location").AddArgument((Get-Location)) | Out-Null
+            # add the script block to the powershell instance and give it the proper parameters
+            $powerShell.AddScript($ScriptBlock).AddParameters(@{ $InputObjectParameterName = $_ } + $ParameterTable) | Out-Null
+            $jobs.Add(@{ PowerShell = $powerShell; Handle = $powerShell.BeginInvoke() })
+        }
+    }
+
+    end {
+        # check once per second if all the jobs are completed
+        while ($jobs.Handle.IsCompleted -contains $false) { Start-Sleep -Seconds 1 }
+
+        # make a list for capturing error records so that all the different threads can get cleaned up without interruption
+        $errorRecords = New-Object System.Collections.Generic.List[System.Management.Automation.ErrorRecord]
+
+        try {
+            # collect the results of all the jobs and clean up the powershell instances
+            $results = $jobs | ForEach-Object {
+                # capture any non-terminating errors that occurred
+                $_.PowerShell.Streams.Error | ForEach-Object { $errorRecords.Add($_) }
+
+                # attempt to gather results from the PowerShell instance
+                try {
+                    $_.PowerShell.EndInvoke($_.Handle)
+                }
+                catch {
+                    # if an inner exception exists, capture the inner most exception's ErrorRecord property
+                    if ($_.Exception.InnerException) {
+                        $exception = $_.Exception
+                        while ($exception.InnerException) { $exception = $exception.InnerException }
+                        $errorRecords.Add($exception.ErrorRecord)
+                    }
+                    # otherwise just capture the initial ErrorRecord
+                    else {
+                        $errorRecords.Add($_)
+                    }
+                }
+                finally {
+                    # clean up the PowerShell instance
+                    $_.PowerShell.Dispose()
+                }
+            }
+        }
+        finally {
+            # clean up the jobs list and runspace pool
+            $jobs.Clear()
+            $runspacePool.Close()
+        }
+
+        # express all the error records captured earlier
+        $errorRecords | ForEach-Object { Write-Error $_ }
+
+        $results
     }
 }
 

@@ -97,9 +97,46 @@ $ba2Files.fallout4Textures7 = "Fallout4 - Textures7.ba2"
 $ba2Files.fallout4Textures8 = "Fallout4 - Textures8.ba2"
 $ba2Files.fallout4Textures9 = "Fallout4 - Textures9.ba2"
 
-$driveBytesUsed = (Get-Item $dir.currentDirectory).PSDrive.Used
-$driveBytesFree = (Get-Item $dir.currentDirectory).PSDrive.Free
-$driveBytesTotal = $driveBytesUsed + $driveBytesFree
+class WBIDriveInfo {
+    [string] $DriveLetter
+    [string] $MediaType
+    [string] $BusType
+    [long] $SizeFree
+    [float] $SizeFreePercent
+    [long] $SizeUsed
+    [float] $SizeUsedPercent
+    [long] $SizeTotal
+}
+Update-FormatData "$($dir.tools)\lib\WorkBaseImproved.Format.ps1xml"
+$driveInfo = Get-PhysicalDisk |
+    ForEach-Object {
+        $physicalDisk = $_
+        Get-Partition -DiskNumber $_.DeviceId |
+            Where-Object { $_.DriveLetter } |
+            Get-Volume |
+            ForEach-Object {
+                $driveInfo = [WBIDriveInfo]::New()
+                $driveInfo.DriveLetter = $_.DriveLetter
+                $driveInfo.MediaType = $physicalDisk.MediaType
+                $driveInfo.BusType = $physicalDisk.BusType
+                $driveInfo.SizeFree = $_.SizeRemaining
+                $driveInfo.SizeFreePercent = if ($_.Size) { $_.SizeRemaining / $_.Size * 100 } else { -1 }
+                $driveInfo.SizeUsed = $_.Size - $_.SizeRemaining
+                $driveInfo.SizeUsedPercent = if ($_.Size) { ($_.Size - $_.SizeRemaining) / $_.Size * 100 } else { -1 }
+                $driveInfo.SizeTotal = $_.Size
+                $driveInfo
+            }
+        } | Sort-Object -Property DriveLetter
+
+# determine the max number of threads to use by default - 2 if HDD, 16 if not
+$maxDriveThreads = if (
+    $driveInfo -and
+    ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).MediaType -eq "HDD") {
+    2
+}
+else {
+    16
+}
 
 $sectionTimer = New-Object System.Diagnostics.Stopwatch
 $archiveTimer = New-Object System.Diagnostics.Stopwatch
@@ -179,7 +216,9 @@ Remove-Item "$($dir.Logs)\current.*.log" -ErrorAction SilentlyContinue
 $Host.UI.RawUI.BackgroundColor = 'black'
 if (-not $NoClearScreen) { Clear-Host }
 
-# write some diagnostic information to the log
+# write some diagnostic information to the logs
+Write-CustomLog "Run start: $RunStartTime"
+Write-CustomLog "Run start: $RunStartTime" -log tool
 Write-CustomLog @(
     ">" * $LineWidth
     "Diagnostic Information:"
@@ -200,10 +239,8 @@ Write-CustomLog @(
     "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { "$msvcr110dllVersion (Hash: $msvcr110dllHash, Size: $msvcr110dllSize bytes)" } else { "(Not Found)" })
     ""
     "  Current Directory: $($dir.currentDirectory)"
-    "  Drive Size Info:"
-    "    Free: $(Write-PrettySize $driveBytesFree) ($(($driveBytesFree / $driveBytesTotal * 100).ToString('f1'))%)"
-    "    Used: $(Write-PrettySize $driveBytesUsed) ($(($driveBytesUsed / $driveBytesTotal * 100).ToString('f1'))%)"
-    "    Total: $(Write-PrettySize $driveBytesTotal)"
+    "  Drive Info:"
+    ($driveInfo | Format-Table | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     ""
     "  Number of repack archive hashes: $($repack7zHashes.Keys.Count)"
     "  Number of original BA2 hashes: $($originalBa2Hashes.Keys.Count)"
@@ -977,62 +1014,25 @@ else {
                     Write-Custom "    Validating extracted files..." -NoNewLine
                     Write-Custom "[WORKING...]" -NoNewLine -JustifyRight -KeepCursorPosition -BypassLog
 
-                    # set max threads to the number of logical processors available
-                    $maxThreads = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
-
-                    # this particular code for parallelization doesn't work in PowerShell 7.2.x,
-                    # so it's gated to PowerShell 5.1.x
-                    if ($PSVersionTable.PSVersion.Major -eq 5 -and $PSVersionTable.PSVersion.Minor -eq 1) {
-                        # set up a runspace pool
-                        $runspacePool = [RunspaceFactory]::CreateRunspacePool(1, $maxThreads)
-                        $runspacePool.Open()
-
-                        # engage all the threads and collect everything into $jobs
-                        $jobs = $repack7zFileRecords | ForEach-Object {
-                            $powerShell = [PowerShell]::Create()
-                            $powerShell.RunspacePool = $runspacePool
-                            $powerShell.AddScript(
-                                {
-                                    param([Hashtable] $Dir, [Hashtable] $FileRecord)
-                                    # enable capability to calculate CRC32 checksums
-                                    Add-Type -TypeDefinition (Get-Content "$($Dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
-                                    . "$($Dir.tools)\lib\Functions.ps1"
-                                    # hash the file
-                                    $hash = (Get-FileHash -LiteralPath "$($Dir.patchedFiles)\$($FileRecord.Path)" -Algorithm CRC32 -ErrorAction SilentlyContinue).Hash
-                                    # if the hash doesn't match, we want to know about it; emit an object
-                                    # containing the file record and computed hash
-                                    if ($hash -ne $FileRecord.CRC) { , @{ FileRecord = $FileRecord; CalculatedCRC = $hash } }
-                                }
-                            ).AddParameters(@{ Dir = $Dir; FileRecord = $_ }) | Out-Null
-                            , @{ PowerShell = $powerShell; Handle = $powerShell.BeginInvoke() }
-                        }
-                        # check once per second if all the jobs are completed
-                        while ($jobs.Handle.IsCompleted -contains $false) { Start-Sleep -Seconds 1 }
-
-                        # collect the results of all the jobs (ideally this will be empty) and clean up the
-                        # powershell instances
-                        $results = $jobs | ForEach-Object {
-                            $_.PowerShell.EndInvoke($_.Handle)
-                            $_.PowerShell.Dispose()
-                        }
-                        # clean up the jobs array and runspace pool
-                        $jobs.Clear()
-                        $runspacePool.Close()
-                    }
-                    # ForEach-Object -Parallel is new to PowerShell 7, so gate it
-                    elseif ($PSVersionTable.PSVersion.Major -eq 7 -and $PSVersionTable.PSVersion.Minor -eq 2) {
-                        $results = $repack7zFileRecords | ForEach-Object -ThrottleLimit $maxThreads -Parallel {
-                            $dir = $using:dir
+                    $argList = @{
+                        ScriptBlock              = {
+                            param([Hashtable] $FileRecord, [Hashtable] $Dir)
                             # enable capability to calculate CRC32 checksums
-                            Add-Type -TypeDefinition (Get-Content "$($dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
-                            . "$($dir.tools)\lib\Functions.ps1"
+                            Add-Type -TypeDefinition (Get-Content "$($Dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
+                            . "$($Dir.tools)\lib\Functions.ps1"
                             # hash the file
-                            $hash = (Get-FileHash -LiteralPath "$($dir.patchedFiles)\$($_.Path)" -Algorithm CRC32 -ErrorAction SilentlyContinue).Hash
+                            $hash = (Get-FileHash -LiteralPath "$($Dir.patchedFiles)\$($FileRecord.Path)" -Algorithm CRC32 -ErrorAction SilentlyContinue).Hash
                             # if the hash doesn't match, we want to know about it; emit an object
                             # containing the file record and computed hash
-                            if ($hash -ne $_.CRC) { , @{ FileRecord = $_; CalculatedCRC = $hash } }
+                            if ($hash -ne $FileRecord.CRC) { , @{ FileRecord = $FileRecord; CalculatedCRC = $hash } }
                         }
+                        ParameterTable           = @{
+                            Dir = $dir
+                        }
+                        InputObjectParameterName = "FileRecord"
+                        MaxThreads               = $maxDriveThreads
                     }
+                    $results = $repack7zFileRecords | Invoke-Parallel @argList
 
                     # if there is anything in $results, then validation failed on one or more files
                     if ($results) {
@@ -1250,7 +1250,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
                 $stderr = $stdout
             }
             $extraErrorText = @(
-                "The program used to extract cube maps from archives (bsab.exe) has indicated that an error occurred while extracting cube maps from one of said archives. Unfortunately, bsab.exe doesn't output an error that can be interpreted by this script."
+                "The program used to extract cube maps from archives (bsab.exe) has indicated that an error occurred while extracting files from one of said archives. Unfortunately, bsab.exe doesn't output an error that can be interpreted by this script."
             )
             $extraErrorLog = @(
                 $stderr
@@ -1271,21 +1271,29 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         $relativeFileList = (Get-ChildItem -File -Recurse | Resolve-Path -Relative).Substring(2)
         Pop-Location
         $relativeFileList = $relativeFileList | Where-Object { Test-Path "$($dir.patchedFiles)\$_" }
-        $relativeFileList | ForEach-Object {
-            try {
-                Copy-Item -LiteralPath "$($dir.patchedFiles)\$_" -Destination "$($dir.workingFiles)\$_" -Force -ErrorAction Stop
+        $argList = @{
+            ScriptBlock              = {
+                param([string] $File, [string] $SourceFolder, [string] $DestinationFolder)
+                Copy-Item -LiteralPath "$SourceFolder\$File" -Destination "$DestinationFolder\$File" -Force
             }
-            catch {
-                $script:extraErrorText = @(
-                    "The following error occurred when attempting to copy the files:"
-                    ""
-                    $_
-                )
-                $script:extraErrorLog = @(
-                    $_.InvocationInfo.PositionMessage
-                )
-                throw "Copying patched files failed."
+            ParameterTable           = @{
+                SourceFolder      = $dir.patchedFiles
+                DestinationFolder = $dir.workingFiles
             }
+            InputObjectParameterName = "File"
+            MaxThreads               = $maxDriveThreads
+            ErrorAction              = "SilentlyContinue"
+            ErrorVariable            = "errorRecords"
+        }
+        $relativeFileList | Invoke-Parallel @argList
+        if ($errorRecords) {
+            $extraErrorText = @(
+                "Error$(if ($errorRecords.Count -gt 1) {"s"}) occurred when attempting to copy the files."
+            )
+            $extraErrorLog = @(
+                $errorRecords | ForEach-Object { $_.ToString(); $_.InvocationInfo.PositionMessage }
+            )
+            throw "Copying patched files failed."
         }
 
         Write-CustomSuccess "      [DONE]"

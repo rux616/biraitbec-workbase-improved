@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 24, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 25, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -370,42 +370,9 @@ function Invoke-HashActions {
     }
 }
 
-function Out-WrapLine {
-    [CmdletBinding()]
-    param (
-        [Parameter(ValueFromPipeline)] [string[]] $Message = "",
-        [char[]] $Delimiters = [char[]] @(" ", "`t", "-", ",", ".", ":", "/", "\"),
-        [int] $Width = $LineWidth,
-        [switch] $NoTrim
-    )
-
-    process {
-        $toReturn = New-Object System.Collections.Generic.List[string]
-        $Message | ForEach-Object {
-            $_ -split "`n" | ForEach-Object {
-                $temp = $_
-                while ($temp.Length -gt $Width) {
-                    $wrapPoint = $temp.LastIndexOfAny($Delimiters, $Width - 1)
-                    # if a delimiter isn't found to the left of the wrap width, check to the right
-                    if ($wrapPoint -lt 0) { $wrapPoint = $temp.IndexOfAny($Delimiters, $Width - 1) }
-                    # if a delimiter still isn't found, break and just add the whole line
-                    if ($wrapPoint -lt 0) { break }
-                    $tempString = $temp.Substring(0, $wrapPoint + 1)
-                    if (-not $NoTrim) { $tempString = $tempString.TrimEnd() }
-                    $toReturn.Add($tempString) | Out-Null
-                    $temp = $temp.Substring($wrapPoint + 1)
-                    if (-not $NoTrim) { $temp = $temp.TrimStart() }
-                }
-                $toReturn.Add($temp) | Out-Null
-            }
-        }
-        $toReturn
-    }
-}
-
 <#
 .SYNOPSIS
-    Run the specified script block over each object in $InputObject in parallel
+    Run the specified script block over each object in $InputObject in parallel (wrapper for Invoke-ParallelActual)
 #>
 function Invoke-Parallel {
     [CmdletBinding()]
@@ -420,10 +387,55 @@ function Invoke-Parallel {
         [Parameter()] [string] $InputObjectParameterName = 'Object',
         # This is the directory to start in, defaults to the current folder
         [Parameter()] [ValidateScript({ Test-Path $_ -PathType Container })] [string] $StartingDirectory = (Get-Location),
+        # This is the number of items to send to each invocation of Invoke-ParallelActual. If you experience memory pressure, lower this number.
+        [Parameter()] [UInt64] $RunspacePoolJobLimit = [UInt64]::MaxValue,
         # The minimum number of threads, defaults to 1
         [Parameter()] [ValidateRange(1, 255)] [int] $MinThreads = 1,
         # The maximum number of threads, defaults to the number of logical processors
         [Parameter()] [ValidateRange(1, 255)] [int] $MaxThreads = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
+    )
+
+    begin {
+        # set up list to capture all input objects
+        $allInputObjects = New-Object System.Collections.Generic.List[PSObject]
+    }
+
+    process {
+        # capture all input objects
+        $InputObject | ForEach-Object { $allInputObjects.Add($_) }
+    }
+
+    end {
+        # set up base hashtable
+        $argList = @{
+            InputObject              = $null
+            ScriptBlock              = $ScriptBlock
+            ParameterTable           = $ParameterTable
+            InputObjectParameterName = $InputObjectParameterName
+            StartingDirectory        = $StartingDirectory
+            MinThreads               = $MinThreads
+            MaxThreads               = $MaxThreads
+        }
+        # send a number of input objects equal to the runspace pool job limit to the Invoke-ParallelActual function
+        for ($index = 0; $index -le $allInputObjects.Count; $index += $RunspacePoolJobLimit) {
+            $indexEnd = [Math]::Min($index + $RunspacePoolJobLimit, $allInputObjects.Count) - 1
+            $argList.InputObject = $allInputObjects[$index .. $indexEnd]
+            Invoke-ParallelActual @argList
+        }
+    }
+}
+
+# Run the specified script block over each object in $InputObject in parallel. Intended to be wrapped by Invoke-Parallel
+function Invoke-ParallelActual {
+    [CmdletBinding()]
+    param (
+        [PSObject] $InputObject,
+        [ScriptBlock] $ScriptBlock,
+        [hashtable] $ParameterTable,
+        [string] $InputObjectParameterName,
+        [string] $StartingDirectory,
+        [int] $MinThreads,
+        [int] $MaxThreads
     )
 
     begin {
@@ -501,6 +513,39 @@ function Invoke-Parallel {
         $errorRecords | ForEach-Object { Write-Error $_ }
 
         $results
+    }
+}
+
+function Out-WrapLine {
+    [CmdletBinding()]
+    param (
+        [Parameter(ValueFromPipeline)] [string[]] $Message = "",
+        [char[]] $Delimiters = [char[]] @(" ", "`t", "-", ",", ".", ":", "/", "\"),
+        [int] $Width = $LineWidth,
+        [switch] $NoTrim
+    )
+
+    process {
+        $toReturn = New-Object System.Collections.Generic.List[string]
+        $Message | ForEach-Object {
+            $_ -split "`n" | ForEach-Object {
+                $temp = $_
+                while ($temp.Length -gt $Width) {
+                    $wrapPoint = $temp.LastIndexOfAny($Delimiters, $Width - 1)
+                    # if a delimiter isn't found to the left of the wrap width, check to the right
+                    if ($wrapPoint -lt 0) { $wrapPoint = $temp.IndexOfAny($Delimiters, $Width - 1) }
+                    # if a delimiter still isn't found, break and just add the whole line
+                    if ($wrapPoint -lt 0) { break }
+                    $tempString = $temp.Substring(0, $wrapPoint + 1)
+                    if (-not $NoTrim) { $tempString = $tempString.TrimEnd() }
+                    $toReturn.Add($tempString) | Out-Null
+                    $temp = $temp.Substring($wrapPoint + 1)
+                    if (-not $NoTrim) { $temp = $temp.TrimStart() }
+                }
+                $toReturn.Add($temp) | Out-Null
+            }
+        }
+        $toReturn
     }
 }
 

@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 23, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 24, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -162,7 +162,7 @@ function Get-FileHash {
         }
 
         # process any directories and wildcards and build a list of actual files to hash
-        $filesActual = foreach ($file in $files) {
+        $allFiles = foreach ($file in $files) {
             if ($file -is [System.IO.FileSystemInfo]) {
                 $file = $file.FullName
             }
@@ -170,27 +170,43 @@ function Get-FileHash {
                 if (Test-Path $file -PathType Container) {
                     $file += "\*"
                 }
-                Resolve-Path -Path $file
+                Resolve-Path -Path $file | Where-Object { Test-Path $_ -PathType Leaf }
             }
             elseif ($LiteralPath -and -not (Test-Path $file -PathType Container)) {
                 Resolve-Path -LiteralPath $file
             }
         }
         # sort and remove duplicates
-        $filesActual = $filesActual | Sort-Object -Unique
+        $allFiles = $allFiles | Sort-Object -Unique
+
+        # break down the list of all files into sub-lists of files whose cumulative path lengths are no longer than 8000 characters
+        $fileLists = New-Object System.Collections.Generic.List[PSObject]
+        $fileList = New-Object System.Collections.Generic.List[System.Management.Automation.PathInfo]
+        $allFiles | ForEach-Object {
+            $cumulativeFileNameLength += $_.Path.Length + 1
+            if ($cumulativeFileNameLength -le 8000) {
+                $fileList.Add($_)
+            }
+            else {
+                $fileLists.Add($fileList)
+                $fileList = New-Object System.Collections.Generic.List[string]
+                $fileList.Add($_)
+                $cumulativeFileNameLength = $_.Path.Length
+            }
+        }
+        if ($fileList) { $fileLists.Add($fileList) }
 
         # provided there are files to work on, do the hashing
-        if ($filesActual) {
+        foreach ($fileList in $fileLists) {
             switch ($Algorithm.ToUpper()) {
                 # the built-in Get-FileHash cmdlet handles SHA{1,256,384,512} and MD5 hashing
                 { @("SHA1", "SHA256", "SHA384", "SHA512", "MD5") -contains $_ } {
+                    $argList = @{
+                        $(if ($Path) { "Path" } else { "LiteralPath" }) = $fileList
+                        Algorithm                                       = $_
+                    }
                     # collect results
-                    $results = if ($LiteralPath) {
-                        Microsoft.PowerShell.Utility\Get-FileHash -LiteralPath $filesActual -Algorithm $_
-                    }
-                    elseif ($Path) {
-                        Microsoft.PowerShell.Utility\Get-FileHash -Path $filesActual -Algorithm $_
-                    }
+                    $results = Microsoft.PowerShell.Utility\Get-FileHash @argList
                     # repackage the results into basic PSCustomObjects
                     $results | ForEach-Object {
                         [PSCustomObject]@{
@@ -202,7 +218,7 @@ function Get-FileHash {
                 }
                 # CRC32 hashing is handled by a bundled C# script
                 "CRC32" {
-                    foreach ($file in $filesActual) {
+                    foreach ($file in $fileList) {
                         # adapted from https://gist.github.com/r3t3ch/86c944ac14a69bccbd81bff698050b83
                         # create a new instance of a crc32 object
                         $crc32 = New-Object DamienG.Security.Cryptography.Crc32
@@ -241,11 +257,11 @@ function Get-FileHash {
                     # the xxhsum command is ran, then the error action preference is changed back to the stored value
                     $errorActionPreferenceSaved = $ErrorActionPreference
                     $ErrorActionPreference = "SilentlyContinue"
-                    $stdout, $stderr = (& "$toolXxhsum" -$xxhAlgorithm $filesActual 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
+                    $stdout, $stderr = (xxhsum.exe -$xxhAlgorithm $fileList 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
                     $ErrorActionPreference = $errorActionPreferenceSaved
-                    if ($LASTEXITCODE -ne 0) {
-                        Write-Error $stderr
-                    }
+
+                    # xxhsum will actually kick back real exceptions, so emit them
+                    $stderr = $stderr | Where-Object { $_.TargetObject -and $_.TargetObject.Trim() } | ForEach-Object { Write-Error $_ }
 
                     foreach ($line in $stdout) {
                         # hashing done with the XXH3 algorithm has a slightly different output format compared to the other algorithms
@@ -400,11 +416,13 @@ function Invoke-Parallel {
         [Parameter(Mandatory, Position = 0)] [ScriptBlock] $ScriptBlock,
         # This is the hashtable of parameters for the script block
         [Parameter()] [hashtable] $ParameterTable,
-        # This is the name of the variable used to reference the particular input object being operated on in the script block
+        # This is the name of the variable used to reference the particular input object being operated on in the script block, defaults to 'Object'
         [Parameter()] [string] $InputObjectParameterName = 'Object',
-        # The minimum number of threads
+        # This is the directory to start in, defaults to the current folder
+        [Parameter()] [ValidateScript({ Test-Path $_ -PathType Container })] [string] $StartingDirectory = (Get-Location),
+        # The minimum number of threads, defaults to 1
         [Parameter()] [ValidateRange(1, 255)] [int] $MinThreads = 1,
-        # The maximum number of threads
+        # The maximum number of threads, defaults to the number of logical processors
         [Parameter()] [ValidateRange(1, 255)] [int] $MaxThreads = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
     )
 
@@ -430,7 +448,7 @@ function Invoke-Parallel {
             $powerShell = [PowerShell]::Create()
             $powerShell.RunspacePool = $runspacePool
             # set the location of the powershell object to the current directory so relative paths work
-            $powerShell.AddCommand("Set-Location").AddArgument((Get-Location)) | Out-Null
+            $powerShell.AddCommand("Set-Location").AddArgument($StartingDirectory) | Out-Null
             # add the script block to the powershell instance and give it the proper parameters
             $powerShell.AddScript($ScriptBlock).AddParameters(@{ $InputObjectParameterName = $_ } + $ParameterTable) | Out-Null
             $jobs.Add(@{ PowerShell = $powerShell; Handle = $powerShell.BeginInvoke() })
@@ -476,6 +494,7 @@ function Invoke-Parallel {
             # clean up the jobs list and runspace pool
             $jobs.Clear()
             $runspacePool.Close()
+            $runspacePool.Dispose()
         }
 
         # express all the error records captured earlier

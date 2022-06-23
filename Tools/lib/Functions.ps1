@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 25, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 26, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -28,30 +28,39 @@ function Add-Hash {
         [Parameter(Mandatory)] [string] $Hash,
         [Parameter(Mandatory)] [string] $FileName,
         [Parameter(Mandatory)] [string] $Tag,
+        [Parameter()] [ValidateSet('FileName', 'Hash')] [string] $KeyType = 'Hash',
         [Parameter()] [long] $FileSize = -1,
         [Parameter()] [string] $Action = $null
     )
 
     $var = (Get-Variable -Name $VariableName -ErrorAction Stop).Value
-    if ($var.ContainsKey($Hash)) {
-        if ($var[$Hash].FileName -ne $FileName) {
-            throw "Assigning file `"$FileName`" to hash `"$Hash`" failed because that hash is already in use by file `"$($var[$Hash].FileName)`"."
+    $key = switch ($KeyType) {
+        'FileName' { $FileName }
+        'Hash' { $Hash }
+    }
+    if ($var.ContainsKey($key)) {
+        if ($var[$key].FileName -ne $FileName) {
+            throw "Assigning file `"$FileName`" to key `"$key`" failed because that key is already in use by file `"$($var[$key].FileName)`"."
         }
         if ($FileSize -ne -1) {
-            if ($var[$Hash].FileSize -eq -1) {
-                $var[$Hash].FileSize = $FileSize
+            if ($var[$key].FileSize -eq -1) {
+                $var[$key].FileSize = $FileSize
             }
-            elseif ($var[$Hash].FileSize -ne $FileSize) {
-                throw "Assigning size `"$FileSize`" to hash `"$Hash`" failed because that hash already has size `"$($var[$Hash].FileSize)`"."
+            elseif ($var[$key].FileSize -ne $FileSize) {
+                throw "Assigning size `"$FileSize`" to key `"$key`" failed because that key already has size `"$($var[$key].FileSize)`"."
             }
         }
-        $var[$Hash].Tags = $var[$Hash].Tags + @($Tag) | Sort-Object -Unique
-        $var[$Hash].Action = $var[$Hash].Actions + @($Action) | Sort-Object -Unique
+        if ($var[$key].Hash -ne $Hash) {
+            throw "Assigning hash `"$Hash`" to key `"$key`" failed because that key is already in use by hash `"$($var[$key].Hash)`"."
+        }
+        $var[$key].Tags = $var[$key].Tags + @($Tag) | Sort-Object -Unique
+        $var[$key].Action = $var[$key].Actions + @($Action) | Sort-Object -Unique
     }
     else {
-        $var[$Hash] = @{
+        $var[$key] = @{
             FileName = $FileName
             FileSize = $FileSize
+            Hash     = $Hash
             Tags     = @($Tag)
             Actions  = @($Action)
         }
@@ -72,12 +81,25 @@ function Exit-Script {
     Write-Custom "Elapsed time: " -NoNewLine
     Write-CustomInfo "$(Write-PrettyTimeSpan $ScriptTimer.Elapsed)" -NoJustifyRight
 
+    if ($multiFactorErrorFlag) {
+        Write-CustomError @(
+            ""
+            "One or more errors were encountered that could be caused by any one of a variety of factors, including (but not limited to) antivirus interference, failing/unstable hardware, or a lack of free space available on the drive."
+            ""
+            "Please try the script again to confirm any issues are repeatable, then report any recurring errors on the Nexus Mods mod page (https://www.nexusmods.com/fallout4/mods/57782) or the GitHub project (https://github.com/rux616/biraitbec-workbase-improved). When you do so, please also upload the `"install.current.log`" file in the `"$(($dir.Logs).Split("\")[-1])`" folder to a website like TextUploader.com (https://textuploader.com/) or Pastebin (https://pastebin.com/), and include the link."
+        ) -NoJustifyRight -BypassLog
+    }
+
     if (-not $Immediate) {
         Write-Custom "" -BypassLog
         Wait-KeyPress
     }
     Write-CustomLog "", "Exit Code: $ExitCode"
+
+    # reset things
     $Host.UI.RawUI.BackgroundColor = $OriginalBackgroundColor
+    $env:Path = $originalPath
+
     exit $ExitCode
 }
 
@@ -378,7 +400,7 @@ function Invoke-Parallel {
     [CmdletBinding()]
     param (
         # This is the object containing the objects that will be worked on in parallel
-        [Parameter(Mandatory, ValueFromPipeline)] [PSObject] $InputObject,
+        [Parameter(Mandatory, ValueFromPipeline)] [AllowNull()] [PSObject] $InputObject,
         # This is the script block that will run in parallel
         [Parameter(Mandatory, Position = 0)] [ScriptBlock] $ScriptBlock,
         # This is the hashtable of parameters for the script block
@@ -566,7 +588,7 @@ function Write-Custom {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)] [AllowEmptyString()] [string[]] $Message,
-        [switch] $NoNewLine,
+        [switch] $NoNewline,
         [switch] $BypassLog,
         [string] $Prefix = $null,
         [switch] $JustifyRight,
@@ -625,7 +647,7 @@ function Write-Custom {
             else {
                 $outputString = $line
             }
-            if ($NoNewLine) {
+            if ($NoNewline) {
                 $stream.Write($formatString, $outputString)
                 $PreviousLineLength.Value = $Host.UI.RawUI.CursorPosition.X
             }
@@ -656,7 +678,7 @@ function Write-CustomError {
         [AllowEmptyString()] [string[]] $ExtraContext = $null,
         [switch] $BypassLog,
         [switch] $NoJustifyRight,
-        [switch] $NoNewLine,
+        [switch] $NoNewline,
         [switch] $NoTrimBeforeDisplay,
         [string] $Prefix = $null,
         [int] $SnippetLength = 0
@@ -672,7 +694,7 @@ function Write-CustomError {
         Message           = $Message
         BypassLog         = $BypassLog
         JustifyRight      = -not $NoJustifyRight
-        NoNewLine         = $NoNewLine
+        NoNewLine         = $NoNewline
         TrimBeforeDisplay = -not $NoTrimBeforeDisplay
         Prefix            = $Prefix
         SnippetLength     = $SnippetLength
@@ -687,7 +709,7 @@ function Write-CustomInfo {
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
         [switch] $BypassLog,
         [switch] $NoJustifyRight,
-        [switch] $NoNewLine,
+        [switch] $NoNewline,
         [switch] $NoTrimBeforeDisplay,
         [string] $Prefix = $null
     )
@@ -696,7 +718,7 @@ function Write-CustomInfo {
         Message           = $Message
         BypassLog         = $BypassLog
         JustifyRight      = -not $NoJustifyRight
-        NoNewLine         = $NoNewLine
+        NoNewLine         = $NoNewline
         TrimBeforeDisplay = -not $NoTrimBeforeDisplay
         Prefix            = $Prefix
         Color             = [System.ConsoleColor]::Blue
@@ -746,7 +768,7 @@ function Write-CustomSuccess {
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
         [switch] $BypassLog,
         [switch] $NoJustifyRight,
-        [switch] $NoNewLine,
+        [switch] $NoNewline,
         [switch] $NoTrimBeforeDisplay,
         [string] $Prefix = $null
     )
@@ -755,7 +777,7 @@ function Write-CustomSuccess {
         Message           = $Message
         BypassLog         = $BypassLog
         JustifyRight      = -not $NoJustifyRight
-        NoNewLine         = $NoNewLine
+        NoNewLine         = $NoNewline
         TrimBeforeDisplay = -not $NoTrimBeforeDisplay
         Prefix            = $Prefix
         Color             = [System.ConsoleColor]::Green
@@ -796,7 +818,7 @@ function Write-CustomWarning {
         [Parameter(Mandatory)] [AllowEmptyString()] [string[]] $Message,
         [switch] $BypassLog,
         [switch] $NoJustifyRight,
-        [switch] $NoNewLine,
+        [switch] $NoNewline,
         [switch] $NoTrimBeforeDisplay,
         [string] $Prefix = $null
     )
@@ -805,7 +827,7 @@ function Write-CustomWarning {
         Message           = $Message
         BypassLog         = $BypassLog
         JustifyRight      = -not $NoJustifyRight
-        NoNewLine         = $NoNewLine
+        NoNewLine         = $NoNewline
         TrimBeforeDisplay = -not $NoTrimBeforeDisplay
         Prefix            = $Prefix
         Color             = [System.ConsoleColor]::Yellow

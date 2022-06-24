@@ -21,6 +21,7 @@
 
 param (
     [switch] $NoClearScreen,
+    [ValidateSet("Custom", "Hybrid", "Standard")] [string] $ForceOperationMode,
     [switch] $ExtendedValidationMode,
     [switch] $SkipChoosingPatchedBa2Dir,
     [switch] $SkipRepackValidation,
@@ -40,7 +41,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 19, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -132,7 +133,7 @@ $driveInfo = Get-PhysicalDisk |
 
 # archive2 becomes non-deterministic if the data it is putting into an archive comes from a USB drive, so if WBI is being ran
 # from a USB drive, switch $dir.workingFiles to reside in the user's $env:TEMP directory instead
-if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) } | Select-Object BusType) -eq "USB") {
+if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType -eq "USB") {
     $dir.workingFiles = (Resolve-Path $(if ($env:TEMP) { $env:TEMP } elseif ($env:TMP) { $env:TMP } else { "." })).Path + "\WorkingFiles"
 }
 
@@ -281,21 +282,15 @@ Write-CustomLog @(
     "  Fallout 4 Data directory (Registry method): " + $(if ($dir.fallout4DataRegistry) { $dir.fallout4DataRegistry } else { "(Not Found)" })
     "  Fallout 4 Data directory (Steam method): " + $(if ($dir.fallout4DataSteam) { $dir.fallout4DataSteam } else { "(Not Found)" })
     ""
-    "  Files in Repack7z directory:"
-    if (Test-Path -LiteralPath $dir.repack7z) {
-        Get-ChildItem $dir.repack7z -File | Sort-Object -Property Name | ForEach-Object { "    `"$($_.Name)`" ($($_.Length) bytes)" }
-    }
-    else {
-        "    (Directory Not Found)"
-    }
+    "  Files in Repack7z directory: $(if ((Get-ChildItem $dir.repack7z -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
+    (Get-ChildItem $dir.repack7z -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
+        [PSCustomObject]@{ Name = $_.Name; Size = $_.Length }
+    } | Format-Table | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     ""
-    "  Files in OriginalBa2 directory:"
-    if (Test-Path -LiteralPath $dir.originalBa2) {
-        Get-ChildItem $dir.originalBa2 -File | Sort-Object -Property Name | ForEach-Object { "    `"$($_.Name)`" ($($_.Length) bytes)" }
-    }
-    else {
-        "    (Directory Not Found)"
-    }
+    "  Files in OriginalBa2 directory: $(if ((Get-ChildItem $dir.originalBa2 -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
+    (Get-ChildItem $dir.originalBa2 -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
+        [PSCustomObject]@{ Name = $_.Name; Size = $_.Length }
+    } | Format-Table | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     "<" * $LineWidth
 )
 
@@ -436,7 +431,7 @@ Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$(
 $sectionTimer.Restart()
 Write-CustomLog "Section: choose extended validation mode"
 
-Write-Custom ""
+Write-CustomLog ""
 Write-Custom "Extended validation mode:" -NoNewline
 
 if ($ExtendedValidationMode) { Write-CustomInfo "Active" }
@@ -445,16 +440,19 @@ else { Write-CustomInfo "Inactive" }
 Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
 
 
-# check for repack archives
-# -------------------------
+# determine mode of operation and create tag
+# ------------------------------------------
 
 $sectionTimer.Restart()
-Write-CustomLog "Section: check for repack archives"
+Write-CustomLog "Section: determine mode of operation and create tag"
+
+Write-CustomLog ""
+Write-Custom "Mode of operation:" -NoNewLine
 
 $repackFlags = [ordered]@{}
 $repackFiles.Keys | ForEach-Object { $repackFlags.$_ = $false }
 
-# do a pre-scan to gather existing repack files - this allows us to not print nonexistent repack files
+# do a pre-scan to gather existing repack files - this allows us to ignore nonexistent repack files
 $existingRepackFiles = [ordered]@{}  # set up variable to mirror data structure of $repackFiles, only with actual existing files
 foreach ($object in $repackFiles.GetEnumerator()) {
     $existingFiles = 0
@@ -462,7 +460,7 @@ foreach ($object in $repackFiles.GetEnumerator()) {
         $fileName = $file.Substring(0, $file.LastIndexOf('.'))
         $fileExt = $file.Substring($file.LastIndexOf('.'))
 
-        # allow for fuzzy matching
+        # do wildcard matching
         $potentialRepackFiles = @(Get-ChildItem -Path $dir.repack7z -File -Filter "$fileName*$fileExt")
         if ($potentialRepackFiles.Count -gt 0) { $existingFiles++ }
     }
@@ -470,137 +468,9 @@ foreach ($object in $repackFiles.GetEnumerator()) {
 }
 $repackFiles = $existingRepackFiles
 
-$foundRepackFiles = [ordered]@{}  # set up variable to mirror data structure of $repackFiles, only with the actual files used
-$firstIteration = $true
-if ($existingRepackFiles.Count -gt 0) {
-    Write-Custom "", "Validating repack sets:"
-}
-:outerLoop foreach ($object in $repackFiles.GetEnumerator()) {
-    $foundFiles = @() # keep track of the actual found files for this key
-    if ($firstIteration) { $firstIteration = $false } else { Write-Custom "  $("-" * ($LineWidth - 2))" }
-    Write-Custom "  $($object.Key) ($($object.Value.Count) archive$(if ($object.Value.Count -ne 1) {"s"})):"
-    foreach ($file in $object.Value.GetEnumerator()) {
-        try {
-            $archiveTimer.Restart()
-
-            $altFile = $file
-            $relFile = "$($dir.repack7z)\$file"
-            $altRelFile = $null
-            $fileName = $file.Substring(0, $file.LastIndexOf('.'))
-            $fileExt = $file.Substring($file.LastIndexOf('.'))
-
-            # allow for fuzzy matching
-            # get files that match file name with anything between the end of the filename and the file extension
-            $potentialRepackFiles = @(Get-ChildItem -Path $dir.repack7z -File -Filter "$fileName*$fileExt")
-            # @($potentialRepackFiles | Where-Object
-            #   pipe potential repack files into Where-Object
-            # { $_.Length -eq
-            #   get the file size and prepare to see if it's equal to
-            # ($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file }).Value.FileSize })
-            #   get the repack hash object that matches the file name and get its file size for comparison
-            $potentialRepackFilesSizeMatched = @($potentialRepackFiles | Where-Object { $_.Length -eq ($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file }).Value.FileSize })
-            if ($potentialRepackFilesSizeMatched.Count -gt 0) {
-                # if there are size-matched files, use those
-                $potentialRepackFiles = $potentialRepackFilesSizeMatched
-            }
-            if ($potentialRepackFiles.Count -gt 0) {
-                if ($potentialRepackFiles.Count -gt 1) {
-                    Write-CustomLog "    Found multiple candidate files for ${file}:"
-                    foreach ($potentialFile in $potentialRepackFiles) { Write-CustomLog "      $($potentialFile.Name) ($($potentialFile.Length) bytes)" }
-                }
-                $altFile = $potentialRepackFiles[-1].Name
-                $altRelFile = "$($dir.repack7z)\$($potentialRepackFiles[-1].Name)"
-            }
-
-            $foundFiles += $altFile
-
-            if ($null -ne $altRelFile -and $altRelFile -ne $relFile) {
-                Write-CustomLog "    `"$file`" not found; using `"$altFile`" instead"
-                $relFile = $altRelFile
-            }
-
-            Write-Custom "    $altFile" -NoNewline
-
-            if (Test-Path -LiteralPath $relFile) {
-                if ($SkipRepackValidation) {
-                    Write-CustomWarning "    [SKIPPED]"
-                }
-                else {
-                    Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
-
-                    Write-CustomLog "    Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
-                    # check size before checking hash
-                    if (@($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem $relFile).Length }).Count -eq 0) {
-                        $extraErrorText = @(
-                            "The size of this repack archive doesn't match any known archives."
-                            ""
-                            "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
-                        )
-                        $extraLogText = @("(No extra log info.)")
-                        throw "Size mismatch."
-                    }
-
-                    $hash = (Get-FileHash -LiteralPath $relFile -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
-                    Write-CustomLog "    Hash: $hash"
-                    if ($repack7zHashes[$hash].FileName -eq $file) {
-                        Write-CustomSuccess "    [VALID]"
-                    }
-                    else {
-                        $extraErrorText = @(
-                            "The exact contents of this repack archive don't match any known archives."
-                            ""
-                            "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
-                        )
-                        $extraLogText = @("(No extra log info.)")
-                        throw "Unrecognized file."
-                    }
-                }
-            }
-            else {
-                $extraErrorText = @(
-                    "The file can not be found in the `"$($dir.repack7z.Split("\")[-1])`" folder."
-                    ""
-                    "Please ensure you have placed all the repack archives from each repack set that you wish to use in the `"$($dir.repack7z.Split("\")[-1])`" folder, then run this script again."
-                )
-                $extraLogText = @("(No extra log info.)")
-                throw "Not found."
-            }
-        }
-        catch {
-            Write-CustomError "    [FAIL]"
-            Write-CustomError $_ -ExtraContext $extraErrorText -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
-            Write-CustomLog $_.InvocationInfo.PositionMessage -ExtraContext $extraLogText -Prefix "    ERROR: "
-            $validateRepacksFailed = $true
-        }
-        finally {
-            $extraErrorText, $extraLogText = $null
-            Write-CustomLog "    Archive duration: $($archiveTimer.Elapsed.ToString())"
-        }
-    }
-    $foundRepackFiles."$($object.Key)" = $foundFiles
-}
-
-Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
-
-if ($validateRepacksFailed) {
-    Exit-Script 1
-}
-
-# replace list of expected repack files with the list of found repack files
-$repackFiles = $foundRepackFiles
-
-
-# check if custom run and create tag
-# ----------------------------------
-
-$sectionTimer.Restart()
-Write-CustomLog "Section: check if custom run and create tag"
-
 # if not using Performance, Main, or Quality, don't need to install the Vault Fix
-$vaultFixNeeded = $true
 if (-not $repackFlags.Performance -and -not $repackFlags.Main -and -not $repackFlags.Quality) {
     $repackFlags."Vault Fix" = $false
-    $vaultFixNeeded = $false
 }
 
 # get the list of original archive size mismatches, then take that list and see how many of those mismatches match sizes for alternate original archives
@@ -626,73 +496,67 @@ $originalBa2SizeMismatches = $originalBa2Hashes.GetEnumerator() | Where-Object {
 #   have Where-Object find alternate original BA2s that have matching file names and matching file sizes
 $alternateOriginalBa2SizeMatches = $originalBa2SizeMismatches | ForEach-Object { $currentMismatch = $_; $alternateOriginalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $currentMismatch.Value.FileName -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath (Get-OriginalBa2File $_.Value.FileName) -ErrorAction SilentlyContinue).Length } }
 
-# check to see if the conditions for a custom run are met:
-#   custom assets exist AND one+ original BA2 size doesn't match expected original BA2 size AND those same archives original BA2 size matches expected alternate BA2 size
-#   custom assets exist AND no standard tag
-if (
-    (Test-Path -LiteralPath "$($dir.patchedFiles)\Textures") -and
-    (Get-ChildItem -LiteralPath "$($dir.patchedFiles)\Textures" -Filter "*.dds" -Recurse).Count -gt 0
-) {
-    $customReason = 0
-    if (
-        $originalBa2SizeMismatches.Count -gt 0 -and
-        $alternateOriginalBa2SizeMatches.Count -gt 0
-    ) {
-        $customReason = 1
+if ($ForceOperationMode -ne "Standard") {
+    # check to see if the conditions for a custom run are met:
+    #   custom assets exist AND
+    #       one or more original BA2 size doesn't match expected original BA2 size AND
+    #       those same archives original BA2 size matches expected alternate BA2 size
+    #   custom assets exist AND
+    #       no repack flags are set (meaning no repack archives are found)
+    if ((Get-ChildItem -LiteralPath $dir.patchedFiles -Filter "*.dds" -Recurse -ErrorAction SilentlyContinue).Count -gt 0) {
+        if (
+            $originalBa2SizeMismatches.Count -gt 0 -and
+            $alternateOriginalBa2SizeMatches.Count -gt 0
+        ) {
+            $customReason = 1
+        }
+        elseif ($repackFlags.Keys.Where({ $repackFlags[$_] }).Count -eq 0) {
+            $customReason = 2
+        }
+        else {
+            $customReason = 0
+        }
     }
-    elseif ($repackFlags.Keys.Where({ $repackFlags[$_] }).Count -eq 0) {
-        $customReason = 2
+    if ($ForceOperationMode -eq "Custom") {
+        $customReason = 3
     }
     if ($customReason) {
         foreach ($key in $($repackFlags.Keys)) { $repackFlags[$key] = $false }
         $repackFlags.Custom = $customReason
         $repackTag = "Custom"
     }
+    # check to see if the conditions for a hybrid run are met:
+    #   no custom assets exist AND
+    #       one or more original BA2 size doesn't match expected original BA2 size AND
+    #       those same archives original BA2 size matches expected alternate BA2 size
+    elseif (
+    ((Get-ChildItem $dir.patchedFiles -File -Recurse -ErrorAction SilentlyContinue).Count -eq 0 -and
+        $originalBa2SizeMismatches.Count -gt 0 -and
+        $alternateOriginalBa2SizeMatches.Count -gt 0) -or
+        $ForceOperationMode -eq "Hybrid"
+    ) {
+        $repackFlags.Hybrid = $true
+        $repackTag = "Hybrid"
+    }
 }
+
+if ($repackFlags.Custom) { Write-CustomInfo "Custom" }
+elseif ($repackFlags.Hybrid) { Write-CustomInfo "Hybrid" }
+else { Write-CustomInfo "Standard" }
 
 # create tag
 $repackTag = $repackFlags.Keys.Where({ $repackFlags[$_] }) -join $TagJoiner
 if (-not $repackTag) { $repackTag = "Unchanged" }
 
-$firstIteration = $true
-Write-Custom "", "Using repack set:"
-foreach ($object in $repackFlags.GetEnumerator()) {
-    if ($firstIteration) { $firstIteration = $false } else { Write-CustomLog "  $("-" * ($LineWidth - 2))" }
-    Write-Custom "  $($object.Key)" -NoNewline
-    switch -wildcard ($object.Key) {
-        "*" { $flagSetText = "  [YES]"; $flagUnsetText = "  [NO]" }
-        "Vault Fix" {
-            if (-not $vaultFixNeeded) { $flagUnsetText = "  [NOT NEEDED]" }
-        }
-    }
-    if ($object.Value) {
-        Write-CustomSuccess $flagSetText
-    }
-    else {
-        Write-CustomWarning $flagUnsetText
-    }
-}
-
-Write-CustomLog "", "Repack tag: $repackTag"
 if ($repackFlags.Custom) {
-    Write-CustomLog @(
-        "Original BA2 size mismatches: $($originalBa2SizeMismatches.Count)"
-        @($originalBa2SizeMismatches | ForEach-Object { "  $(Get-OriginalBa2File $_.Value.FileName) ($($_.Value.Tags -join ", "))" })
-        "Original BA2 size mismatches that match alternate original BA2 sizes: $($alternateOriginalBa2SizeMatches.Count)"
-        @($alternateOriginalBa2SizeMatches | ForEach-Object { "  $($_.Value.FileName) ($($_.Value.Tags -join ", "))" })
-    )
+    Write-CustomWarning "Mode of operation switched to `"Custom`"." -NoJustifyRight -BypassLog
 }
-Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
-
-if ($repackFlags.Custom -eq 1) {
-    Write-CustomWarning "", "Existing assets found in `"$($dir.patchedFiles)`" and possible alternative original BA2 archive$(if ($alternateOriginalBa2SizeMatches.Count -ne 1) {"s"}) detected.", "Mode switched to `"Custom`"." -NoJustifyRight
-}
-elseif ($repackFlags.Custom -eq 2) {
-    Write-CustomWarning "", "Existing assets found in `"$($dir.patchedFiles)`" and no repack sets detected.", "Mode switched to `"Custom`"." -NoJustifyRight
+elseif ($repackFlags.Hybrid) {
+    Write-CustomWarning "Mode of operation switched to `"Hybrid`"." -NoJustifyRight -BypassLog
 }
 elseif ($repackTag -eq "Unchanged") {
-    $message = "No repack sets found and no custom assets exist."
-    Write-Custom ""
+    Write-CustomLog ""
+    $message = "No repack archives found and no custom assets exist."
     if ($AllowUnchanged) {
         Write-CustomWarning $message -Prefix "WARNING: " -NoJustifyRight
     }
@@ -702,6 +566,160 @@ elseif ($repackTag -eq "Unchanged") {
     }
 }
 
+Write-CustomLog "", "Repack tag: $repackTag"
+
+if ($repackFlags.Custom -or $repackFlags.Hybrid) {
+    Write-CustomLog @(
+        ""
+        "Original BA2 size mismatches: $($originalBa2SizeMismatches.Count)"
+        @($originalBa2SizeMismatches | ForEach-Object { "  $(Get-OriginalBa2File $_.Value.FileName) ($($_.Value.Tags -join ", "))" })
+        "Original BA2 size mismatches that match alternate original BA2 sizes: $($alternateOriginalBa2SizeMatches.Count)"
+        @($alternateOriginalBa2SizeMatches | ForEach-Object { "  $($_.Value.FileName) ($($_.Value.Tags -join ", "))" })
+    )
+}
+
+if (-not $repackFlags.Custom) {
+    Write-Custom "", "Using repack set:"
+    $repackFlags.GetEnumerator() | Where-Object { $_.Value -and $_.Key -ne "Hybrid" } | ForEach-Object {
+        Write-Custom "  $($_.Key)"
+    }
+}
+
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+
+
+# validate repack archives
+# ------------------------
+
+$sectionTimer.Restart()
+Write-CustomLog "Section: validate repack archives"
+
+$foundRepackFiles = [ordered]@{}  # set up variable to mirror data structure of $repackFiles, only with the actual files used
+$firstIteration = $true
+if ($existingRepackFiles.Count -gt 0) {
+    Write-Custom ""
+    Write-Custom "Validating repack sets:" -NoNewline
+}
+if ($repackFlags.Custom) {
+    Write-CustomWarning "[CUSTOM - SKIPPED]"
+}
+else {
+    Write-Custom "" -BypassLog
+    :outerLoop foreach ($object in $repackFiles.GetEnumerator()) {
+        $foundFiles = @() # keep track of the actual found files for this key
+        if ($firstIteration) { $firstIteration = $false } else { Write-Custom "  $("-" * ($LineWidth - 2))" }
+        Write-Custom "  $($object.Key) ($($object.Value.Count) archive$(if ($object.Value.Count -ne 1) {"s"})):"
+        foreach ($file in $object.Value.GetEnumerator()) {
+            try {
+                $archiveTimer.Restart()
+
+                $altFile = $file
+                $relFile = "$($dir.repack7z)\$file"
+                $altRelFile = $null
+                $fileName = $file.Substring(0, $file.LastIndexOf('.'))
+                $fileExt = $file.Substring($file.LastIndexOf('.'))
+
+                # do wildcard matching
+                # get files that match file name with anything between the end of the filename and the file extension
+                $potentialRepackFiles = @(Get-ChildItem -Path $dir.repack7z -File -Filter "$fileName*$fileExt")
+                # @($potentialRepackFiles | Where-Object
+                #   pipe potential repack files into Where-Object
+                # { $_.Length -eq
+                #   get the file size and prepare to see if it's equal to
+                # ($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file }).Value.FileSize })
+                #   get the repack hash object that matches the file name and get its file size for comparison
+                $potentialRepackFilesSizeMatched = @($potentialRepackFiles | Where-Object { $_.Length -eq ($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file }).Value.FileSize })
+                if ($potentialRepackFilesSizeMatched.Count -gt 0) {
+                    # if there are size-matched files, use those
+                    $potentialRepackFiles = $potentialRepackFilesSizeMatched
+                }
+                if ($potentialRepackFiles.Count -gt 0) {
+                    if ($potentialRepackFiles.Count -gt 1) {
+                        Write-CustomLog "    Found multiple candidate files for ${file}:"
+                        foreach ($potentialFile in $potentialRepackFiles) { Write-CustomLog "      $($potentialFile.Name) ($($potentialFile.Length) bytes)" }
+                    }
+                    $altFile = $potentialRepackFiles[-1].Name
+                    $altRelFile = "$($dir.repack7z)\$($potentialRepackFiles[-1].Name)"
+                }
+
+                $foundFiles += $altFile
+
+                if ($null -ne $altRelFile -and $altRelFile -ne $relFile) {
+                    Write-CustomLog "    `"$file`" not found; using `"$altFile`" instead"
+                    $relFile = $altRelFile
+                }
+
+                Write-Custom "    $altFile" -NoNewline
+
+                if (Test-Path -LiteralPath $relFile) {
+                    if ($SkipRepackValidation) {
+                        Write-CustomWarning "    [SKIPPED]"
+                    }
+                    else {
+                        Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
+
+                        Write-CustomLog "    Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
+                        # check size before checking hash
+                        if (@($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem $relFile).Length }).Count -eq 0) {
+                            $extraErrorText = @(
+                                "The size of this repack archive doesn't match any known archives."
+                                ""
+                                "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
+                            )
+                            $extraLogText = @("(No extra log info.)")
+                            throw "Size mismatch."
+                        }
+
+                        $hash = (Get-FileHash -LiteralPath $relFile -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
+                        Write-CustomLog "    Hash: $hash"
+                        if ($repack7zHashes[$hash].FileName -eq $file) {
+                            Write-CustomSuccess "    [VALID]"
+                        }
+                        else {
+                            $extraErrorText = @(
+                                "The exact contents of this repack archive don't match any known archives."
+                                ""
+                                "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
+                            )
+                            $extraLogText = @("(No extra log info.)")
+                            throw "Unrecognized file."
+                        }
+                    }
+                }
+                else {
+                    $extraErrorText = @(
+                        "The file can not be found in the `"$($dir.repack7z.Split("\")[-1])`" folder."
+                        ""
+                        "Please ensure you have placed all the repack archives from each repack set that you wish to use in the `"$($dir.repack7z.Split("\")[-1])`" folder, then run this script again."
+                    )
+                    $extraLogText = @("(No extra log info.)")
+                    throw "Not found."
+                }
+            }
+            catch {
+                Write-CustomError "    [FAIL]"
+                Write-CustomError $_ -ExtraContext $extraErrorText -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+                Write-CustomLog $_.InvocationInfo.PositionMessage -ExtraContext $extraLogText -Prefix "    ERROR: "
+                $validateRepacksFailed = $true
+            }
+            finally {
+                $extraErrorText, $extraLogText = $null
+                Write-CustomLog "    Archive duration: $($archiveTimer.Elapsed.ToString())"
+            }
+        }
+        $foundRepackFiles."$($object.Key)" = $foundFiles
+    }
+}
+
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+
+if ($validateRepacksFailed) {
+    Exit-Script 1
+}
+
+# replace list of expected repack files with the list of found repack files
+$repackFiles = $foundRepackFiles
+
 
 # validate any existing patched archives
 # --------------------------------------
@@ -710,8 +728,7 @@ $sectionTimer.Restart()
 Write-CustomLog "Section: validate any existing patched archives"
 
 $existingPatchedArchives = foreach ($object in $ba2Files.GetEnumerator()) {
-    $file = $object.Value
-    if (Test-Path -LiteralPath "$($dir.patchedBa2)\$file") { , $file }
+    if (Test-Path -LiteralPath "$($dir.patchedBa2)\$($object.Value)") { , $object.Value }
 }
 
 if ($existingPatchedArchives.Count -gt 0) {
@@ -722,6 +739,9 @@ if ($existingPatchedArchives.Count -gt 0) {
     }
     elseif ($repackFlags.Custom) {
         Write-CustomWarning "[CUSTOM - SKIPPED]"
+    }
+    elseif ($repackFlags.Hybrid) {
+        Write-CustomWarning "[HYBRID - SKIPPED]"
     }
     else {
         $firstIteration = $true
@@ -1226,10 +1246,10 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             if ($originalBa2Hashes[$hash].FileName -eq $file) {
                 $validOriginalText = "[VALID]"
             }
-            elseif ($repackFlags.Custom -and $alternateOriginalBa2Hashes[$hash].FileName -eq $file) {
+            elseif (($repackFlags.Custom -or $repackFlags.Hybrid) -and $alternateOriginalBa2Hashes[$hash].FileName -eq $file) {
                 $validOriginalText = "[VALID - ALTERNATE]"
             }
-            elseif ($repackFlags.Custom -and $oldAlternateOriginalBa2Hashes[$hash].FileName -eq $file) {
+            elseif (($repackFlags.Custom -or $repackFlags.Hybrid) -and $oldAlternateOriginalBa2Hashes[$hash].FileName -eq $file) {
                 Write-CustomLog "      Tags: $($oldAlternateOriginalBa2Hashes[$hash].Tags -join ", ")"
                 $extraErrorText = @(
                     "If using alternate original BA2 archives (i.e. PhyOp or Luxor), this script only allows the latest versions."
@@ -1305,7 +1325,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-CustomSuccess "      [DONE]"
 
         # extract original archive/correctly extract cubemaps extended validation
-        if ($ExtendedValidationMode -and -not $repackFlags.Custom) {
+        if ($ExtendedValidationMode -and -not ($repackFlags.Custom -or $repackFlags.Hybrid)) {
             Write-Custom "      Validating extracted files..." -NoNewline
             Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
             # load file-specific hashes
@@ -1491,7 +1511,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-CustomSuccess "      [DONE]"
 
         # validate patched archive
-        if ($repackFlags.Custom) {
+        if ($repackFlags.Custom -or $repackFlags.Hybrid) {
             Write-Custom "      Hashing patched archive..." -NoNewline
         }
         else {
@@ -1500,7 +1520,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
         Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $patchedBa2File).Length) bytes"
         if (
-            -not $repackFlags.Custom -and
+            -not ($repackFlags.Custom -or $repackFlags.Hybrid) -and
             # get patched BA2 hash records where the file name matches, the tag is present, and the file size matches
             ($patchedBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.Tags -contains $repackTag -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $patchedBa2File).Length }).Count -eq 0
         ) {
@@ -1524,7 +1544,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             $multiFactorErrorFlag = $true
             throw "Size mismatch."
         }
-        if ($repackFlags.Custom) {
+        if ($repackFlags.Custom -or $repackFlags.Hybrid) {
             Write-CustomInfo "      [Hash: $hash]" -BypassLog
             continue
         }
@@ -1597,9 +1617,9 @@ else {
 
 Write-Custom ""
 if ($processingFailed) {
-    Write-CustomError "BiRaitBec WorkBase Improved failed." -NoJustifyRight
+    Write-CustomError "Patched archive creation failed." -NoJustifyRight
     Exit-Script 1
 }
 
-Write-CustomSuccess "BiRaitBec WorkBase Improved succeeded." -NoJustifyRight
+Write-CustomSuccess "Patched archive creation succeeded." -NoJustifyRight
 Exit-Script 0

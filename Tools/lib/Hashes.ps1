@@ -21,9 +21,9 @@
 
 # notes:
 # power set maker: https://www.mathsisfun.com/sets/power-set-maker.html
-# get patched archive hashes from a run (linux): foo=($(iconv -f utf-16 -t utf-8 "$(ls -1 install* | tail -n 1)" | grep '    Hash: ')); for ((index=0; index<${#foo[@]}; index++)); do if [[ $((($index + 1) % 6)) -eq 0 ]]; then echo ${foo[$index]}; fi; done
+# all hashes are created using the XXH128 hashing algorithm: https://github.com/Cyan4973/xxHash
 
-Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 7, 0)) -Option Constant
+Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 8, 0)) -Option Constant
 
 
 # repack hashes
@@ -367,27 +367,7 @@ Add-Hash -VariableName $var -Hash "2EED1F8C4261C56C88FE40EF07BCDCFD" -Tag $tag -
 # patched ba2 hashes
 # ------------------
 
-# notes:
-# when 'main' is used without 'performance', Textures\interiors\vault\VltHallResPaneled07Cafeteria02_Damage_d.DDS is deleted
-# when 'main' is used with 'performance', Textures\interiors\vault\VltHallResPaneled07Cafeteria02_Damage_d.DDS from 'performance' is used instead
 $patchedBa2Hashes = @{}; $var = "patchedBa2Hashes"
-# # template
-# $tag = @("") -join $TagJoiner
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.dlcCoastTextures
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.dlcRobotTextures
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.fallout4Textures1
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.fallout4Textures2
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.fallout4Textures3
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.fallout4Textures4
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.fallout4Textures5
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.fallout4Textures6
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.fallout4Textures7
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.fallout4Textures8
-# Add-Hash -VariableName $var -Hash "" -Tag $tag -FileName $ba2Files.fallout4Textures9
 
 # unchanged
 $tag = @("Unchanged") -join $TagJoiner

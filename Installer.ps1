@@ -41,7 +41,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 1)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -496,48 +496,44 @@ $originalBa2SizeMismatches = $originalBa2Hashes.GetEnumerator() | Where-Object {
 #   have Where-Object find alternate original BA2s that have matching file names and matching file sizes
 $alternateOriginalBa2SizeMatches = $originalBa2SizeMismatches | ForEach-Object { $currentMismatch = $_; $alternateOriginalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $currentMismatch.Value.FileName -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath (Get-OriginalBa2File $_.Value.FileName) -ErrorAction SilentlyContinue).Length } }
 
-if ($ForceOperationMode -ne "Standard") {
-    # check to see if the conditions for a custom run are met:
-    #   custom assets exist AND
-    #       one or more original BA2 size doesn't match expected original BA2 size AND
-    #       those same archives original BA2 size matches expected alternate BA2 size
-    #   custom assets exist AND
-    #       no repack flags are set (meaning no repack archives are found)
-    if ((Get-ChildItem -LiteralPath $dir.patchedFiles -Filter "*.dds" -Recurse -ErrorAction SilentlyContinue).Count -gt 0) {
+switch ($ForceOperationMode) {
+    "Custom" { $repackFlags.Custom = $true }
+    "Hybrid" { $repackFlags.Hybrid = $true }
+    "Standard" { <# do nothing #> }
+    Default {
+        # check to see if the conditions for a custom run are met:
+        #   custom assets exist AND
+        #     one or more original BA2 size doesn't match expected original BA2 size AND
+        #     those same archives original BA2 size matches expected alternate BA2 size
+        #   OR
+        #   custom assets exist AND
+        #     no repack flags are set (meaning no repack archives are found)
         if (
+            ((Get-ChildItem -LiteralPath $dir.patchedFiles -Filter "*.dds" -Recurse -ErrorAction SilentlyContinue).Count -gt 0 -and
+            $originalBa2SizeMismatches.Count -gt 0 -and
+            $alternateOriginalBa2SizeMatches.Count -gt 0) -or
+            ((Get-ChildItem -LiteralPath $dir.patchedFiles -Filter "*.dds" -Recurse -ErrorAction SilentlyContinue).Count -gt 0 -and
+            $repackFlags.Keys.Where({ $repackFlags[$_] }).Count -eq 0)
+        ) {
+            $repackFlags.Custom = $true
+        }
+        # check to see if the conditions for a hybrid run are met:
+        #   no custom assets exist AND
+        #   one or more original BA2 size doesn't match expected original BA2 size AND
+        #   those same archives original BA2 size matches expected alternate BA2 size
+        elseif (
+            (Get-ChildItem $dir.patchedFiles -File -Recurse -ErrorAction SilentlyContinue).Count -eq 0 -and
             $originalBa2SizeMismatches.Count -gt 0 -and
             $alternateOriginalBa2SizeMatches.Count -gt 0
         ) {
-            $customReason = 1
-        }
-        elseif ($repackFlags.Keys.Where({ $repackFlags[$_] }).Count -eq 0) {
-            $customReason = 2
-        }
-        else {
-            $customReason = 0
+            $repackFlags.Hybrid = $true
         }
     }
-    if ($ForceOperationMode -eq "Custom") {
-        $customReason = 3
-    }
-    if ($customReason) {
-        foreach ($key in $($repackFlags.Keys)) { $repackFlags[$key] = $false }
-        $repackFlags.Custom = $customReason
-        $repackTag = "Custom"
-    }
-    # check to see if the conditions for a hybrid run are met:
-    #   no custom assets exist AND
-    #       one or more original BA2 size doesn't match expected original BA2 size AND
-    #       those same archives original BA2 size matches expected alternate BA2 size
-    elseif (
-    ((Get-ChildItem $dir.patchedFiles -File -Recurse -ErrorAction SilentlyContinue).Count -eq 0 -and
-        $originalBa2SizeMismatches.Count -gt 0 -and
-        $alternateOriginalBa2SizeMatches.Count -gt 0) -or
-        $ForceOperationMode -eq "Hybrid"
-    ) {
-        $repackFlags.Hybrid = $true
-        $repackTag = "Hybrid"
-    }
+}
+
+# if using custom mode, turn off all the other repack flags
+if ($repackFlags.Custom) {
+    foreach ($key in $($repackFlags.Keys)) { $repackFlags[$key] = $false }
 }
 
 if ($repackFlags.Custom) { Write-CustomInfo "Custom" }
@@ -1009,19 +1005,21 @@ else {
                                 Copy-Item -LiteralPath "$($dir.temp)\DiamondWood01_d.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondWood01_d.DDS" -ErrorAction Stop
                                 Copy-Item -LiteralPath "$($dir.temp)\DiamondWood01_n.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondWood01_n.DDS" -ErrorAction Stop
                                 Copy-Item -LiteralPath "$($dir.temp)\DiamondWood01_s.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondWood01_s.DDS" -ErrorAction Stop
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\Buildings\RoofMetal02_d.DDS" }).CRC = "7B3D09AB"
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondMetalTrims01.DDS" }).CRC = "3699752D"
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondMetalTrims01_d.DDS" }).CRC = "380060B9"
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondMetalTrims01_n.DDS" }).CRC = "7A18AF3D"
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondMetalTrims01_s.DDS" }).CRC = "837A7203"
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondRVPanel02.DDS" }).CRC = "78D926EE"
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondRVPanel02_d.DDS" }).CRC = "3E986B45"
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondRVPanel02_n.DDS" }).CRC = "E80E73F4"
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondRVPanel02_s.DDS" }).CRC = "1DB6762D"
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondWood01.DDS" }).CRC = "B5C1A134"
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondWood01_d.DDS" }).CRC = "EE4A20AD"
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondWood01_n.DDS" }).CRC = "5053F59A"
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondWood01_s.DDS" }).CRC = "6E6EFFA4"
+                                if ($ExtendedValidationMode) {
+                                    ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\Buildings\RoofMetal02_d.DDS" }).CRC = "7B3D09AB"
+                                    ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondMetalTrims01.DDS" }).CRC = "3699752D"
+                                    ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondMetalTrims01_d.DDS" }).CRC = "380060B9"
+                                    ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondMetalTrims01_n.DDS" }).CRC = "7A18AF3D"
+                                    ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondMetalTrims01_s.DDS" }).CRC = "837A7203"
+                                    ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondRVPanel02.DDS" }).CRC = "78D926EE"
+                                    ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondRVPanel02_d.DDS" }).CRC = "3E986B45"
+                                    ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondRVPanel02_n.DDS" }).CRC = "E80E73F4"
+                                    ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondRVPanel02_s.DDS" }).CRC = "1DB6762D"
+                                    ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondWood01.DDS" }).CRC = "B5C1A134"
+                                    ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondWood01_d.DDS" }).CRC = "EE4A20AD"
+                                    ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondWood01_n.DDS" }).CRC = "5053F59A"
+                                    ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\diamondcity\DiamondWood01_s.DDS" }).CRC = "6E6EFFA4"
+                                }
                             }
                             # special case: if on main and using performance, copy previously-saved textures
                             Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled02Clinic_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled02Clinic_Damage_d.dds" -ErrorAction Stop
@@ -1029,22 +1027,28 @@ else {
                             Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria03_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria03_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.temp)\VltSecretWindow01_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltSecretWindow01_d.dds" -ErrorAction Stop
-                            ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled02Clinic_Damage_d.dds" }).CRC = "81F209CA"
-                            ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria01_Damage_d.dds" }).CRC = "3E8ABAF8"
-                            ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" }).CRC = "4B0F2DCE"
-                            ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria03_Damage_d.dds" }).CRC = "E289DD52"
-                            ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltSecretWindow01_d.dds" }).CRC = "27950FEB"
+                            if ($ExtendedValidationMode) {
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled02Clinic_Damage_d.dds" }).CRC = "81F209CA"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria01_Damage_d.dds" }).CRC = "3E8ABAF8"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" }).CRC = "4B0F2DCE"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria03_Damage_d.dds" }).CRC = "E289DD52"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltSecretWindow01_d.dds" }).CRC = "27950FEB"
+                            }
                         }
                     }
                     # special case: if on restyle, copy items to PatchedFiles folder
                     "Restyle" {
                         Copy-Item -LiteralPath $($extra | ForEach-Object { "$($dir.temp)\$_" }) -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
-                        $repack7zFileRecords | ForEach-Object { $_.Path = ($_.Path.Split("\") | Select-Object -Skip 3) -join "\" }
+                        if ($ExtendedValidationMode) {
+                            $repack7zFileRecords | ForEach-Object { $_.Path = ($_.Path.Split("\") | Select-Object -Skip 3) -join "\" }
+                        }
                     }
                     # special case: if using vault fix, copy Textures subdirectory
                     "Vault Fix" {
                         Copy-Item -LiteralPath "$($dir.temp)\Data\Textures" -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
-                        $repack7zFileRecords | ForEach-Object { $_.Path = ($_.Path.Split("\") | Select-Object -Skip 1) -join "\" }
+                        if ($ExtendedValidationMode) {
+                            $repack7zFileRecords | ForEach-Object { $_.Path = ($_.Path.Split("\") | Select-Object -Skip 1) -join "\" }
+                        }
                     }
                 }
 

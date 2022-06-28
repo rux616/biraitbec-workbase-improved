@@ -27,8 +27,6 @@ jobs:
       - name: Sign PowerShell scripts
         shell: powershell
         run: |
-          # remove git dir from checked out repo
-          Get-ChildItem -Path "." -Filter ".git*" -Force | ForEach-Object {Remove-Item -Path $_.FullName -Recurse -Force}
           $scripts = @(
               Get-ChildItem -Path . -Filter "Installer*.ps1" -ErrorAction Stop
               Get-ChildItem -Path .\Tools\lib -Filter "*.ps1*" -ErrorAction Stop

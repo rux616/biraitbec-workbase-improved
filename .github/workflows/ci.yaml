@@ -38,9 +38,9 @@ jobs:
           # load cert thumbprint
           $certThumbprint = (Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert | Select-Object -First 1).Thumbprint
           $scripts | ForEach-Object {
-              Write-Output "Signing script `"$($_.Name)`" with certificate `"$certThumbprint`""
+              Write-Output "Signing script `"$_`" with certificate `"$certThumbprint`""
               # sign script
-              $stdout, $stderr = (& $signtool sign /fd sha256 /tr http://ts.ssl.com /td sha256 /sha1 $certThumbprint "$($_.FullName)" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
+              $stdout, $stderr = (& $signtool sign /fd sha256 /tr http://ts.ssl.com /td sha256 /sha1 $certThumbprint "$_" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
               $stderr = $stderr | Where-Object { $_.TargetObject -and $_.TargetObject.Trim() } | ForEach-Object { Write-Error $_ }
               Write-Output $stdout
           }

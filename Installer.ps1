@@ -20,17 +20,29 @@
 # ----------
 
 param (
+    # Prevents the script from clearing the screen when starting up
     [switch] $NoClearScreen,
+    # Forces 'Custom', 'Hybrid', or 'Automatic' mode of operation
     [ValidateSet("Custom", "Hybrid", "Standard")] [string] $ForceOperationMode,
+    # Activates Extended Validation mode
     [switch] $ExtendedValidationMode,
+    # Don't display the dialog box to choose the patched BA2 folder and instead choose the default (".\PatchedBa2")
     [switch] $SkipChoosingPatchedBa2Dir,
+    # Skip the validation of the repack archives
     [switch] $SkipRepackValidation,
+    # Skip the extraction of the repack archives
     [switch] $SkipRepackExtraction,
+    # Skip validation of any existing patched BA2 archives
     [switch] $SkipExistingPatchedValidation,
+    # Skip validation of original BA2 archives
     [switch] $SkipOriginalBa2Validation,
+    # Force the script to hash a patched BA2 file after creation, even if the size doesn't match any known archives
     [switch] $ForcePatchedBa2Hashing,
+    # Allow unchanged patched BA2 archives to be created (don't throw an error)
     [switch] $AllowUnchanged,
+    # Don't delete the ".\PatchedFiles" folder after the script is complete
     [switch] $SkipFinalCleanup,
+    # Don't pause on exit
     [switch] $NoPauseOnExit
 )
 
@@ -41,7 +53,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 1)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 2)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -185,12 +197,21 @@ $env:PATH = (Resolve-Path "$($dir.tools)\xxHash").Path + ";" + $env:PATH
 # imports
 # -------
 
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -TypeDefinition (Get-Content "$($dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
 Write-Host "Loading functions..."
 . "$($dir.tools)\lib\Functions.ps1"
 Write-Host "Loading hashes..."
 . "$($dir.tools)\lib\Hashes.ps1"
+
+
+# check files
+# -----------
+
+if ((Get-FileHash "$($dir.tools)\lib\Crc32.cs" -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash -ne "78750A7DD1EA51144AA06098E42878F6618A42C712021849AE3A7AD352EC7DC6") {
+    Write-CustomError "The contents of `"$($dir.tools)\lib\Crc32.cs`" do not match what's expected. Try re-extracting the WorkBase Improved files again. If this error persists, please contact the author." -Prefix "ERROR: " -NoJustifyRight
+}
+else {
+    Add-Type -TypeDefinition (Get-Content "$($dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
+}
 
 
 # late variables
@@ -474,27 +495,29 @@ if (-not $repackFlags.Performance -and -not $repackFlags.Main -and -not $repackF
 }
 
 # get the list of original archive size mismatches, then take that list and see how many of those mismatches match sizes for alternate original archives
-# $originalBa2Hashes.GetEnumerator() | Where-Object {
-#   get enumerator for the original BA2 hashes and pipe it into Where-Object
-# $_.Value.FileSize -ne
-#   get file size for a given file and prepare to see if it's not equal
-# (Get-ChildItem -LiteralPath (Get-OriginalBa2File $_.Value.FileName) -ErrorAction SilentlyContinue).Length
-#   use the Get-OriginalBa2File function to grab the full path of the file
-#   feed full file path of file to Get-ChildItem, telling it to silently continue if not there (it gets checked later)
-#   get file size of file returned by Get-ChildItem
-# } | Sort-Object { $_.Value.FileName }
-#   make sure that any objects found are sorted by file name
-$originalBa2SizeMismatches = $originalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileSize -ne (Get-ChildItem -LiteralPath (Get-OriginalBa2File $_.Value.FileName) -ErrorAction SilentlyContinue).Length } | Sort-Object { $_.Value.FileName }
-# $originalBa2SizeMismatches | ForEach-Object {
-#   take the original ba2 size mismatches and pipe them into ForEach-Object
-# $currentMismatch = $_;
-#   assign the current object in the pipeline to a variable other than $_
-# $alternateOriginalBa2Hashes.GetEnumerator() | Where-Object {
-#   get an enumerator for the alternate original ba2 hashes and pipe it into Where-Object
-# $_.Value.FileName -eq $currentMismatch.Value.FileName -and
-# $_.Value.FileSize -eq (Get-ChildItem -LiteralPath (Get-OriginalBa2File $_.Value.FileName) -ErrorAction SilentlyContinue).Length } }
-#   have Where-Object find alternate original BA2s that have matching file names and matching file sizes
-$alternateOriginalBa2SizeMatches = $originalBa2SizeMismatches | ForEach-Object { $currentMismatch = $_; $alternateOriginalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $currentMismatch.Value.FileName -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath (Get-OriginalBa2File $_.Value.FileName) -ErrorAction SilentlyContinue).Length } }
+
+# get enumerator for the original BA2 hashes and pipe it into Where-Object
+$originalBa2SizeMismatches = $originalBa2Hashes.GetEnumerator() | Where-Object {
+    # get file size for a given file and prepare to see if it's not equal
+    $_.Value.FileSize -ne
+    # use the Get-OriginalBa2File function to grab the full path of the file
+    # feed full file path of file to Get-ChildItem, telling it to silently continue if not there (it gets checked later)
+    # get file size of file returned by Get-ChildItem
+    (Get-ChildItem -LiteralPath (Get-OriginalBa2File $_.Value.FileName) -ErrorAction SilentlyContinue).Length
+    # make sure that any objects found are sorted by file name
+} | Sort-Object { $_.Value.FileName }
+
+# take the original ba2 size mismatches and pipe them into ForEach-Object
+$alternateOriginalBa2SizeMatches = $originalBa2SizeMismatches | ForEach-Object {
+    # assign the current object in the pipeline to a variable other than $_
+    $currentMismatch = $_
+    # get an enumerator for the alternate original ba2 hashes and pipe it into Where-Object
+    $alternateOriginalBa2Hashes.GetEnumerator() | Where-Object {
+        # have Where-Object find alternate original BA2s that have matching file names and matching file sizes
+        $_.Value.FileName -eq $currentMismatch.Value.FileName -and
+        $_.Value.FileSize -eq (Get-ChildItem -LiteralPath (Get-OriginalBa2File $_.Value.FileName) -ErrorAction SilentlyContinue).Length
+    }
+}
 
 switch ($ForceOperationMode) {
     "Custom" { $repackFlags.Custom = $true }

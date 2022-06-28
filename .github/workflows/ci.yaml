@@ -9,7 +9,7 @@ env:
 
 jobs:
   sign_scripts:
-    name: Sign and publish PowerShell scripts as pipeline artifacts
+    name: Sign PowerShell scripts
     runs-on: windows-latest
     steps:
       - name: Import code signing certificate
@@ -44,11 +44,16 @@ jobs:
               $stderr = $stderr | Where-Object { $_.TargetObject -and $_.TargetObject.Trim() } | ForEach-Object { Write-Error $_ }
               Write-Output $stdout
           }
+      - name: Build archive
+        shell: powershell
+        run: |
+          New-Item -Path .\build -ItemType Directory
+          7z.exe a -mx9 -spf -t7z .\build\build.7z `@".\.github\build_manifest"
       - name: Publish artifacts
         uses: actions/upload-artifact@v2
         with:
           name: ${{ env.ARTIFACT_NAME }}
-          path: .
+          path: .\build\build.7z
 
   # package_build:
   #   name: Build 7-zip archive and publish as artifact

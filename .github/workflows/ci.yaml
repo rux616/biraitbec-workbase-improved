@@ -1,0 +1,56 @@
+# original found at https://tech.nicolonsky.ch/github-actions-powershell-signing/
+# this has been modified to suit
+
+name: CI
+on: push
+
+env:
+  ARTIFACT_NAME: PowerShell.Workflows.ScriptSigning
+
+jobs:
+  sign_scripts:
+    name: Sign and publish PowerShell scripts as pipeline artifacts
+    runs-on: windows-latest
+    steps:
+      - name: Import code signing certificate
+        shell: powershell
+        run: |
+          $pfxCertFilePath = Join-Path -Path $PSScriptRoot -ChildPath "CodeSigningCertificate.pfx"
+          Set-Content -Value $([System.Convert]::FromBase64String($env:BASE64_PFX)) -Path $pfxCertFilePath -Encoding Byte
+          $codeSigningCert = Import-PfxCertificate -FilePath $pfxCertFilePath -Password $($env:PFX_PASSWORD | ConvertTo-SecureString -AsPlainText -Force) -CertStoreLocation Cert:\CurrentUser\My
+          Remove-Item -Path $pfxCertFilePath
+        env:
+          BASE64_PFX: ${{ secrets.BASE64_PFX }}
+          PFX_PASSWORD: ${{ secrets.PFX_PASSWORD }}
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: Sign PowerShell scripts
+        shell: powershell
+        run: |
+          # remove git dir from checked out repo
+          Get-ChildItem -Path "." -Filter ".git*" -Force | ForEach-Object {Remove-Item -Path $_.FullName -Recurse -Force}
+          $scripts = @(
+              Get-ChildItem -Path . -Filter "Installer*.ps1" -ErrorAction Stop
+              Get-ChildItem -Path .\Tools\lib -Filter "*.ps1*" -ErrorAction Stop
+          ) | Resolve-Path -Relative
+          # specify signtool path
+          $signtool = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
+          # load cert thumbprint
+          $certThumbprint = (Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert | Select-Object -First 1).Thumbprint
+          $scripts | ForEach-Object {
+              Write-Output "Signing script `"$($_.Name)`" with certificate `"$certThumbprint`""
+              # sign script
+              $stdout, $stderr = (& $signtool sign /fd sha256 /tr http://ts.ssl.com /td sha256 /sha1 $certThumbprint "$($_.FullName)" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
+              $stderr = $stderr | Where-Object { $_.TargetObject -and $_.TargetObject.Trim() } | ForEach-Object { Write-Error $_ }
+              Write-Output $stdout
+          }
+      - name: Publish artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: .
+
+  # package_build:
+  #   name: Build 7-zip archive and publish as artifact
+  #   runs-on: ubuntu-latest
+  #   steps:

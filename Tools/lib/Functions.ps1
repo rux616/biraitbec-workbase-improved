@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 26, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 26, 1))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -801,15 +801,26 @@ function Write-PrettyTimeSpan {
 }
 
 function Write-PrettySize {
-    param ([parameter(mandatory)] [long] $Size)
+    param (
+        [Parameter(Mandatory, ValueFromPipeline)] [long] $Size,
+        [Parameter()] [int] $RoundToDigits = 2,
+        [Parameter()] [switch] $UseUnitFullForm,
+        [Parameter()] [switch] $JoinUnit
+    )
     switch ($Size) {
-        { $_ -ge 1PB } { "$(($_ / 1PB).ToString('f2')) PiB"; break }
-        { $_ -ge 1TB } { "$(($_ / 1TB).ToString('f2')) TiB"; break }
-        { $_ -ge 1GB } { "$(($_ / 1GB).ToString('f2')) GiB"; break }
-        { $_ -ge 1MB } { "$(($_ / 1MB).ToString('f2')) MiB"; break }
-        { $_ -ge 1KB } { "$(($_ / 1KB).ToString('f2')) KiB"; break }
-        Default { "$_ bytes" }
+        { $_ -ge 1PB } { $prettySize = $_ / 1PB; $prefix = if ($UseUnitFullForm) { "peta" } else { "P" }; break }
+        { $_ -ge 1TB } { $prettySize = $_ / 1TB; $prefix = if ($UseUnitFullForm) { "tera" } else { "T" }; break }
+        { $_ -ge 1GB } { $prettySize = $_ / 1GB; $prefix = if ($UseUnitFullForm) { "giga" } else { "G" }; break }
+        { $_ -ge 1MB } { $prettySize = $_ / 1MB; $prefix = if ($UseUnitFullForm) { "mega" } else { "M" }; break }
+        { $_ -ge 1KB } { $prettySize = $_ / 1KB; $prefix = if ($UseUnitFullForm) { "kilo" } else { "K" }; break }
+        Default { $prettySize = $_ }
     }
+    $prettySize = [Math]::Round($prettySize, $RoundToDigits)
+    $unit = $prefix + $(if ($UseUnitFullForm) { "byte" } else { "B" })
+    @(
+        $prettySize.ToString("f$RoundToDigits")
+        "$unit$(if ($UseUnitFullForm -and $prettySize -ne 1) {"s"})"
+    ) -join $(if ($JoinUnit) { "" } else { " " })
 }
 
 function Write-CustomWarning {

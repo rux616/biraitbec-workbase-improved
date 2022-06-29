@@ -14,7 +14,7 @@
                     </TableColumnHeader>
                     <TableColumnHeader>
                         <Label>Type</Label>
-                        <Width>5</Width>
+                        <Width>12</Width>
                     </TableColumnHeader>
                     <TableColumnHeader>
                         <Label>Bus</Label>

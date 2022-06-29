@@ -53,7 +53,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 3)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 4)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -112,17 +112,6 @@ $ba2Files.fallout4Textures7 = "Fallout4 - Textures7.ba2"
 $ba2Files.fallout4Textures8 = "Fallout4 - Textures8.ba2"
 $ba2Files.fallout4Textures9 = "Fallout4 - Textures9.ba2"
 
-class WBIDriveInfo {
-    [string] $DriveLetter
-    [string] $MediaType
-    [string] $BusType
-    [long] $SizeFree
-    [float] $SizeFreePercent
-    [long] $SizeUsed
-    [float] $SizeUsedPercent
-    [long] $SizeTotal
-}
-Update-FormatData "$($dir.tools)\lib\WorkBaseImproved.Format.ps1xml"
 $driveInfo = Get-PhysicalDisk |
     ForEach-Object {
         $physicalDisk = $_
@@ -130,18 +119,29 @@ $driveInfo = Get-PhysicalDisk |
             Where-Object { $_.DriveLetter } |
             Get-Volume |
             ForEach-Object {
-                $driveInfo = [WBIDriveInfo]::New()
-                $driveInfo.DriveLetter = $_.DriveLetter
-                $driveInfo.MediaType = $physicalDisk.MediaType
-                $driveInfo.BusType = $physicalDisk.BusType
-                $driveInfo.SizeFree = $_.SizeRemaining
-                $driveInfo.SizeFreePercent = if ($_.Size) { $_.SizeRemaining / $_.Size * 100 } else { -1 }
-                $driveInfo.SizeUsed = $_.Size - $_.SizeRemaining
-                $driveInfo.SizeUsedPercent = if ($_.Size) { ($_.Size - $_.SizeRemaining) / $_.Size * 100 } else { -1 }
-                $driveInfo.SizeTotal = $_.Size
-                $driveInfo
+                [PSCustomObject]@{
+                    DriveLetter     = $_.DriveLetter
+                    MediaType       = $physicalDisk.MediaType
+                    BusType         = $physicalDisk.BusType
+                    SizeFree        = $_.SizeRemaining
+                    SizeFreePercent = if ($_.Size) { $_.SizeRemaining / $_.Size * 100 } else { -1 }
+                    SizeUsed        = $_.Size - $_.SizeRemaining
+                    SizeUsedPercent = if ($_.Size) { ($_.Size - $_.SizeRemaining) / $_.Size * 100 } else { -1 }
+                    SizeTotal       = $_.Size
+                }
             }
         } | Sort-Object -Property DriveLetter
+
+$driveInfoTableFormat = [object]@(
+    @{ Name = "Drive"; Expression = { $_.DriveLetter }; Width = 6; Alignment = "left" },
+    @{ Name = "Type"; Expression = { $_.MediaType }; Width = 12; Alignment = "left" },
+    @{ Name = "Bus"; Expression = { $_.BusType }; Width = 5; Alignment = "left" },
+    @{ Name = "Free"; Expression = { Write-PrettySize $_.SizeFree }; Width = 9; Alignment = "right" },
+    @{ Name = "% Free"; Expression = { if ($_.SizeFreePercent -eq -1) { "Unknown" } else { "$(($_.SizeFreePercent).ToString("f1"))%" } }; Width = 8; Alignment = "right" },
+    @{ Name = "Used"; Expression = { Write-PrettySize $_.SizeUsed }; Width = 10; Alignment = "right" },
+    @{ Name = "% Used"; Expression = { if ($_.SizeUsedPercent -eq -1) { "Unknown" } else { "$(($_.SizeUsedPercent).ToString("f1"))%" } }; Width = 8; Alignment = "right" },
+    @{ Name = "Total"; Expression = { Write-PrettySize $_.SizeTotal }; Width = 10; Alignment = "right" }
+)
 
 # archive2 becomes non-deterministic if the data it is putting into an archive comes from a USB drive, so if WBI is being ran
 # from a USB drive, switch $dir.workingFiles to reside in the user's $env:TEMP directory instead
@@ -283,7 +283,7 @@ Write-CustomLog @(
     "  Drive Threads (WBI Drive): $maxWBIDriveThreads"
     "  Drive Threads (Working Files Drive): $maxWorkingFilesDriveThreads"
     "  Drive Info:"
-    ($driveInfo | Format-Table | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
+    ($driveInfo | Format-Table -Property $driveInfoTableFormat | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     ""
     "  Number of repack archive hashes: $($repack7zHashes.Keys.Count)"
     "  Number of original BA2 hashes: $($originalBa2Hashes.Keys.Count)"

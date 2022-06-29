@@ -53,7 +53,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 2)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 3)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -1252,11 +1252,31 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         }
         else {
             Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
+            if (-not (Test-Path -LiteralPath $originalBa2File)) {
+                $extraErrorText = @(
+                    "The archive in question cannot be found."
+                    ""
+                    "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
+                    ""
+                    "If you're attempting to use one of the alternate bases, make sure you didn't miss a file when extracting and/or copying the files."
+                )
+                $extraLogText = @("(No extra log info.)")
+                throw "Archive not found."
+            }
             Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length) bytes"
             if (
-            ($originalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length }).Count -eq 0 -and
-            ($alternateOriginalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length }).Count -eq 0 -and
-            ($oldAlternateOriginalBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length }).Count -eq 0
+                ($originalBa2Hashes.GetEnumerator() | Where-Object {
+                    $_.Value.FileName -eq $file -and
+                    $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length
+                }).Count -eq 0 -and
+                ($alternateOriginalBa2Hashes.GetEnumerator() | Where-Object {
+                    $_.Value.FileName -eq $file -and
+                    $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length
+                }).Count -eq 0 -and
+                ($oldAlternateOriginalBa2Hashes.GetEnumerator() | Where-Object {
+                    $_.Value.FileName -eq $file -and
+                    $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length
+                }).Count -eq 0
             ) {
                 $extraErrorText = @(
                     "The size of this original archive doesn't match any known archives."

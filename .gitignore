@@ -2,9 +2,13 @@ Logs/
 PatchedBa2/
 PatchedFiles/
 Temp/
+TempPerm/
 WorkingFiles/
 *.7z
 *.ba2
+*.bgem
+*.bgsm
 *.dds
 *.log
+*.nif
 *.zip

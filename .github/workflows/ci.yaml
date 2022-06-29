@@ -4,12 +4,9 @@
 name: CI
 on: push
 
-env:
-  ARTIFACT_NAME: PowerShell.Workflows.ScriptSigning
-
 jobs:
-  sign_scripts:
-    name: Sign PowerShell scripts
+  continuous_integration:
+    name: Sign scripts and publish artifact
     runs-on: windows-latest
     steps:
       - name: Import code signing certificate
@@ -23,11 +20,11 @@ jobs:
           BASE64_PFX: ${{ secrets.BASE64_PFX }}
           PFX_PASSWORD: ${{ secrets.PFX_PASSWORD }}
       - name: Check out repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Sign PowerShell scripts
         shell: powershell
         run: |
-          $scripts = @(
+          $toSign = @(
               Get-ChildItem -Path . -Filter "Installer*.ps1" -ErrorAction Stop
               Get-ChildItem -Path .\Tools\lib -Filter "*.ps1*" -ErrorAction Stop
           ) | Resolve-Path -Relative
@@ -35,9 +32,9 @@ jobs:
           $signtool = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
           # load cert thumbprint
           $certThumbprint = (Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert | Select-Object -First 1).Thumbprint
-          $scripts | ForEach-Object {
-              Write-Output "Signing script `"$_`" with certificate `"$certThumbprint`""
-              # sign script
+          $toSign | ForEach-Object {
+              Write-Output "Signing `"$_`" with certificate `"$certThumbprint`""
+              # sign object
               $stdout, $stderr = (& $signtool sign /fd sha256 /tr http://ts.ssl.com /td sha256 /sha1 $certThumbprint "$_" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
               $stderr = $stderr | Where-Object { $_.TargetObject -and $_.TargetObject.Trim() } | ForEach-Object { Write-Error $_ }
               Write-Output $stdout
@@ -46,14 +43,8 @@ jobs:
         shell: powershell
         run: |
           New-Item -Path .\build -ItemType Directory
-          7z.exe a -mx9 -spf -t7z .\build\build.7z `@".\.github\build_manifest"
-      - name: Publish artifacts
-        uses: actions/upload-artifact@v2
+          7z.exe a -mx9 -spf -t7z .\build\BRB_WorkBase_Improved.7z `@".\.github\build_manifest"
+      - name: Publish artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: .\build\build.7z
-
-  # package_build:
-  #   name: Build 7-zip archive and publish as artifact
-  #   runs-on: ubuntu-latest
-  #   steps:
+          path: .\build\BRB_WorkBase_Improved.7z

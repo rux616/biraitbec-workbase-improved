@@ -26,6 +26,8 @@ param (
     [ValidateSet("Custom", "Hybrid", "Standard")] [string] $ForceOperationMode,
     # Activates Extended Validation mode
     [switch] $ExtendedValidationMode,
+    # Make it so that the DLC archives are optional instead of required to have a successful run
+    [switch] $MakeDLCOptional,
     # Don't display the dialog box to choose the patched BA2 folder and instead choose the default (".\PatchedBa2")
     [switch] $SkipChoosingPatchedBa2Dir,
     # Skip the validation of the repack archives
@@ -53,7 +55,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 5)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 6)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -111,6 +113,15 @@ $ba2Files.fallout4Textures6 = "Fallout4 - Textures6.ba2"
 $ba2Files.fallout4Textures7 = "Fallout4 - Textures7.ba2"
 $ba2Files.fallout4Textures8 = "Fallout4 - Textures8.ba2"
 $ba2Files.fallout4Textures9 = "Fallout4 - Textures9.ba2"
+
+$optionalOriginalArchives = @(
+    "DLCCoast - Textures.ba2"
+    "DLCNukaWorld - Textures.ba2"
+    "DLCRobot - Textures.ba2"
+    "DLCworkshop01 - Textures.ba2"
+    "DLCworkshop02 - Textures.ba2"
+    "DLCworkshop03 - Textures.ba2"
+)
 
 # Get-Disk and Get-PhysicalDisk don't seem to work on the first try in Windows 11 in virtualbox (and maybe elsewhere)
 # but do seem to work after a second call. as a workaround, call Get-PhysicalDisk once before actually trying to get
@@ -1258,6 +1269,10 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         else {
             Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
             if (-not (Test-Path -LiteralPath $originalBa2File)) {
+                if ($file -in $optionalOriginalArchives -and $MakeDLCOptional) {
+                    Write-CustomWarning "      [NOT FOUND - OPTIONAL]"
+                    continue
+                }
                 $extraErrorText = @(
                     "The archive in question cannot be found."
                     ""

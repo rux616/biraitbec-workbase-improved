@@ -54,8 +54,8 @@ param (
 
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 6)) -Option Constant
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 2, 1)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 7)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -495,10 +495,9 @@ foreach ($object in $repackFiles.GetEnumerator()) {
     $existingFiles = 0
     foreach ($file in $object.Value.GetEnumerator()) {
         $fileName = $file.Substring(0, $file.LastIndexOf('.'))
-        $fileExt = $file.Substring($file.LastIndexOf('.'))
 
         # do wildcard matching
-        $potentialRepackFiles = @(Get-ChildItem -Path $dir.repack7z -File -Filter "$fileName*$fileExt")
+        $potentialRepackFiles = @(Get-ChildItem -Path $dir.repack7z -File -Filter "$fileName*")
         if ($potentialRepackFiles.Count -gt 0) { $existingFiles++ }
     }
     if ($existingFiles -gt 0) { $existingRepackFiles."$($object.Key)" = $object.Value; $repackFlags."$($object.Key)" = $true }
@@ -652,11 +651,10 @@ else {
                 $relFile = "$($dir.repack7z)\$file"
                 $altRelFile = $null
                 $fileName = $file.Substring(0, $file.LastIndexOf('.'))
-                $fileExt = $file.Substring($file.LastIndexOf('.'))
 
                 # do wildcard matching
-                # get files that match file name with anything between the end of the filename and the file extension
-                $potentialRepackFiles = @(Get-ChildItem -Path $dir.repack7z -File -Filter "$fileName*$fileExt")
+                # get files that match file name with anything after the end of the filename
+                $potentialRepackFiles = @(Get-ChildItem -Path $dir.repack7z -File -Filter "$fileName*")
                 # @($potentialRepackFiles | Where-Object
                 #   pipe potential repack files into Where-Object
                 # { $_.Length -eq

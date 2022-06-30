@@ -14,9 +14,14 @@ Table Of Contents
     - [Repack Files](#repack-files)
 - [Instructions](#instructions)
     - [Common](#common)
-    - [Automatic](#automatic)
+    - [Standard](#standard)
+    - [Hybrid](#hybrid)
     - [Custom](#custom)
-- [Troubleshooting Info](#troubleshooting-info)
+- [Advanced Usage](#advanced-usage)
+    - [Supported Command Line Parameters](#supported-command-line-parameters)
+    - [Unsupported Command Line Parameters](#unsupported-command-line-parameters)
+- [Troubleshooting](#troubleshooting)
+    - [Known Issues](#known-issues)
     - [Logs](#logs)
 - [Copyright and Licenses](#copyright-and-licenses)
 - [Credits and Thanks](#credits-and-thanks)
@@ -30,7 +35,7 @@ Summary
 -------
 An evolution of the BiRaitBec WorkBase file.
 
-The original [BiRaitBec guide](https://www.nexusmods.com/fallout4/mods/23556) (this version is no longer supported), and the updated guide at the [Collective Modding Discord server](https://discord.gg/DfFYJtt8p4) (which _is_ still being supported) specify that the user install the original WorkBase file, but that one doesn't generate clear errors and is generally hard to diagnose.
+The original [BiRaitBec guide](https://www.nexusmods.com/fallout4/mods/23556) (no longer supported), and the updated guide at the [Collective Modding Discord server](https://discord.gg/DfFYJtt8p4) (which _is_ still being supported) specify that the user install the original WorkBase file, but that one doesn't generate clear errors and is generally hard to diagnose.
 
 This edition attempts to address those shortcomings.
 
@@ -45,11 +50,11 @@ Features
 - Will only (re)build archives it needs
 - Incremental status is printed to the screen
 - Logs are generated in the `Logs` folder
-- In 'automatic mode', repack archives are detected in the `Repack7z` folder and automatically extracted
+- In 'Standard' mode, repack archives are detected in the `Repack7z` folder and automatically extracted
 - Original BA2 archives can be used directly from the Fallout 4 Data folder
-- Verifies the repack archives via SHA256 hash
-- Verifies the original BA2 archives via SHA256 hash
-- Verifies the patched BA2 archives via SHA256 hash
+- Verifies the repack archives, original BA2 archives, and patched BA2 archives via XXH128 hash
+- Optionally has an Extended Validation mode where files are validated after every step
+- Fixes known bad patched files
 - Cleans up after itself
 
 ([TOC](#table-of-contents))
@@ -113,33 +118,31 @@ Recommended if using the Performance, Main, or Quality repack sets.
 
 Instructions
 ============
-There are two modes of operation for BiRaitBec WorkBase Improved:
+There are three modes of operation for BiRaitBec WorkBase Improved:
 
-- Automatic (recommended)
+- Standard (recommended)
+    - Original BA2 archives: Vanilla
+    - Automatic extraction of repack archives: Yes
+    - Use vanilla original BA2 archives in conjunction with the repack archives.
+- Hybrid
+    - Original BA2 archives: At least one alternate (PhyOp/Luxor)
+    - Automatic extraction of repack archives: Yes
+    - Use alternate original BA2 archives in conjunction with the repack archives.
 - Custom
+    - Original BA2 archives: Vanilla or at least one alternate (PhyOp/Luxor)
+    - Automatic extraction of repack archives: No
+    - Use custom assets
 
-In both modes, the installer will first look at the `OriginalBa2` folder when looking for the original BA2 archives. If it doesn't find an archive there, it will then attempt to look in the Fallout 4 Data folder. Currently, the following original BA2 archives are supported:
+In all modes, the installer will first look at the `OriginalBa2` folder when looking for the original BA2 archives. If it doesn't find an archive there, it will then attempt to look in the Fallout 4 Data folder.
+
+If any non-vanilla original BA2 archives are found, the script will automatically switch to Hybrid mode if no texture files are present in the `PatchedFiles` folder. If texture files _are_ found in the `PatchedFiles` folder, the script will switch to Custom mode.
+
+Currently, the following original BA2 archives are supported:
 
 - Vanilla (game version 1.10.163.0, steam build ID 4460038)
     - (All archives)
-- Luxor's Fallout 4 HD Overhaul (v1.0)
-    - `DLCCoast - Textures.ba2`
-    - `DLCNukaWorld - Textures.ba2`
-    - `DLCRobot - Textures.ba2`
-    - `DLCworkshop01 - Textures.ba2`
-    - `DLCworkshop02 - Textures.ba2`
-    - `DLCworkshop03 - Textures.ba2`
-    - `Fallout4 - Textures4.ba2`
-    - `Fallout4 - Textures5.ba2`
-    - `Fallout4 - Textures6.ba2`
-    - `Fallout4 - Textures7.ba2`
-    - `Fallout4 - Textures8.ba2`
-    - `Fallout4 - Textures9.ba2`
-- Luxor's Fallout 4 HD Overhaul (v1.01)
-    - `Fallout4 - Textures2.ba2`
-- Luxor's Fallout 4 HD Overhaul (v1.02)
-    - `Fallout4 - Textures1.ba2`
-    - `Fallout4 - Textures3.ba2`
+- Luxor's Fallout 4 HD Overhaul (v1.03)
+    - (All archives)
 - PhyOp's Overhauled Optimized Textures (v1.2a)
     - Custom
         - `DLCCoast - Textures.ba2`
@@ -282,7 +285,7 @@ In both modes, the installer will first look at the `OriginalBa2` folder when lo
 
 Common
 ------
-NOTE: The script will automatically attempt to locate and use the original BA2 archive from the Fallout 4 Data folder if it doesn't find it in the `OriginalBa2` folder.
+NOTE: The script will automatically attempt to locate and use original BA2 archives from the Fallout 4 Data folder if it doesn't find them in the `OriginalBa2` folder.
 
 Currently supports the BA2s from vanilla, [Luxor's Fallout 4 HD Overhaul](https://www.nexusmods.com/fallout4/mods/52423), and [PhyOp's Overhauled Optimized Textures](https://www.nexusmods.com/fallout4/mods/27038?).
 
@@ -290,21 +293,38 @@ Currently supports the BA2s from vanilla, [Luxor's Fallout 4 HD Overhaul](https:
 
 ([TOC](#table-of-contents))
 
-Automatic
----------
-This is designed to be a mostly automatic process which validates both input and output files.
+Standard
+--------
+This mode is designed to be a mostly automatic process which validates both input and output files.
 
 - Put the repack files you have downloaded into the `Repack7z` folder.
 - Right click on `Installer.ps1` file and select "Run with PowerShell".
 - If you get an "Execution Policy Change" warning, type `Y` then hit the `Enter` key.
 - A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the `PatchedBa2` folder, but you can choose a different folder. **Do not choose the Fallout 4 Data folder.**
-- The script will then proceed to verify and extract the the repack archives, then create the patched BA2 archives.
+- The script will then proceed to validate and extract the the repack archives, then create and validate the patched BA2 archives.
 
 Notes:
 
-- If using the `Main` repack set _with_ the `Performance` repack set, the uncorrupted repack texture `Textures\interiors\vault\VltHallResPaneled07Cafeteria02_Damage_d.DDS` is preserved from the `Performance` repack set
-- If using the `Main` repack set _without_ the `Performance` repack set, the repack texture noted in the updated guide as being corrupt, `Textures\interiors\vault\VltHallResPaneled07Cafeteria02_Damage_d.DDS`, is deleted so that the original is preserved
-- If using the `Restyle` repack set, the "Author's Choice" options are automatically chosen
+- Only works with vanilla original BA2 archives (if non-vanilla original BA2s are detected, mode is switched to 'Hybrid' if no texture files are present in the `PatchedFiles` folder, or 'Custom' mode if they are).
+- If using the `Restyle` repack set, the "Author's Choice" options are automatically chosen.
+
+([TOC](#table-of-contents))
+
+Hybrid
+------
+This mode is similar to 'Standard' mode in that it's a mostly automatic process, but it allows alternate original BA2 archives (PhyOp/Luxor) to be used instead, sacrificing patched BA2 archive validation to do so.
+
+- Put the repack files you have downloaded into the `Repack7z` folder.
+- Put the alternate original BA2 files (PhyOp/Luxor) into the `OriginalBa2` folder.
+- Right click on `Installer.ps1` file and select "Run with PowerShell".
+- If you get an "Execution Policy Change" warning, type `Y` then hit the `Enter` key.
+- A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the `PatchedBa2` folder, but you can choose a different folder. **Do not choose the Fallout 4 Data folder.**
+- The script will then proceed to validate and extract the the repack archives, then create (but **NOT** validate) the patched BA2 archives.
+
+Notes:
+
+- Only works with alternate original BA2 archives and if no texture files are present in the `PatchedFiles` folder (mode is switched to 'Custom' mode if there are texture files present in the `PatchedFiles` folder).
+- If using the `Restyle` repack set, the "Author's Choice" options are automatically chosen.
 
 ([TOC](#table-of-contents))
 
@@ -316,20 +336,62 @@ This process is basically the traditional BRB install process as has been descri
 - Right click on `Installer.ps1` file and select "Run with PowerShell".
 - If you get an "Execution Policy Change" warning, type `Y` then hit the `Enter` key.
 - A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the `PatchedBa2` folder, but you can choose a different folder. **Do not choose the Fallout 4 Data folder.**
-- The script will then proceed to create the patched BA2 archives.
+- The script will then proceed to validate the original BA2 archives and create the patched BA2 archives.
 
 ([TOC](#table-of-contents))
 
 
-Troubleshooting Info
-====================
-This script has a lot of built-in checks that will tend to have very clear error messages. If you run into something that's not clear though, post something on the Nexus mod comments page or make an issue on the GitHub project.
+Advanced Usage
+==============
+To utilize these parameters, you will have to open a PowerShell window, navigate to the folder where BRB WorkBase Improved is extracted, and invoke the script manually. For example: `.\Installer.ps1 -ForceOperationMode Standard -ExtendedValidationMode`
+
+([TOC](#table-of-contents))
+
+Supported Command Line Parameters
+---------------------------------
+These (and only these) parameters are supported.
+
+- `ExtendedValidationMode`: Activates Extended Validation mode
+- `MakeDLCOptional`: Make it so that the DLC archives are optional instead of required to have a successful run
+- `SkipOriginalBa2Validation`: Skip validation of original BA2 archives
+
+([TOC](#table-of-contents))
+
+Unsupported Command Line Parameters
+-----------------------------------
+Most of these were added for my own convenience while testing or for debugging purposes. I take no responsibility if your computer implodes when using them.
+
+- `NoClearScreen`: Prevents the script from clearing the screen when starting up
+- `ForceOperationMode <Custom|Hybrid|Standard>`: Forces 'Custom', 'Hybrid', or 'Standard' mode of operation
+- `SkipChoosingPatchedBa2Dir`: Don't display the dialog box to choose the patched BA2 folder and instead choose the default (`.\PatchedBa2`)
+- `SkipRepackValidation`: Skip the validation of the repack archives
+- `SkipRepackExtraction`: Skip the extraction of the repack archives
+- `SkipExistingPatchedValidation`: Skip validation of any existing patched BA2 archives
+- `ForcePatchedBa2Hashing`: Force the script to hash a patched BA2 file after creation, even if the size doesn't match any known archives
+- `AllowUnchanged`: Allow unchanged patched BA2 archives to be created (don't throw an error)
+- `SkipFinalCleanup`: Don't delete the `.\PatchedFiles` folder after the script is complete
+- `NoPauseOnExit`: Don't pause on exit
+
+([TOC](#table-of-contents))
+
+
+Troubleshooting
+===============
+This script has a lot of built-in checks that will tend to have very clear error messages. However, if you run into something that's not clear, post a message on the Nexus Mods mod comments page or make an issue on the GitHub project.
+
+Known Issues
+------------
+- Sometimes, when attempting to running the Installer script, PowerShell will open then immediately close again. This is usually because something called an execution policy is set to be restrictive on your computer. To temporarily bypass this issue:
+    - Click the Start button and type "Windows PowerShell" and hit "Enter" to open up a new PowerShell window.
+    - Type the command `powershell.exe -ExecutionPolicy Bypass -File "<folder_holding_WBI>\Installer.ps1"` (quotes included) and hit "Enter", where `<folder_holding_WBI>` is the folder you extracted WorkBase Improved to, for example `C:\WorkBase Improved`.
+
+([TOC](#table-of-contents))
 
 Logs
 ----
-Logs will be located in the `Logs` folder inside the `WorkBase` folder. There will be 1 to 2 files generated per run, depending on how far the process gets: `install_<timestamp>.log` and `tool_<timestamp>.log`, where `<timestamp>` is the timestamp of when the process was started, for example `20220201T205350Z`.
+Logs will be located in the `Logs` sub-folder. There will be 2 or 4 files generated per run, depending on how far the process gets: `current.install.log` and `install_<timestamp>.log`, and `current.tool.log` and `tool_<timestamp>.log`, where `<timestamp>` is the timestamp of when the process was started, for example `20220201T205350Z`. The `current.*.log` files will be overwritten every run, while the `*_<timestamp>.log` files serve as a more permanent record.
 
-The `install` log generally mirrors what is seen on screen, and the `tool` log is the output of the various tools used, such as `7za.exe` and `archive2.exe`. When asking questions or attempting to get help for errors, please include at least the `install` log.
+The `install` log generally mirrors what is seen on screen, and the `tool` log is the output of the various tools used, such as `7za.exe` and `archive2.exe`. When asking questions or attempting to get help for errors, please include at least the `current.install` log.
 
 ([TOC](#table-of-contents))
 
@@ -346,6 +408,7 @@ This tool is bundled with the following programs, each having their own copyrigh
 - [7-Zip Standalone Console v21.07 (2021-12-26) by Igor Pavlov](https://www.7-zip.org/)
 - [Archive2 v1.1.0.4 by Bethesda Game Studios, part of the Fallout 4 Creation Kit](https://bethesda.net/en/game/bethesda-launcher)
 - [BSA Browser v1.14.1 by AlexxEG](https://www.nexusmods.com/skyrimspecialedition/mods/1756)
+- [xxhsum v0.8.1 by Cyan4973](https://cyan4973.github.io/xxHash/)
 
 ([TOC](#table-of-contents))
 
@@ -356,6 +419,9 @@ Credits and Thanks
 - ScreamingLake and CyberDanz: For administering the [Community Modding discord server and the updated BRB guide](https://discord.gg/DfFYJtt8p4)
 - luxor8071: For the [Fallout 4 HD Overhaul](https://www.nexusmods.com/fallout4/mods/52423) mod
 - Phylith: For the [PhyOp - Overhauled Optimized Textures](https://www.nexusmods.com/fallout4/mods/27038) mod
+- Lively: For helping me make the error messaging easier to understand
+- Aegis27: For helping me make the error messaging easier to understand
+- Kaethela: For being an excellent guinea pig and helping me track down the issue with USB drives
 
 ([TOC](#table-of-contents))
 

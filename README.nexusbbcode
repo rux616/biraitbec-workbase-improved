@@ -43,7 +43,7 @@ This mod is also available at the [url=https://github.com/rux616/biraitbec-workb
 - Will only (re)build archives it needs
 - Incremental status is printed to the screen
 - Logs are generated in the [font=Courier New][color=#b2b2b2]Logs[/color][/font] folder
-- In 'Standard' mode, repack archives are detected in the [font=Courier New][color=#b2b2b2]Repack7z[/color][/font] folder and automatically extracted
+- In "Standard" mode, repack archives are detected in the [font=Courier New][color=#b2b2b2]Repack7z[/color][/font] folder and automatically extracted
 - Original BA2 archives can be used directly from the Fallout 4 Data folder
 - Verifies the repack archives, original BA2 archives, and patched BA2 archives via XXH128 hash
 - Optionally has an Extended Validation mode where files are validated after every step
@@ -280,11 +280,11 @@ This mode is designed to be a mostly automatic process which validates both inpu
 
 Notes:
 
-- Only works with vanilla original BA2 archives (if non-vanilla original BA2s are detected, mode is switched to 'Hybrid' if no texture files are present in the [font=Courier New][color=#b2b2b2]PatchedFiles[/color][/font] folder, or 'Custom' mode if they are).
+- Only works with vanilla original BA2 archives (if non-vanilla original BA2s are detected, mode is switched to "Hybrid" if no texture files are present in the [font=Courier New][color=#b2b2b2]PatchedFiles[/color][/font] folder, or "Custom" mode if they are).
 - If using the [font=Courier New][color=#b2b2b2]Restyle[/color][/font] repack set, the "Author's Choice" options are automatically chosen.
 
 [size=4][b][u]Hybrid:[/u][/b][/size]
-This mode is similar to 'Standard' mode in that it's a mostly automatic process, but it allows alternate original BA2 archives (PhyOp/Luxor) to be used instead, sacrificing patched BA2 archive validation to do so.
+This mode is similar to "Standard" mode in that it's a mostly automatic process, but it allows alternate original BA2 archives (PhyOp/Luxor) to be used instead, sacrificing patched BA2 archive validation to do so.
 
 - Put the repack files you have downloaded into the [font=Courier New][color=#b2b2b2]Repack7z[/color][/font] folder.
 - Put the alternate original BA2 files (PhyOp/Luxor) into the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder.
@@ -295,7 +295,7 @@ This mode is similar to 'Standard' mode in that it's a mostly automatic process,
 
 Notes:
 
-- Only works with alternate original BA2 archives and if no texture files are present in the [font=Courier New][color=#b2b2b2]PatchedFiles[/color][/font] folder (mode is switched to 'Custom' mode if there are texture files present in the [font=Courier New][color=#b2b2b2]PatchedFiles[/color][/font] folder).
+- Only works with alternate original BA2 archives and if no texture files are present in the [font=Courier New][color=#b2b2b2]PatchedFiles[/color][/font] folder (mode is switched to "Custom" mode if there are texture files present in the [font=Courier New][color=#b2b2b2]PatchedFiles[/color][/font] folder).
 - If using the [font=Courier New][color=#b2b2b2]Restyle[/color][/font] repack set, the "Author's Choice" options are automatically chosen.
 
 [size=4][b][u]Custom:[/u][/b][/size]
@@ -322,7 +322,7 @@ These (and only these) parameters are supported.
 Most of these were added for my own convenience while testing or for debugging purposes. I take no responsibility if your computer implodes when using them.
 
 - [font=Courier New][color=#b2b2b2]NoClearScreen[/color][/font]: Prevents the script from clearing the screen when starting up
-- [font=Courier New][color=#b2b2b2]ForceOperationMode <Custom|Hybrid|Standard>[/color][/font]: Forces 'Custom', 'Hybrid', or 'Standard' mode of operation
+- [font=Courier New][color=#b2b2b2]ForceOperationMode <Custom|Hybrid|Standard>[/color][/font]: Forces "Custom", "Hybrid", or "Standard" mode of operation
 - [font=Courier New][color=#b2b2b2]SkipChoosingPatchedBa2Dir[/color][/font]: Don't display the dialog box to choose the patched BA2 folder and instead choose the default ([font=Courier New][color=#b2b2b2].\PatchedBa2[/color][/font])
 - [font=Courier New][color=#b2b2b2]SkipRepackValidation[/color][/font]: Skip the validation of the repack archives
 - [font=Courier New][color=#b2b2b2]SkipRepackExtraction[/color][/font]: Skip the extraction of the repack archives

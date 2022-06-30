@@ -43,8 +43,8 @@ jobs:
         shell: powershell
         run: |
           New-Item -Path .\build -ItemType Directory -ErrorAction Stop | Out-Null
-          7z.exe a -mx9 -spf -t7z .\build\BRB_WorkBase_Improved.7z `@".\.github\build_manifest"
+          7z.exe a -mx9 -spf -t7z .\build\BiRaitBec_WorkBase_Improved.7z `@".\.github\build_manifest"
       - name: Publish artifact
         uses: actions/upload-artifact@v3
         with:
-          path: .\build\BRB_WorkBase_Improved.7z
+          path: .\build\BiRaitBec_WorkBase_Improved.7z

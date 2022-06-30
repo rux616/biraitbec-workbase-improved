@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.2.1](#v121)
     - [v1.2.0](#v120)
     - [v1.1.0](#v110)
     - [v1.0.0](#v100)
@@ -14,11 +15,23 @@ Table Of Contents
 Changelogs
 ==========
 
+v1.2.1
+------
+**Summary:**
+- Loosened the naming requirements for the repack archives
+
+**Installer v1.20.7:**
+- Loosened the naming requirements for the repack archives - file extension is no longer required
+
+([TOC](#table-of-contents))
+
+
 v1.2.0
 ------
 **Summary:**
 - Fixed issue where the script would never be able to validate the patched BA2 successfully if the Installer script was run from a USB drive
 - Fixed some more invalid patched files (make sure to rebuild your patched archives!)
+- Added support for Luxor HD v1.03
 - Added Extended Validation mode to validate all the files after every step (run it via the "Installer (Extended Validation Mode).ps1" file)
 - Added Hybrid mode, allowing the repack archives to be used with alternate original BA2 archives
 - Changed to the XXH128 algorithm for (most) file validation, which should result in a significant speed increase when using NVMe or fast SSD drives
@@ -55,6 +68,8 @@ v1.2.0
 - Moved v1.0, v1.01, and v1.02 of Luxor HD texture BA2 archives to the list of OLD alternate original BA2s
 - Recalculated hashes for all files with the XXH128 algorithm
 - Cleaned up the main hashes file a bit
+
+([TOC](#table-of-contents))
 
 
 v1.1.0

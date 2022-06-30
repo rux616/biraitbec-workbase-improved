@@ -50,7 +50,7 @@ Features
 - Will only (re)build archives it needs
 - Incremental status is printed to the screen
 - Logs are generated in the `Logs` folder
-- In 'Standard' mode, repack archives are detected in the `Repack7z` folder and automatically extracted
+- In "Standard" mode, repack archives are detected in the `Repack7z` folder and automatically extracted
 - Original BA2 archives can be used directly from the Fallout 4 Data folder
 - Verifies the repack archives, original BA2 archives, and patched BA2 archives via XXH128 hash
 - Optionally has an Extended Validation mode where files are validated after every step
@@ -305,14 +305,14 @@ This mode is designed to be a mostly automatic process which validates both inpu
 
 Notes:
 
-- Only works with vanilla original BA2 archives (if non-vanilla original BA2s are detected, mode is switched to 'Hybrid' if no texture files are present in the `PatchedFiles` folder, or 'Custom' mode if they are).
+- Only works with vanilla original BA2 archives (if non-vanilla original BA2s are detected, mode is switched to "Hybrid" if no texture files are present in the `PatchedFiles` folder, or "Custom" mode if they are).
 - If using the `Restyle` repack set, the "Author's Choice" options are automatically chosen.
 
 ([TOC](#table-of-contents))
 
 Hybrid
 ------
-This mode is similar to 'Standard' mode in that it's a mostly automatic process, but it allows alternate original BA2 archives (PhyOp/Luxor) to be used instead, sacrificing patched BA2 archive validation to do so.
+This mode is similar to "Standard" mode in that it's a mostly automatic process, but it allows alternate original BA2 archives (PhyOp/Luxor) to be used instead, sacrificing patched BA2 archive validation to do so.
 
 - Put the repack files you have downloaded into the `Repack7z` folder.
 - Put the alternate original BA2 files (PhyOp/Luxor) into the `OriginalBa2` folder.
@@ -323,7 +323,7 @@ This mode is similar to 'Standard' mode in that it's a mostly automatic process,
 
 Notes:
 
-- Only works with alternate original BA2 archives and if no texture files are present in the `PatchedFiles` folder (mode is switched to 'Custom' mode if there are texture files present in the `PatchedFiles` folder).
+- Only works with alternate original BA2 archives and if no texture files are present in the `PatchedFiles` folder (mode is switched to "Custom" mode if there are texture files present in the `PatchedFiles` folder).
 - If using the `Restyle` repack set, the "Author's Choice" options are automatically chosen.
 
 ([TOC](#table-of-contents))
@@ -362,7 +362,7 @@ Unsupported Command Line Parameters
 Most of these were added for my own convenience while testing or for debugging purposes. I take no responsibility if your computer implodes when using them.
 
 - `NoClearScreen`: Prevents the script from clearing the screen when starting up
-- `ForceOperationMode <Custom|Hybrid|Standard>`: Forces 'Custom', 'Hybrid', or 'Standard' mode of operation
+- `ForceOperationMode <Custom|Hybrid|Standard>`: Forces "Custom", "Hybrid", or "Standard" mode of operation
 - `SkipChoosingPatchedBa2Dir`: Don't display the dialog box to choose the patched BA2 folder and instead choose the default (`.\PatchedBa2`)
 - `SkipRepackValidation`: Skip the validation of the repack archives
 - `SkipRepackExtraction`: Skip the extraction of the repack archives

@@ -5,65 +5,77 @@
     - [Table of Contents](#table-of-contents)
     - [General Notes](#general-notes)
     - [Startup Errors](#startup-errors)
-        - [Script is located in a protected folder](#script-is-located-in-a-protected-folder)
+        - [Script is not run with PowerShell v5.1.x or v7.2.x](#script-is-not-run-with-powershell-v51x-or-v72x)
             - [Error Text](#error-text)
             - [Extra Error Text](#extra-error-text)
-        - [Proper version of Visual C++ Redistributable not found](#proper-version-of-visual-c-redistributable-not-found)
+        - [Script is located in a protected folder](#script-is-located-in-a-protected-folder)
             - [Error Text](#error-text-1)
             - [Extra Error Text](#extra-error-text-1)
-        - [User cancels choosing a folder for the Patched BA2 archives](#user-cancels-choosing-a-folder-for-the-patched-ba2-archives)
+        - [Proper version of Visual C++ Redistributable not found](#proper-version-of-visual-c-redistributable-not-found)
             - [Error Text](#error-text-2)
             - [Extra Error Text](#extra-error-text-2)
-        - [The Steam "Fallout 4\Data" folder is chosen as the patched BA2 archive output folder](#the-steam-fallout-4data-folder-is-chosen-as-the-patched-ba2-archive-output-folder)
+        - [User cancels choosing a folder for the Patched BA2 archives](#user-cancels-choosing-a-folder-for-the-patched-ba2-archives)
             - [Error Text](#error-text-3)
             - [Extra Error Text](#extra-error-text-3)
-    - [Repack Errors](#repack-errors)
-        - [Size mismatch on repack archive](#size-mismatch-on-repack-archive)
+        - [The Steam "Fallout 4\Data" folder is chosen as the patched BA2 archive output folder](#the-steam-fallout-4data-folder-is-chosen-as-the-patched-ba2-archive-output-folder)
             - [Error Text](#error-text-4)
             - [Extra Error Text](#extra-error-text-4)
-        - [Unrecognized repack archive](#unrecognized-repack-archive)
+        - [No custom assets exist and no repack archives found](#no-custom-assets-exist-and-no-repack-archives-found)
             - [Error Text](#error-text-5)
             - [Extra Error Text](#extra-error-text-5)
-        - [Repack archive not found](#repack-archive-not-found)
+    - [Repack Errors](#repack-errors)
+        - [Size mismatch on repack archive](#size-mismatch-on-repack-archive)
             - [Error Text](#error-text-6)
             - [Extra Error Text](#extra-error-text-6)
-        - [Extracting repack archive fails (\*)](#extracting-repack-archive-fails-)
+        - [Unrecognized repack archive](#unrecognized-repack-archive)
             - [Error Text](#error-text-7)
             - [Extra Error Text](#extra-error-text-7)
-        - [Validating files extracted from repack archive fails (\*)](#validating-files-extracted-from-repack-archive-fails-)
+        - [Repack archive not found](#repack-archive-not-found)
             - [Error Text](#error-text-8)
             - [Extra Error Text](#extra-error-text-8)
-    - [Original/Alternate Archive Errors](#originalalternate-archive-errors)
-        - [Size mismatch on original BA2 archive](#size-mismatch-on-original-ba2-archive)
+        - [Extracting repack archive fails (\*)](#extracting-repack-archive-fails-)
             - [Error Text](#error-text-9)
             - [Extra Error Text](#extra-error-text-9)
-        - [Old version of alternate original BA2 archive found](#old-version-of-alternate-original-ba2-archive-found)
+        - [Validating files extracted from repack archive fails (\*)](#validating-files-extracted-from-repack-archive-fails-)
             - [Error Text](#error-text-10)
             - [Extra Error Text](#extra-error-text-10)
-        - [Original (or Alternate Original) archive is unrecognized](#original-or-alternate-original-archive-is-unrecognized)
+    - [Original/Alternate Archive Errors](#originalalternate-archive-errors)
+        - [Original/alternate archive not found](#originalalternate-archive-not-found)
             - [Error Text](#error-text-11)
             - [Extra Error Text](#extra-error-text-11)
-        - [Original (or Alternate Original) BA2 extraction fails (\*)](#original-or-alternate-original-ba2-extraction-fails-)
+        - [Hash contents of PatchedFiles (\*)](#hash-contents-of-patchedfiles-)
             - [Error Text](#error-text-12)
             - [Extra Error Text](#extra-error-text-12)
-        - [Cube map extraction fails (\*)](#cube-map-extraction-fails-)
+        - [Size mismatch on original BA2 archive](#size-mismatch-on-original-ba2-archive)
             - [Error Text](#error-text-13)
             - [Extra Error Text](#extra-error-text-13)
-        - [Copying patched files fails (\*)](#copying-patched-files-fails-)
+        - [Old version of alternate original BA2 archive found](#old-version-of-alternate-original-ba2-archive-found)
             - [Error Text](#error-text-14)
             - [Extra Error Text](#extra-error-text-14)
-        - [Creating patched archive file fails (\*)](#creating-patched-archive-file-fails-)
+        - [Original (or Alternate Original) archive is unrecognized](#original-or-alternate-original-archive-is-unrecognized)
             - [Error Text](#error-text-15)
             - [Extra Error Text](#extra-error-text-15)
-        - [Size mismatch on the patched file (\*)](#size-mismatch-on-the-patched-file-)
+        - [Original (or Alternate Original) BA2 extraction fails (\*)](#original-or-alternate-original-ba2-extraction-fails-)
             - [Error Text](#error-text-16)
             - [Extra Error Text](#extra-error-text-16)
-        - [Hash mismatch of patched file (\*)](#hash-mismatch-of-patched-file-)
+        - [Cube map extraction fails (\*)](#cube-map-extraction-fails-)
             - [Error Text](#error-text-17)
             - [Extra Error Text](#extra-error-text-17)
-        - [Tag mismatch of patched file](#tag-mismatch-of-patched-file)
+        - [Copying patched files fails (\*)](#copying-patched-files-fails-)
             - [Error Text](#error-text-18)
             - [Extra Error Text](#extra-error-text-18)
+        - [Creating patched archive file fails (\*)](#creating-patched-archive-file-fails-)
+            - [Error Text](#error-text-19)
+            - [Extra Error Text](#extra-error-text-19)
+        - [Size mismatch on the patched file (\*)](#size-mismatch-on-the-patched-file-)
+            - [Error Text](#error-text-20)
+            - [Extra Error Text](#extra-error-text-20)
+        - [Hash mismatch of patched file (\*)](#hash-mismatch-of-patched-file-)
+            - [Error Text](#error-text-21)
+            - [Extra Error Text](#extra-error-text-21)
+        - [Tag mismatch of patched file](#tag-mismatch-of-patched-file)
+            - [Error Text](#error-text-22)
+            - [Extra Error Text](#extra-error-text-22)
 
 ---
 
@@ -74,9 +86,10 @@ When errors are displayed, they have the following format:
 > ERROR: (Extra Error Text)
 
 This text will be displayed on exit if any errors marked with an asterisk (\*) occur:
-> This could be caused by any one of a variety of factors, including antivirus interference, failing hardware, or not enough space available on the drive. Or it could just be a fluke.
->
-> Please try the script again to confirm any issues are repeatable, then report any recurring errors on the Nexus Mods mod page or the GitHub project. When you do so, please also upload the most recent "install" log file in the "`$(($dir.Logs).Split("\")[-1])`" folder and include the link (<https://textuploader.com/> or <https://pastebin.com/> are good websites to upload the log file to).
+>  
+> One or more errors were encountered that could be caused by any one of a variety of factors, including (but not limited to) antivirus interference, failing/unstable hardware, or a lack of free space available on the drive.  
+>  
+> Please try the script again to confirm any issues are repeatable, then report any recurring errors on the Nexus Mods mod page (<https://www.nexusmods.com/fallout4/mods/57782>) or the GitHub project (<https://github.com/rux616/biraitbec-workbase-improved>). When you do so, please also upload the "install.current.log" file in the "`$(($dir.Logs).Split("\")[-1])`" folder to a website like TextUploader.com (<https://textuploader.com/>) or Pastebin (<https://pastebin.com/>), and include the link.
 
 ([Top](#table-of-contents))
 
@@ -86,13 +99,25 @@ This text will be displayed on exit if any errors marked with an asterisk (\*) o
 
 ---
 
+### Script is not run with PowerShell v5.1.x or v7.2.x
+
+#### Error Text
+> Invalid PowerShell version.
+
+#### Extra Error Text
+> This script will not function properly if it is not run with PowerShell version 5.1.x or 7.2.x.
+>
+> Make sure to run this script by opening the folder where it resides, right-clicking the script, and choosing "Run with PowerShell" from the menu.
+
 ### Script is located in a protected folder
 
 #### Error Text
 > Problematic script location detected.
 
 #### Extra Error Text
-> Attempting to run script from "`$($dir.currentDirectory)`". Please ensure this script is not anywhere inside the following folders:  
+> Attempting to run script from "`$($dir.currentDirectory)`".
+>
+> Please ensure this script is not anywhere inside the following folders:  
 > `$problemDirs | ForEach-Object { "  $_" }`
 
 ([Top](#table-of-contents))
@@ -132,7 +157,19 @@ This text will be displayed on exit if any errors marked with an asterisk (\*) o
 #### Extra Error Text
 > Cannot choose the "Fallout 4\Data" folder from your Steam library.
 >
-> Keeping the patched BA2 archives separate from the base game files keeps the location clean and enables you to verify the vanilla files through Steam without losing these files.
+> Keeping the patched BA2 archives separate from the base game files keeps the location clean and enables you to verify the vanilla files through Steam without losing the patched archives.
+
+([Top](#table-of-contents))
+
+---
+
+### No custom assets exist and no repack archives found
+
+#### Error Text
+> No repack archives found and no custom assets exist.
+
+#### Extra Error Text
+> (None)
 
 ([Top](#table-of-contents))
 
@@ -150,7 +187,7 @@ This text will be displayed on exit if any errors marked with an asterisk (\*) o
 #### Extra Error Text
 > The size of this repack archive doesn't match any known archives.
 >
-> Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying.
+> Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying.
 
 ([Top](#table-of-contents))
 
@@ -164,7 +201,7 @@ This text will be displayed on exit if any errors marked with an asterisk (\*) o
 #### Extra Error Text
 > The exact contents of this repack archive don't match any known archives.
 >
-> Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying.
+> Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying.
 
 ([Top](#table-of-contents))
 
@@ -206,13 +243,43 @@ Special case - this only happens when only some parts of a repack set are there 
 #### Extra Error Text
 > The exact contents of one or more files extracted from a repack archive set don't match any known files.
 >
-> See the most recent "install" log file in the "`$(($dir.Logs).Split("\")[-1])`" folder for the list of files which failed validation.
+> See the "current.install" log file in the "`$($dir.Logs.Split("\")[-1])`" folder for the list of files which failed validation."
+
 
 ([Top](#table-of-contents))
 
 ---
 
 ## Original/Alternate Archive Errors
+
+---
+
+### Original/alternate archive not found
+
+#### Error Text
+> Archive not found.
+
+#### Extra Error Text
+> The archive in question cannot be found.
+>
+> If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again.
+>
+> If you're attempting to use one of the alternate bases, make sure you didn't miss a file when extracting and/or copying the files.
+
+
+([Top](#table-of-contents))
+
+---
+
+### Hash contents of PatchedFiles (\*)
+
+#### Error Text
+> Collecting baseline information failed.
+
+#### Extra Error Text
+> Error`$(if ($errorRecords.Count -gt 1) {"s"})` occurred during this process.
+
+([Top](#table-of-contents))
 
 ---
 
@@ -226,7 +293,7 @@ Special case - this only happens when only some parts of a repack set are there 
 >
 > If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again.
 >
-> If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying.
+> If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying.
 
 ([Top](#table-of-contents))
 
@@ -256,7 +323,7 @@ Special case - this only happens when only some parts of a repack set are there 
 >
 > If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again.
 >
-> If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to, otherwise just keep trying.
+> If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying.
 
 ([Top](#table-of-contents))
 
@@ -280,7 +347,7 @@ Special case - this only happens when only some parts of a repack set are there 
 > Extracting cube maps from "`$originalBa2File`" failed.
 
 #### Extra Error Text
-> The program used to extract cube maps from archives (bsab.exe) has indicated that an error occurred while extracting cube maps from one of said archives. Unfortunately, bsab.exe doesn't output an error that can be interpreted by this script.
+> The program used to extract cube maps from archives (bsab.exe) has indicated that an error occurred while extracting files from one of said archives. Unfortunately, bsab.exe doesn't output an error that can be interpreted by this script.
 
 ([Top](#table-of-contents))
 
@@ -292,7 +359,7 @@ Special case - this only happens when only some parts of a repack set are there 
 > Copying patched files failed.
 
 #### Extra Error Text
-> The program used to copy patched files (robocopy.exe) has indicated that an error occurred while copying said files. Unfortunately, robocopy.exe doesn't output an error that can be interpreted by this script.
+> Error`$(if ($errorRecords.Count -gt 1) {"s"})` occurred when attempting to copy the files.
 
 ([Top](#table-of-contents))
 

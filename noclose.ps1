@@ -1,1 +1,1 @@
-powershell.exe -noexit .\Installer.ps1 -SkipRepackHashing -SkipChoosingPatchedBa2Dir
+powershell.exe -NoExit .\Installer.ps1 -SkipRepackValidation -SkipChoosingPatchedBa2Dir

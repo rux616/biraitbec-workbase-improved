@@ -24,24 +24,8 @@ Currently, the following original BA2 archives are supported:
 
 - Vanilla (Game version v1.10.163.0, Steam build ID 4460038)
     - (All archives)
-- Luxor's Fallout 4 HD Overhaul (v1.0)
-    - `DLCCoast - Textures.ba2`
-    - `DLCNukaWorld - Textures.ba2`
-    - `DLCRobot - Textures.ba2`
-    - `DLCworkshop01 - Textures.ba2`
-    - `DLCworkshop02 - Textures.ba2`
-    - `DLCworkshop03 - Textures.ba2`
-    - `Fallout4 - Textures4.ba2`
-    - `Fallout4 - Textures5.ba2`
-    - `Fallout4 - Textures6.ba2`
-    - `Fallout4 - Textures7.ba2`
-    - `Fallout4 - Textures8.ba2`
-    - `Fallout4 - Textures9.ba2`
-- Luxor's Fallout 4 HD Overhaul (v1.01)
-    - `Fallout4 - Textures2.ba2`
-- Luxor's Fallout 4 HD Overhaul (v1.02)
-    - `Fallout4 - Textures1.ba2`
-    - `Fallout4 - Textures3.ba2`
+- Luxor's Fallout 4 HD Overhaul (v1.03)
+    - (All archives)
 - PhyOp's Overhauled Optimized Textures (v1.2a)
     - Custom
         - `DLCCoast - Textures.ba2`

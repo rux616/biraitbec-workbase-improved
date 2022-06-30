@@ -13,18 +13,26 @@
 			"Dogmeat",
 			"DWORD",
 			"Fomod",
+			"hashtable",
 			"HKCU",
 			"HKLM",
 			"Hmmss",
+			"Kaethela",
 			"libraryfolders",
+			"MSVC",
 			"notcontains",
 			"notin",
 			"Phylith",
 			"Reapack",
+			"Runspace",
 			"Softworks",
 			"steamapps",
 			"Wabbajack",
-			"workbase"
-		]
+			"workbase",
+			"xxhsum"
+		],
+		"yaml.schemas": {
+			"https://json.schemastore.org/github-workflow.json": "file:///d%3A/Modding/temp/Fallout%204/BiRaitBec%20WorkBase%20Improved/.github/workflows/build.yaml"
+		}
 	}
 }

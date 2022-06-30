@@ -42,7 +42,7 @@ jobs:
       - name: Build archive
         shell: powershell
         run: |
-          New-Item -Path .\build -ItemType Directory
+          New-Item -Path .\build -ItemType Directory -ErrorAction Stop | Out-Null
           7z.exe a -mx9 -spf -t7z .\build\BRB_WorkBase_Improved.7z `@".\.github\build_manifest"
       - name: Publish artifact
         uses: actions/upload-artifact@v3

@@ -2,7 +2,11 @@
 # this has been modified to suit
 
 name: CI
-on: push
+on:
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
 
 jobs:
   continuous_integration:

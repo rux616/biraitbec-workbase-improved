@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.3.1](#v131)
     - [v1.3.0](#v130)
     - [v1.2.1](#v121)
     - [v1.2.0](#v120)
@@ -15,6 +16,18 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.3.1
+------
+**Summary:**
+- Fixed a couple bugs related to Custom mode
+
+**Installer v1.20.8:**
+- Fixed "Custom" mode always deactivating itself
+- Fixed "[CUSTOM - SKIPPED]" being shown even if there were no repack archives to validate
+
+([TOC](#table-of-contents))
+
 
 v1.3.0
 ------

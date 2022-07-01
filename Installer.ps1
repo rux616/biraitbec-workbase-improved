@@ -54,8 +54,8 @@ param (
 
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 3, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 7)) -Option Constant
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 3, 1)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 8)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -571,7 +571,7 @@ switch ($ForceOperationMode) {
 
 # if using custom mode, turn off all the other repack flags
 if ($repackFlags.Custom) {
-    foreach ($key in $($repackFlags.Keys)) { $repackFlags[$key] = $false }
+    foreach ($key in $($repackFlags.Keys)) { if ($key -ne "Custom") { $repackFlags[$key] = $false } }
 }
 
 if ($repackFlags.Custom) { Write-CustomInfo "Custom" }
@@ -633,114 +633,114 @@ $firstIteration = $true
 if ($existingRepackFiles.Count -gt 0) {
     Write-Custom ""
     Write-Custom "Validating repack sets:" -NoNewline
-}
-if ($repackFlags.Custom) {
-    Write-CustomWarning "[CUSTOM - SKIPPED]"
-}
-else {
-    Write-Custom "" -BypassLog
-    :outerLoop foreach ($object in $repackFiles.GetEnumerator()) {
-        $foundFiles = @() # keep track of the actual found files for this key
-        if ($firstIteration) { $firstIteration = $false } else { Write-Custom "  $("-" * ($LineWidth - 2))" }
-        Write-Custom "  $($object.Key) ($($object.Value.Count) archive$(if ($object.Value.Count -ne 1) {"s"})):"
-        foreach ($file in $object.Value.GetEnumerator()) {
-            try {
-                $archiveTimer.Restart()
+    if ($repackFlags.Custom) {
+        Write-CustomWarning "[CUSTOM - SKIPPED]"
+    }
+    else {
+        Write-Custom "" -BypassLog
+        :outerLoop foreach ($object in $repackFiles.GetEnumerator()) {
+            $foundFiles = @() # keep track of the actual found files for this key
+            if ($firstIteration) { $firstIteration = $false } else { Write-Custom "  $("-" * ($LineWidth - 2))" }
+            Write-Custom "  $($object.Key) ($($object.Value.Count) archive$(if ($object.Value.Count -ne 1) {"s"})):"
+            foreach ($file in $object.Value.GetEnumerator()) {
+                try {
+                    $archiveTimer.Restart()
 
-                $altFile = $file
-                $relFile = "$($dir.repack7z)\$file"
-                $altRelFile = $null
-                $fileName = $file.Substring(0, $file.LastIndexOf('.'))
+                    $altFile = $file
+                    $relFile = "$($dir.repack7z)\$file"
+                    $altRelFile = $null
+                    $fileName = $file.Substring(0, $file.LastIndexOf('.'))
 
-                # do wildcard matching
-                # get files that match file name with anything after the end of the filename
-                $potentialRepackFiles = @(Get-ChildItem -Path $dir.repack7z -File -Filter "$fileName*")
-                # @($potentialRepackFiles | Where-Object
-                #   pipe potential repack files into Where-Object
-                # { $_.Length -eq
-                #   get the file size and prepare to see if it's equal to
-                # ($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file }).Value.FileSize })
-                #   get the repack hash object that matches the file name and get its file size for comparison
-                $potentialRepackFilesSizeMatched = @($potentialRepackFiles | Where-Object { $_.Length -eq ($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file }).Value.FileSize })
-                if ($potentialRepackFilesSizeMatched.Count -gt 0) {
-                    # if there are size-matched files, use those
-                    $potentialRepackFiles = $potentialRepackFilesSizeMatched
-                }
-                if ($potentialRepackFiles.Count -gt 0) {
-                    if ($potentialRepackFiles.Count -gt 1) {
-                        Write-CustomLog "    Found multiple candidate files for ${file}:"
-                        foreach ($potentialFile in $potentialRepackFiles) { Write-CustomLog "      $($potentialFile.Name) ($($potentialFile.Length) bytes)" }
+                    # do wildcard matching
+                    # get files that match file name with anything after the end of the filename
+                    $potentialRepackFiles = @(Get-ChildItem -Path $dir.repack7z -File -Filter "$fileName*")
+                    # @($potentialRepackFiles | Where-Object
+                    #   pipe potential repack files into Where-Object
+                    # { $_.Length -eq
+                    #   get the file size and prepare to see if it's equal to
+                    # ($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file }).Value.FileSize })
+                    #   get the repack hash object that matches the file name and get its file size for comparison
+                    $potentialRepackFilesSizeMatched = @($potentialRepackFiles | Where-Object { $_.Length -eq ($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file }).Value.FileSize })
+                    if ($potentialRepackFilesSizeMatched.Count -gt 0) {
+                        # if there are size-matched files, use those
+                        $potentialRepackFiles = $potentialRepackFilesSizeMatched
                     }
-                    $altFile = $potentialRepackFiles[-1].Name
-                    $altRelFile = "$($dir.repack7z)\$($potentialRepackFiles[-1].Name)"
-                }
-
-                $foundFiles += $altFile
-
-                if ($null -ne $altRelFile -and $altRelFile -ne $relFile) {
-                    Write-CustomLog "    `"$file`" not found; using `"$altFile`" instead"
-                    $relFile = $altRelFile
-                }
-
-                Write-Custom "    $altFile" -NoNewline
-
-                if (Test-Path -LiteralPath $relFile) {
-                    if ($SkipRepackValidation) {
-                        Write-CustomWarning "    [SKIPPED]"
-                    }
-                    else {
-                        Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
-
-                        Write-CustomLog "    Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
-                        # check size before checking hash
-                        if (@($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem $relFile).Length }).Count -eq 0) {
-                            $extraErrorText = @(
-                                "The size of this repack archive doesn't match any known archives."
-                                ""
-                                "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
-                            )
-                            $extraLogText = @("(No extra log info.)")
-                            throw "Size mismatch."
+                    if ($potentialRepackFiles.Count -gt 0) {
+                        if ($potentialRepackFiles.Count -gt 1) {
+                            Write-CustomLog "    Found multiple candidate files for ${file}:"
+                            foreach ($potentialFile in $potentialRepackFiles) { Write-CustomLog "      $($potentialFile.Name) ($($potentialFile.Length) bytes)" }
                         }
+                        $altFile = $potentialRepackFiles[-1].Name
+                        $altRelFile = "$($dir.repack7z)\$($potentialRepackFiles[-1].Name)"
+                    }
 
-                        $hash = (Get-FileHash -LiteralPath $relFile -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
-                        Write-CustomLog "    Hash: $hash"
-                        if ($repack7zHashes[$hash].FileName -eq $file) {
-                            Write-CustomSuccess "    [VALID]"
+                    $foundFiles += $altFile
+
+                    if ($null -ne $altRelFile -and $altRelFile -ne $relFile) {
+                        Write-CustomLog "    `"$file`" not found; using `"$altFile`" instead"
+                        $relFile = $altRelFile
+                    }
+
+                    Write-Custom "    $altFile" -NoNewline
+
+                    if (Test-Path -LiteralPath $relFile) {
+                        if ($SkipRepackValidation) {
+                            Write-CustomWarning "    [SKIPPED]"
                         }
                         else {
-                            $extraErrorText = @(
-                                "The exact contents of this repack archive don't match any known archives."
-                                ""
-                                "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
-                            )
-                            $extraLogText = @("(No extra log info.)")
-                            throw "Unrecognized file."
+                            Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
+
+                            Write-CustomLog "    Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
+                            # check size before checking hash
+                            if (@($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem $relFile).Length }).Count -eq 0) {
+                                $extraErrorText = @(
+                                    "The size of this repack archive doesn't match any known archives."
+                                    ""
+                                    "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
+                                )
+                                $extraLogText = @("(No extra log info.)")
+                                throw "Size mismatch."
+                            }
+
+                            $hash = (Get-FileHash -LiteralPath $relFile -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
+                            Write-CustomLog "    Hash: $hash"
+                            if ($repack7zHashes[$hash].FileName -eq $file) {
+                                Write-CustomSuccess "    [VALID]"
+                            }
+                            else {
+                                $extraErrorText = @(
+                                    "The exact contents of this repack archive don't match any known archives."
+                                    ""
+                                    "Try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
+                                )
+                                $extraLogText = @("(No extra log info.)")
+                                throw "Unrecognized file."
+                            }
                         }
                     }
+                    else {
+                        $extraErrorText = @(
+                            "The file can not be found in the `"$($dir.repack7z.Split("\")[-1])`" folder."
+                            ""
+                            "Please ensure you have placed all the repack archives from each repack set that you wish to use in the `"$($dir.repack7z.Split("\")[-1])`" folder, then run this script again."
+                        )
+                        $extraLogText = @("(No extra log info.)")
+                        throw "Not found."
+                    }
                 }
-                else {
-                    $extraErrorText = @(
-                        "The file can not be found in the `"$($dir.repack7z.Split("\")[-1])`" folder."
-                        ""
-                        "Please ensure you have placed all the repack archives from each repack set that you wish to use in the `"$($dir.repack7z.Split("\")[-1])`" folder, then run this script again."
-                    )
-                    $extraLogText = @("(No extra log info.)")
-                    throw "Not found."
+                catch {
+                    Write-CustomError "    [FAIL]"
+                    Write-CustomError $_ -ExtraContext $extraErrorText -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+                    Write-CustomLog $_.InvocationInfo.PositionMessage -ExtraContext $extraLogText -Prefix "    ERROR: "
+                    $validateRepacksFailed = $true
+                }
+                finally {
+                    $extraErrorText, $extraLogText = $null
+                    Write-CustomLog "    Archive duration: $($archiveTimer.Elapsed.ToString())"
                 }
             }
-            catch {
-                Write-CustomError "    [FAIL]"
-                Write-CustomError $_ -ExtraContext $extraErrorText -Prefix "    ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
-                Write-CustomLog $_.InvocationInfo.PositionMessage -ExtraContext $extraLogText -Prefix "    ERROR: "
-                $validateRepacksFailed = $true
-            }
-            finally {
-                $extraErrorText, $extraLogText = $null
-                Write-CustomLog "    Archive duration: $($archiveTimer.Elapsed.ToString())"
-            }
+            $foundRepackFiles."$($object.Key)" = $foundFiles
         }
-        $foundRepackFiles."$($object.Key)" = $foundFiles
     }
 }
 

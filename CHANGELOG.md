@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.3.0](#v130)
     - [v1.2.1](#v121)
     - [v1.2.0](#v120)
     - [v1.1.0](#v110)
@@ -14,6 +15,18 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.3.0
+------
+**Summary:**
+- Added support for Luxor HD v1.1
+
+**Hashes v1.9.0:**
+- Added support for Luxor HD v1.1
+- Marked Luxor HD v1.03, v1.04, and v1.05 as "old"
+
+([TOC](#table-of-contents))
+
 
 v1.2.1
 ------

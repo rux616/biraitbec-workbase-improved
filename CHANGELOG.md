@@ -22,6 +22,7 @@ v1.3.2
 ------
 **Summary:**
 - Fixed bug with long user names and USB drives
+- Moved to using a CMD file to call the installer script to bypass issues with ExecutionPolicies in PowerShell
 
 **Installer v1.20.9:**
 - Fixed process failing when ran from a USB drive and the user having a long username

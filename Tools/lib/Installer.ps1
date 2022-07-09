@@ -54,8 +54,8 @@ param (
 
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 3, 2)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 9)) -Option Constant
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 3, 3)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 10)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -1394,7 +1394,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             Write-Custom "      Validating extracted files..." -NoNewline
             Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
             # load file-specific hashes
-            . "$($dir.tools)\lib\Hashes ($file).ps1"
+            . "$($dir.tools)\lib\EVM Hashes ($file).ps1"
             # calculate and compare hashes
             $argList = @{
                 InputObject              = $originalBa2FileHashes.Values

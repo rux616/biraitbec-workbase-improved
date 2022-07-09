@@ -1,7 +1,7 @@
 Tools\
 CHANGELOG.md
-Installer (Extended Validation Mode).ps1
-Installer.ps1
+Installer (Extended Validation Mode).cmd
+Installer.cmd
 LICENSE.txt
 README.md
 OriginalBa2\README.md

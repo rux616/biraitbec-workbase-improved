@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.3.3](#v133)
     - [v1.3.2](#v132)
     - [v1.3.1](#v131)
     - [v1.3.0](#v130)
@@ -17,6 +18,14 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.3.3
+------
+**Summary:**
+- Fixed a build issue
+
+([TOC](#table-of-contents))
+
 
 v1.3.2
 ------

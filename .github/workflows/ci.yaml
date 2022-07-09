@@ -29,8 +29,7 @@ jobs:
         shell: powershell
         run: |
           $toSign = @(
-              Get-ChildItem -Path . -Filter "Installer*.ps1" -ErrorAction Stop
-              Get-ChildItem -Path .\Tools\lib -Filter "*.ps1*" -ErrorAction Stop
+              Get-ChildItem -Path .\Tools\lib -Filter "*.ps1" -ErrorAction Stop
           ) | Resolve-Path -Relative
           # specify signtool path
           $signtool = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"

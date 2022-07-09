@@ -305,7 +305,7 @@ This process is basically the traditional BRB install process as has been descri
 
 
 [size=5][b]Advanced Usage[/b][/size]
-To utilize these parameters, you will have to open a PowerShell window, navigate to the folder where BRB WorkBase Improved is extracted, and invoke the script manually. For example: [font=Courier New][color=#b2b2b2].\Installer.ps1 -ForceOperationMode Standard -ExtendedValidationMode[/color][/font]
+To utilize these parameters, you will have to open a PowerShell window, navigate to the folder where BRB WorkBase Improved is extracted, and invoke the script manually. For example: [font=Courier New][color=#b2b2b2].\Tools\lib\Installer.ps1 -ForceOperationMode Standard -ExtendedValidationMode[/color][/font]
 
 [size=4][b][u]Supported Command Line Parameters:[/u][/b][/size]
 These (and only these) parameters are supported.

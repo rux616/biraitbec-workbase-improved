@@ -21,7 +21,6 @@ Table Of Contents
     - [Supported Command Line Parameters](#supported-command-line-parameters)
     - [Unsupported Command Line Parameters](#unsupported-command-line-parameters)
 - [Troubleshooting](#troubleshooting)
-    - [Known Issues](#known-issues)
     - [Logs](#logs)
 - [Copyright and Licenses](#copyright-and-licenses)
 - [Credits and Thanks](#credits-and-thanks)
@@ -298,8 +297,7 @@ Standard
 This mode is designed to be a mostly automatic process which validates both input and output files.
 
 - Put the repack files you have downloaded into the `Repack7z` folder.
-- Right click on `Installer.ps1` file and select "Run with PowerShell".
-- If you get an "Execution Policy Change" warning, type `Y` then hit the `Enter` key.
+- Double click on "Installer.cmd". (If it just opens up in Notepad or something, right click it and choose "Open" instead.)
 - A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the `PatchedBa2` folder, but you can choose a different folder. **Do not choose the Fallout 4 Data folder.**
 - The script will then proceed to validate and extract the the repack archives, then create and validate the patched BA2 archives.
 
@@ -316,8 +314,7 @@ This mode is similar to "Standard" mode in that it's a mostly automatic process,
 
 - Put the repack files you have downloaded into the `Repack7z` folder.
 - Put the alternate original BA2 files (PhyOp/Luxor) into the `OriginalBa2` folder.
-- Right click on `Installer.ps1` file and select "Run with PowerShell".
-- If you get an "Execution Policy Change" warning, type `Y` then hit the `Enter` key.
+- Double click on "Installer.cmd". (If it just opens up in Notepad or something, right click it and choose "Open" instead.)
 - A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the `PatchedBa2` folder, but you can choose a different folder. **Do not choose the Fallout 4 Data folder.**
 - The script will then proceed to validate and extract the the repack archives, then create (but **NOT** validate) the patched BA2 archives.
 
@@ -333,8 +330,7 @@ Custom
 This process is basically the traditional BRB install process as has been described in the guide and is done the same way.
 
 - Extract all the repack files to the `PatchedFiles` folder (creating it first, if necessary).
-- Right click on `Installer.ps1` file and select "Run with PowerShell".
-- If you get an "Execution Policy Change" warning, type `Y` then hit the `Enter` key.
+- Double click on "Installer.cmd". (If it just opens up in Notepad or something, right click it and choose "Open" instead.)
 - A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the `PatchedBa2` folder, but you can choose a different folder. **Do not choose the Fallout 4 Data folder.**
 - The script will then proceed to validate the original BA2 archives and create the patched BA2 archives.
 
@@ -378,14 +374,6 @@ Most of these were added for my own convenience while testing or for debugging p
 Troubleshooting
 ===============
 This script has a lot of built-in checks that will tend to have very clear error messages. However, if you run into something that's not clear, post a message on the Nexus Mods mod comments page or make an issue on the GitHub project.
-
-Known Issues
-------------
-- Sometimes, when attempting to running the Installer script, PowerShell will open then immediately close again. This is usually because something called an execution policy is set to be restrictive on your computer. To temporarily bypass this issue:
-    - Click the Start button and type "Windows PowerShell" and hit "Enter" to open up a new PowerShell window.
-    - Type the command `powershell.exe -ExecutionPolicy Bypass -File "<folder_holding_WBI>\Installer.ps1"` (quotes included) and hit "Enter", where `<folder_holding_WBI>` is the folder you extracted WorkBase Improved to, for example `C:\WorkBase Improved`.
-
-([TOC](#table-of-contents))
 
 Logs
 ----

@@ -19,7 +19,6 @@ by rux616
     - Supported Command Line Parameters
     - Unsupported Command Line Parameters
 - Troubleshooting
-    - Known Issues
     - Logs
 - Copyright and Licenses
 - Credits and Thanks
@@ -273,8 +272,7 @@ Currently supports the BA2s from vanilla, [url=https://www.nexusmods.com/fallout
 This mode is designed to be a mostly automatic process which validates both input and output files.
 
 - Put the repack files you have downloaded into the [font=Courier New][color=#b2b2b2]Repack7z[/color][/font] folder.
-- Right click on [font=Courier New][color=#b2b2b2]Installer.ps1[/color][/font] file and select "Run with PowerShell".
-- If you get an "Execution Policy Change" warning, type [font=Courier New][color=#b2b2b2]Y[/color][/font] then hit the [font=Courier New][color=#b2b2b2]Enter[/color][/font] key.
+- Double click on "Installer.cmd". (If it just opens up in Notepad or something, right click it and choose "Open" instead.)
 - A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the [font=Courier New][color=#b2b2b2]PatchedBa2[/color][/font] folder, but you can choose a different folder. [b]Do not choose the Fallout 4 Data folder.[/b]
 - The script will then proceed to validate and extract the the repack archives, then create and validate the patched BA2 archives.
 
@@ -288,8 +286,7 @@ This mode is similar to "Standard" mode in that it's a mostly automatic process,
 
 - Put the repack files you have downloaded into the [font=Courier New][color=#b2b2b2]Repack7z[/color][/font] folder.
 - Put the alternate original BA2 files (PhyOp/Luxor) into the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder.
-- Right click on [font=Courier New][color=#b2b2b2]Installer.ps1[/color][/font] file and select "Run with PowerShell".
-- If you get an "Execution Policy Change" warning, type [font=Courier New][color=#b2b2b2]Y[/color][/font] then hit the [font=Courier New][color=#b2b2b2]Enter[/color][/font] key.
+- Double click on "Installer.cmd". (If it just opens up in Notepad or something, right click it and choose "Open" instead.)
 - A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the [font=Courier New][color=#b2b2b2]PatchedBa2[/color][/font] folder, but you can choose a different folder. [b]Do not choose the Fallout 4 Data folder.[/b]
 - The script will then proceed to validate and extract the the repack archives, then create (but [b]NOT[/b] validate) the patched BA2 archives.
 
@@ -302,8 +299,7 @@ Notes:
 This process is basically the traditional BRB install process as has been described in the guide and is done the same way.
 
 - Extract all the repack files to the [font=Courier New][color=#b2b2b2]PatchedFiles[/color][/font] folder (creating it first, if necessary).
-- Right click on [font=Courier New][color=#b2b2b2]Installer.ps1[/color][/font] file and select "Run with PowerShell".
-- If you get an "Execution Policy Change" warning, type [font=Courier New][color=#b2b2b2]Y[/color][/font] then hit the [font=Courier New][color=#b2b2b2]Enter[/color][/font] key.
+- Double click on "Installer.cmd". (If it just opens up in Notepad or something, right click it and choose "Open" instead.)
 - A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the [font=Courier New][color=#b2b2b2]PatchedBa2[/color][/font] folder, but you can choose a different folder. [b]Do not choose the Fallout 4 Data folder.[/b]
 - The script will then proceed to validate the original BA2 archives and create the patched BA2 archives.
 
@@ -335,11 +331,6 @@ Most of these were added for my own convenience while testing or for debugging p
 
 [size=5][b]Troubleshooting[/b][/size]
 This script has a lot of built-in checks that will tend to have very clear error messages. However, if you run into something that's not clear, post a message on the Nexus Mods mod comments page or make an issue on the GitHub project.
-
-[size=4][b][u]Known Issues:[/u][/b][/size]
-- Sometimes, when attempting to running the Installer script, PowerShell will open then immediately close again. This is usually because something called an execution policy is set to be restrictive on your computer. To temporarily bypass this issue:
-    - Click the Start button and type "Windows PowerShell" and hit "Enter" to open up a new PowerShell window.
-    - Type the command [font=Courier New][color=#b2b2b2]powershell.exe -ExecutionPolicy Bypass -File "<folder_holding_WBI>\Installer.ps1"[/color][/font] (quotes included) and hit "Enter", where [font=Courier New][color=#b2b2b2]<folder_holding_WBI>[/color][/font] is the folder you extracted WorkBase Improved to, for example [font=Courier New][color=#b2b2b2]C:\WorkBase Improved[/color][/font].
 
 [size=4][b][u]Logs:[/u][/b][/size]
 Logs will be located in the [font=Courier New][color=#b2b2b2]Logs[/color][/font] sub-folder. There will be 2 or 4 files generated per run, depending on how far the process gets: [font=Courier New][color=#b2b2b2]current.install.log[/color][/font] and [font=Courier New][color=#b2b2b2]install_<timestamp>.log[/color][/font], and [font=Courier New][color=#b2b2b2]current.tool.log[/color][/font] and [font=Courier New][color=#b2b2b2]tool_<timestamp>.log[/color][/font], where [font=Courier New][color=#b2b2b2]<timestamp>[/color][/font] is the timestamp of when the process was started, for example [font=Courier New][color=#b2b2b2]20220201T205350Z[/color][/font]. The [font=Courier New][color=#b2b2b2]current.*.log[/color][/font] files will be overwritten every run, while the [font=Courier New][color=#b2b2b2]*_<timestamp>.log[/color][/font] files serve as a more permanent record.

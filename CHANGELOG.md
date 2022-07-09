@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.3.2](#v132)
     - [v1.3.1](#v131)
     - [v1.3.0](#v130)
     - [v1.2.1](#v121)
@@ -16,6 +17,17 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.3.2
+------
+**Summary:**
+- Fixed bug with long user names and USB drives
+
+**Installer v1.20.9:**
+- Fixed process failing when ran from a USB drive and the user having a long username
+
+([TOC](#table-of-contents))
+
 
 v1.3.1
 ------

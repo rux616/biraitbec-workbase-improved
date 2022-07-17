@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.3.4](#v134)
     - [v1.3.3](#v133)
     - [v1.3.2](#v132)
     - [v1.3.1](#v131)
@@ -18,6 +19,20 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.3.4
+------
+**Summary:**
+- Added some additional directories to the problematic folder list and updated the method used to determine those folders
+- Added SPDX identifier for Crc32.cs
+- Added some additional debugging parameters
+
+**Installer v1.20.11:**
+- Added some additional directories to the problematic folder list and updated the method used to determine those folders
+- Added some additional debugging parameters
+
+([TOC](#table-of-contents))
+
 
 v1.3.3
 ------

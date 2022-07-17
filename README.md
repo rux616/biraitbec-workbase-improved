@@ -21,6 +21,7 @@ Table Of Contents
     - [Supported Command Line Parameters](#supported-command-line-parameters)
     - [Unsupported Command Line Parameters](#unsupported-command-line-parameters)
 - [Troubleshooting](#troubleshooting)
+    - [Known Issues](#known-issues)
     - [Logs](#logs)
 - [Copyright and Licenses](#copyright-and-licenses)
 - [Credits and Thanks](#credits-and-thanks)
@@ -339,7 +340,7 @@ This process is basically the traditional BRB install process as has been descri
 
 Advanced Usage
 ==============
-To utilize these parameters, you will have to open a PowerShell window, navigate to the folder where BRB WorkBase Improved is extracted, and invoke the script manually. For example: `.\Tools\lib\Installer.ps1 -ForceOperationMode Standard -ExtendedValidationMode`
+To utilize these parameters, you will have to open a PowerShell window, navigate to the folder where BRB WorkBase Improved is extracted, and invoke the script manually. For example: `.\Tools\lib\Installer.ps1 -ForceOperationMode Standard -ExtendedValidationMode`. Alternatively, you can edit the `Installer.cmd` file and change the `-Command` parameter to the previous example.
 
 ([TOC](#table-of-contents))
 
@@ -359,6 +360,9 @@ Most of these were added for my own convenience while testing or for debugging p
 
 - `NoClearScreen`: Prevents the script from clearing the screen when starting up
 - `ForceOperationMode <Custom|Hybrid|Standard>`: Forces "Custom", "Hybrid", or "Standard" mode of operation
+- `SkipPowerShellVersionCheck`: Skip checking that this script is being run by a supported version of PowerShell
+- `SkipProblematicDirectoryCheck`: Skip checking that this script is not being run from a problematic directory
+- `SkipVisualCppRedistFileCheck`: Skip checking the Visual C++ Redistributable file versions
 - `SkipChoosingPatchedBa2Dir`: Don't display the dialog box to choose the patched BA2 folder and instead choose the default (`.\PatchedBa2`)
 - `SkipRepackValidation`: Skip the validation of the repack archives
 - `SkipRepackExtraction`: Skip the extraction of the repack archives
@@ -374,6 +378,18 @@ Most of these were added for my own convenience while testing or for debugging p
 Troubleshooting
 ===============
 This script has a lot of built-in checks that will tend to have very clear error messages. However, if you run into something that's not clear, post a message on the Nexus Mods mod comments page or make an issue on the GitHub project.
+
+Known Issues
+------------
+- Sometimes when attempting to running the Installer script, the console window will open then immediately close again. If this happens, you can run it by doing the following:
+    - Click the Start button, type "Command Prompt" and hit "Enter" to open up a new Command Prompt window.
+    - Type the name of the drive you have WBI extracted to (for example `C:` or `D:`) and hit "Enter".
+    - Type `cd` followed by the folder where you have WorkBase Improved extracted to in quotes (for example `cd "D:\Path to\WorkBase Improved"`) and hit "Enter".
+    - Type the command `Installer.cmd` and hit "Enter".
+- The script appears stuck at "Patched BA2 archive folder:".
+    - The script has opened up a window to enable you to choose the folder where the patched BA2 archives will go. Sometimes this window gets hidden behind others, so hit the Windows+Tab key combination, look for a window titled "Browse For Folder", then click on it.
+
+([TOC](#table-of-contents))
 
 Logs
 ----
@@ -397,6 +413,10 @@ This tool is bundled with the following programs, each having their own copyrigh
 - [Archive2 v1.1.0.4 by Bethesda Game Studios, part of the Fallout 4 Creation Kit](https://bethesda.net/en/game/bethesda-launcher)
 - [BSA Browser v1.14.1 by AlexxEG](https://www.nexusmods.com/skyrimspecialedition/mods/1756)
 - [xxhsum v0.8.1 by Cyan4973](https://cyan4973.github.io/xxHash/)
+
+This tool also uses the following source code; each has their own copyrights and licenses:
+- [Crc32 hash sum by Damien Guard](https://github.com/damieng/DamienGKit/blob/178992cb6215104a9312720881d8465d7bf040ba/CSharp/DamienG.Library/Security/Cryptography/Crc32.cs)
+- [Get-KnownFolderPath function by Boe Prox](https://github.com/proxb/PInvoke/blob/bd3b5e572a722a2e7557968761992b334c134596/Get-KnownFolderPath.ps1)
 
 ([TOC](#table-of-contents))
 

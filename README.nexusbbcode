@@ -19,6 +19,7 @@ by rux616
     - Supported Command Line Parameters
     - Unsupported Command Line Parameters
 - Troubleshooting
+    - Known Issues
     - Logs
 - Copyright and Licenses
 - Credits and Thanks
@@ -305,7 +306,7 @@ This process is basically the traditional BRB install process as has been descri
 
 
 [size=5][b]Advanced Usage[/b][/size]
-To utilize these parameters, you will have to open a PowerShell window, navigate to the folder where BRB WorkBase Improved is extracted, and invoke the script manually. For example: [font=Courier New][color=#b2b2b2].\Tools\lib\Installer.ps1 -ForceOperationMode Standard -ExtendedValidationMode[/color][/font]
+To utilize these parameters, you will have to open a PowerShell window, navigate to the folder where BRB WorkBase Improved is extracted, and invoke the script manually. For example: [font=Courier New][color=#b2b2b2].\Tools\lib\Installer.ps1 -ForceOperationMode Standard -ExtendedValidationMode[/color][/font]. Alternatively, you can edit the [font=Courier New][color=#b2b2b2]Installer.cmd[/color][/font] file and change the [font=Courier New][color=#b2b2b2]-Command[/color][/font] parameter to the previous example.
 
 [size=4][b][u]Supported Command Line Parameters:[/u][/b][/size]
 These (and only these) parameters are supported.
@@ -319,6 +320,9 @@ Most of these were added for my own convenience while testing or for debugging p
 
 - [font=Courier New][color=#b2b2b2]NoClearScreen[/color][/font]: Prevents the script from clearing the screen when starting up
 - [font=Courier New][color=#b2b2b2]ForceOperationMode <Custom|Hybrid|Standard>[/color][/font]: Forces "Custom", "Hybrid", or "Standard" mode of operation
+- [font=Courier New][color=#b2b2b2]SkipPowerShellVersionCheck[/color][/font]: Skip checking that this script is being run by a supported version of PowerShell
+- [font=Courier New][color=#b2b2b2]SkipProblematicDirectoryCheck[/color][/font]: Skip checking that this script is not being run from a problematic directory
+- [font=Courier New][color=#b2b2b2]SkipVisualCppRedistFileCheck[/color][/font]: Skip checking the Visual C++ Redistributable file versions
 - [font=Courier New][color=#b2b2b2]SkipChoosingPatchedBa2Dir[/color][/font]: Don't display the dialog box to choose the patched BA2 folder and instead choose the default ([font=Courier New][color=#b2b2b2].\PatchedBa2[/color][/font])
 - [font=Courier New][color=#b2b2b2]SkipRepackValidation[/color][/font]: Skip the validation of the repack archives
 - [font=Courier New][color=#b2b2b2]SkipRepackExtraction[/color][/font]: Skip the extraction of the repack archives
@@ -331,6 +335,15 @@ Most of these were added for my own convenience while testing or for debugging p
 
 [size=5][b]Troubleshooting[/b][/size]
 This script has a lot of built-in checks that will tend to have very clear error messages. However, if you run into something that's not clear, post a message on the Nexus Mods mod comments page or make an issue on the GitHub project.
+
+[size=4][b][u]Known Issues:[/u][/b][/size]
+- Sometimes when attempting to running the Installer script, the console window will open then immediately close again. If this happens, you can run it by doing the following:
+    - Click the Start button, type "Command Prompt" and hit "Enter" to open up a new Command Prompt window.
+    - Type the name of the drive you have WBI extracted to (for example [font=Courier New][color=#b2b2b2]C:[/color][/font] or [font=Courier New][color=#b2b2b2]D:[/color][/font]) and hit "Enter".
+    - Type [font=Courier New][color=#b2b2b2]cd[/color][/font] followed by the folder where you have WorkBase Improved extracted to in quotes (for example [font=Courier New][color=#b2b2b2]cd "D:\Path to\WorkBase Improved"[/color][/font]) and hit "Enter".
+    - Type the command [font=Courier New][color=#b2b2b2]Installer.cmd[/color][/font] and hit "Enter".
+- The script appears stuck at "Patched BA2 archive folder:".
+    - The script has opened up a window to enable you to choose the folder where the patched BA2 archives will go. Sometimes this window gets hidden behind others, so hit the Windows+Tab key combination, look for a window titled "Browse For Folder", then click on it.
 
 [size=4][b][u]Logs:[/u][/b][/size]
 Logs will be located in the [font=Courier New][color=#b2b2b2]Logs[/color][/font] sub-folder. There will be 2 or 4 files generated per run, depending on how far the process gets: [font=Courier New][color=#b2b2b2]current.install.log[/color][/font] and [font=Courier New][color=#b2b2b2]install_<timestamp>.log[/color][/font], and [font=Courier New][color=#b2b2b2]current.tool.log[/color][/font] and [font=Courier New][color=#b2b2b2]tool_<timestamp>.log[/color][/font], where [font=Courier New][color=#b2b2b2]<timestamp>[/color][/font] is the timestamp of when the process was started, for example [font=Courier New][color=#b2b2b2]20220201T205350Z[/color][/font]. The [font=Courier New][color=#b2b2b2]current.*.log[/color][/font] files will be overwritten every run, while the [font=Courier New][color=#b2b2b2]*_<timestamp>.log[/color][/font] files serve as a more permanent record.
@@ -350,6 +363,10 @@ This tool is bundled with the following programs, each having their own copyrigh
 - [url=https://bethesda.net/en/game/bethesda-launcher]Archive2 v1.1.0.4 by Bethesda Game Studios, part of the Fallout 4 Creation Kit[/url]
 - [url=https://www.nexusmods.com/skyrimspecialedition/mods/1756]BSA Browser v1.14.1 by AlexxEG[/url]
 - [url=https://cyan4973.github.io/xxHash/]xxhsum v0.8.1 by Cyan4973[/url]
+
+This tool also uses the following source code; each has their own copyrights and licenses:
+- [url=https://github.com/damieng/DamienGKit/blob/178992cb6215104a9312720881d8465d7bf040ba/CSharp/DamienG.Library/Security/Cryptography/Crc32.cs]Crc32 hash sum by Damien Guard[/url]
+- [url=https://github.com/proxb/PInvoke/blob/bd3b5e572a722a2e7557968761992b334c134596/Get-KnownFolderPath.ps1]Get-KnownFolderPath function by Boe Prox[/url]
 
 
 [size=5][b]Credits and Thanks[/b][/size]

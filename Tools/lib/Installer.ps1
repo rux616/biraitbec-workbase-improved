@@ -28,6 +28,12 @@ param (
     [switch] $ExtendedValidationMode,
     # Make it so that the DLC archives are optional instead of required to have a successful run
     [switch] $MakeDLCOptional,
+    # Skip checking that this script is being run by a supported version of PowerShell
+    [switch] $SkipPowerShellVersionCheck,
+    # Skip checking that this script is not being run from a problematic directory
+    [switch] $SkipProblematicDirectoryCheck,
+    # Skip checking the Visual C++ Redistributable file versions
+    [switch] $SkipVisualCppRedistFileCheck,
     # Don't display the dialog box to choose the patched BA2 folder and instead choose the default (".\PatchedBa2")
     [switch] $SkipChoosingPatchedBa2Dir,
     # Skip the validation of the repack archives
@@ -54,8 +60,8 @@ param (
 
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 3, 3)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 10)) -Option Constant
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 3, 4)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 11)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -215,6 +221,7 @@ $env:PATH = (Resolve-Path "$($dir.tools)\xxHash").Path + ";" + $env:PATH
 
 Write-Host "Loading functions..."
 . "$($dir.tools)\lib\Functions.ps1"
+. "$($dir.tools)\lib\Get-KnownFolderPath.ps1"
 Write-Host "Loading hashes..."
 . "$($dir.tools)\lib\Hashes.ps1"
 
@@ -222,7 +229,7 @@ Write-Host "Loading hashes..."
 # check files
 # -----------
 
-if ((Get-FileHash "$($dir.tools)\lib\Crc32.cs" -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash -ne "78750A7DD1EA51144AA06098E42878F6618A42C712021849AE3A7AD352EC7DC6") {
+if ((Get-FileHash "$($dir.tools)\lib\Crc32.cs" -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash -ne "53C3DE02CFAD47B2C9D02B2EDEDA0CCD25E38652CD2A1D7AA348F038026D5EAF") {
     Write-CustomError "The contents of `"$($dir.tools)\lib\Crc32.cs`" do not match what's expected. Try re-extracting the WorkBase Improved files again. If this error persists, please contact the author." -Prefix "ERROR: " -NoJustifyRight
 }
 else {
@@ -239,11 +246,11 @@ else {
 $dir.fallout4DataRegistry = Get-Fallout4DataFolder -DiscoveryMethod Registry
 $dir.fallout4DataSteam = Get-Fallout4DataFolder -DiscoveryMethod Steam
 
-$msvcp110dllPath = "${env:windir}\System32\msvcp110.dll"
+$msvcp110dllPath = "$((Get-KnownFolderPath -Name System).Path)\msvcp110.dll"
 $msvcp110dllVersion = (Get-Command $msvcp110dllPath -ErrorAction SilentlyContinue).Version
 $msvcp110dllSize = (Get-Item $msvcp110dllPath -ErrorAction SilentlyContinue).Length
 $msvcp110dllHash = (Get-FileHash -LiteralPath $msvcp110dllPath -Algorithm $FileHashAlgorithm -ErrorAction SilentlyContinue).Hash
-$msvcr110dllPath = "${env:windir}\System32\msvcr110.dll"
+$msvcr110dllPath = "$((Get-KnownFolderPath -Name System).Path)\msvcr110.dll"
 $msvcr110dllVersion = (Get-Command $msvcr110dllPath -ErrorAction SilentlyContinue).Version
 $msvcr110dllSize = (Get-Item $msvcr110dllPath -ErrorAction SilentlyContinue).Length
 $msvcr110dllHash = (Get-FileHash -LiteralPath $msvcr110dllPath -Algorithm $FileHashAlgorithm -ErrorAction SilentlyContinue).Hash
@@ -355,39 +362,65 @@ Write-Custom @(
 
 # check to make sure that this is being run with PowerShell 5.1.x or 7.2.x
 # ------------------------------------------------------------------------
-if (($PSVersionTable.PSVersion.Major -ne 5 -and $PSVersionTable.PSVersion.Minor -ne 1) -and
-    ($PSVersionTable.PSVersion.Major -ne 7 -and $PSVersionTable.PSVersion.Minor -ne 2)) {
-    Write-Custom ""
-    $extraErrorText = @(
-        "This script will not function properly if it is not run with PowerShell version 5.1.x or 7.2.x."
-        ""
-        "Make sure to run this script by opening the folder where it resides, right-clicking the script, and choosing `"Run with PowerShell`" from the menu."
-    )
-    Write-CustomError "Invalid PowerShell version." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
-    Exit-Script 1
+
+if (-not $SkipPowerShellVersionCheck) {
+    if (($PSVersionTable.PSVersion.Major -ne 5 -and $PSVersionTable.PSVersion.Minor -ne 1) -and
+        ($PSVersionTable.PSVersion.Major -ne 7 -and $PSVersionTable.PSVersion.Minor -ne 2)) {
+        Write-Custom ""
+        $extraErrorText = @(
+            "This script will not function properly if it is not run with PowerShell version 5.1.x or 7.2.x."
+            ""
+            "Make sure to run this script by opening the folder where it resides, right-clicking the script, and choosing `"Run with PowerShell`" from the menu."
+        )
+        Write-CustomError "Invalid PowerShell version." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
+        Exit-Script 1
+    }
 }
 
 
 # check location to ensure the script is not located in a problematic directory
 # -----------------------------------------------------------------------------
 
-$problemDirs = @(
-    [IO.Path]::GetFullPath(${env:ProgramFiles})
-    [IO.Path]::GetFullPath(${env:ProgramFiles(x86)})
-    [IO.Path]::GetFullPath(${env:windir})
-    (Get-Item $([IO.Path]::GetFullPath(${env:USERPROFILE}))).Parent.FullName
-)
-foreach ($problemDir in $problemDirs) {
-    if ($dir.currentDirectory.StartsWith($problemDir, [System.StringComparison]::OrdinalIgnoreCase)) {
-        Write-Custom ""
-        $extraErrorText = @(
-            "Attempting to run script from `"$($dir.currentDirectory)`"."
-            ""
-            "Please ensure this script is not anywhere inside the following folders:"
-            $problemDirs | ForEach-Object { "  $_" }
-        )
-        Write-CustomError "Problematic script location detected." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
-        Exit-Script 1
+if (-not $SkipProblematicDirectoryCheck) {
+    $problemDirs = @(
+        # system folders
+        (Get-KnownFolderPath -Name ProgramData).Path
+        (Get-KnownFolderPath -Name ProgramFiles).Path
+        (Get-KnownFolderPath -Name ProgramFilesX86).Path
+        (Get-KnownFolderPath -Name Windows).Path
+        # profile folder
+        (Get-KnownFolderPath -Name UserProfiles).Path
+        # user's folders - included because these don't necessarily have to be under the user profile folder
+        (Get-KnownFolderPath -Name Profile).Path
+        (Get-KnownFolderPath -Name Desktop).Path
+        (Get-KnownFolderPath -Name Documents).Path
+        (Get-KnownFolderPath -Name Downloads).Path
+        (Get-KnownFolderPath -Name Favorites).Path
+        (Get-KnownFolderPath -Name Music).Path
+        (Get-KnownFolderPath -Name Pictures).Path
+        (Get-KnownFolderPath -Name Videos).Path
+        # public folders - included because these don't necessarily have to be under the user profile folder
+        (Get-KnownFolderPath -Name Public).Path
+        (Get-KnownFolderPath -Name PublicDesktop).Path
+        (Get-KnownFolderPath -Name PublicDocuments).Path
+        (Get-KnownFolderPath -Name PublicDownloads).Path
+        (Get-KnownFolderPath -Name PublicMusic).Path
+        (Get-KnownFolderPath -Name PublicPictures).Path
+        (Get-KnownFolderPath -Name PublicVideos).Path
+    )
+    foreach ($problemDir in $problemDirs) {
+        if (-not $problemDir) { continue }
+        if ($dir.currentDirectory.StartsWith($problemDir, [System.StringComparison]::OrdinalIgnoreCase)) {
+            Write-Custom ""
+            $extraErrorText = @(
+                "Attempting to run script from `"$($dir.currentDirectory)`"."
+                ""
+                "Please ensure this script is not anywhere inside any of the following folders or their subfolders:"
+                $problemDirs | ForEach-Object { "  $_" }
+            )
+            Write-CustomError "Problematic script location detected." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
+            Exit-Script 1
+        }
     }
 }
 
@@ -395,19 +428,21 @@ foreach ($problemDir in $problemDirs) {
 # check for visual c++ redist files
 # ---------------------------------
 
-# need only C:\Windows\System32\msvcp110.dll and C:\Windows\System32\msvcr110.dll
-# from vc redist 2012 update 4:
-#   msvcp110.dll version = 11.00.51106.1
-#   msvcr110.dll version = 11.00.51106.1
-$vcrMinVersion = New-Object System.Version -ArgumentList @(11, 00, 51106, 1)
-if ($msvcp110dllVersion -lt $vcrMinVersion -or $msvcr110dllVersion -lt $vcrMinVersion) {
-    Write-Custom ""
-    $extraErrorText = @(
-        "Need 64-bit Visual C++ Redistributable for Visual Studio 2012 Update 4. Please download it from this link:"
-        "https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe"
-    )
-    Write-CustomError "Visual C++ Redistributable files not found." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
-    Exit-Script 1
+if (-not $SkipVisualCppRedistFileCheck) {
+    # need only C:\Windows\System32\msvcp110.dll and C:\Windows\System32\msvcr110.dll
+    # from vc redist 2012 update 4:
+    #   msvcp110.dll version = 11.00.51106.1
+    #   msvcr110.dll version = 11.00.51106.1
+    $vcrMinVersion = New-Object System.Version -ArgumentList @(11, 00, 51106, 1)
+    if ($msvcp110dllVersion -lt $vcrMinVersion -or $msvcr110dllVersion -lt $vcrMinVersion) {
+        Write-Custom ""
+        $extraErrorText = @(
+            "Need 64-bit Visual C++ Redistributable for Visual Studio 2012 Update 4. Please download it from this link:"
+            "https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe"
+        )
+        Write-CustomError "Visual C++ Redistributable files not found." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
+        Exit-Script 1
+    }
 }
 
 

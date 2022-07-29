@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.3.6](#v136)
     - [v1.3.5](#v135)
     - [v1.3.4](#v134)
     - [v1.3.3](#v133)
@@ -20,6 +21,13 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.3.6
+------
+- [Functions] Fix logic error with `SteamFallback` discovery method - don't code when tired, kids
+- [Functions] Version bumped to `1.26.3`
+
+([TOC](#table-of-contents))
 
 v1.3.5
 ------

@@ -22,6 +22,10 @@
 param (
     # Prevents the script from clearing the screen when starting up
     [switch] $NoClearScreen,
+    # Changes the OriginalBa2 folder
+    [ValidateScript({ Test-Path -LiteralPath $_ -PathType Container })] [string] $OriginalBa2Folder = ".\OriginalBa2",
+    # Changes the PatchedBa2 folder
+    [string] $PatchedBa2Folder = ".\PatchedBa2",
     # Forces 'Custom', 'Hybrid', or 'Automatic' mode of operation
     [ValidateSet("Custom", "Hybrid", "Standard")] [string] $ForceOperationMode,
     # Activates Extended Validation mode
@@ -60,8 +64,8 @@ param (
 
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 3, 4)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 11)) -Option Constant
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 3, 5)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 12)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -74,9 +78,10 @@ $dir.currentDirectory = $pwd.Path
 $dir.defaultPatchedBa2 = ".\PatchedBa2"
 $dir.fallout4DataRegistry = ""
 $dir.fallout4DataSteam = ""
+$dir.fallout4DataSteamFallback = ""
 $dir.logs = ".\Logs"
-$dir.originalBa2 = ".\OriginalBa2"
-$dir.patchedBa2 = $dir.defaultPatchedBa2
+$dir.originalBa2 = $OriginalBa2Folder
+$dir.patchedBa2 = $PatchedBa2Folder
 $dir.patchedFiles = ".\PatchedFiles"
 $dir.repack7z = ".\Repack7z"
 $dir.temp = ".\Temp"
@@ -200,20 +205,20 @@ $originalPath = $env:PATH
 
 # 7-Zip Standalone Console v21.07 (2021-12-26) by Igor Pavlov
 # https://www.7-zip.org/
-$env:PATH = (Resolve-Path "$($dir.tools)\7-zip\x64").Path + ";" + $env:PATH
+$env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\7-zip\x64").Path + ";" + $env:PATH
 
 # Archive2 v1.1.0.4 by Bethesda Game Studios
 # Part of the Fallout 4 Creation Kit
 # https://bethesda.net/en/game/bethesda-launcher
-$env:PATH = (Resolve-Path "$($dir.tools)\Archive2").Path + ";" + $env:PATH
+$env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\Archive2").Path + ";" + $env:PATH
 
 # BSA Browser v1.14.1 by AlexxEG
 # https://www.nexusmods.com/skyrimspecialedition/mods/1756
-$env:PATH = (Resolve-Path "$($dir.tools)\BSA Browser").Path + ";" + $env:PATH
+$env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\BSA Browser").Path + ";" + $env:PATH
 
 # xxhsum v0.8.1 by cyan4973
 # https://cyan4973.github.io/xxHash/
-$env:PATH = (Resolve-Path "$($dir.tools)\xxHash").Path + ";" + $env:PATH
+$env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\xxHash").Path + ";" + $env:PATH
 
 
 # imports
@@ -229,11 +234,11 @@ Write-Host "Loading hashes..."
 # check files
 # -----------
 
-if ((Get-FileHash "$($dir.tools)\lib\Crc32.cs" -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash -ne "53C3DE02CFAD47B2C9D02B2EDEDA0CCD25E38652CD2A1D7AA348F038026D5EAF") {
+if ((Get-FileHash -LiteralPath "$($dir.tools)\lib\Crc32.cs" -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash -ne "53C3DE02CFAD47B2C9D02B2EDEDA0CCD25E38652CD2A1D7AA348F038026D5EAF") {
     Write-CustomError "The contents of `"$($dir.tools)\lib\Crc32.cs`" do not match what's expected. Try re-extracting the WorkBase Improved files again. If this error persists, please contact the author." -Prefix "ERROR: " -NoJustifyRight
 }
 else {
-    Add-Type -TypeDefinition (Get-Content "$($dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
+    Add-Type -TypeDefinition (Get-Content -LiteralPath "$($dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
 }
 
 
@@ -245,6 +250,7 @@ else {
 
 $dir.fallout4DataRegistry = Get-Fallout4DataFolder -DiscoveryMethod Registry
 $dir.fallout4DataSteam = Get-Fallout4DataFolder -DiscoveryMethod Steam
+$dir.fallout4DataSteamFallback = Get-Fallout4DataFolder -DiscoveryMethod SteamFallback
 
 $msvcp110dllPath = "$((Get-KnownFolderPath -Name System).Path)\msvcp110.dll"
 $msvcp110dllVersion = (Get-Command $msvcp110dllPath -ErrorAction SilentlyContinue).Version
@@ -271,8 +277,10 @@ $msvcr110dllHash = (Get-FileHash -LiteralPath $msvcr110dllPath -Algorithm $FileH
 # begin script
 # ------------
 
-# clear the *.current.log files
-Remove-Item "$($dir.Logs)\current.*.log" -ErrorAction SilentlyContinue
+# clear the current.*.log files
+if (Test-Path -LiteralPath $dir.Logs) {
+    Get-ChildItem -LiteralPath $dir.Logs -Filter "current.*.log" | Remove-Item
+}
 
 # set the console background to a more appealing color and clear the background so it takes effect
 $Host.UI.RawUI.BackgroundColor = 'black'
@@ -325,14 +333,15 @@ Write-CustomLog @(
     ""
     "  Fallout 4 Data directory (Registry method): " + $(if ($dir.fallout4DataRegistry) { $dir.fallout4DataRegistry } else { "(Not Found)" })
     "  Fallout 4 Data directory (Steam method): " + $(if ($dir.fallout4DataSteam) { $dir.fallout4DataSteam } else { "(Not Found)" })
+    "  Fallout 4 Data directory (Steam Fallback method): " + $(if ($dir.fallout4DataSteamFallback) { $dir.fallout4DataSteamFallback } else { "(Not Found)" })
     ""
-    "  Files in Repack7z directory: $(if ((Get-ChildItem $dir.repack7z -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
-    (Get-ChildItem $dir.repack7z -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
+    "  Files in Repack7z directory: $(if ((Get-ChildItem -LiteralPath $dir.repack7z -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
+    (Get-ChildItem -LiteralPath $dir.repack7z -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
         [PSCustomObject]@{ Name = $_.Name; Size = $_.Length }
     } | Format-Table | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     ""
-    "  Files in OriginalBa2 directory: $(if ((Get-ChildItem $dir.originalBa2 -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
-    (Get-ChildItem $dir.originalBa2 -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
+    "  Files in OriginalBa2 directory: $(if ((Get-ChildItem -LiteralPath $dir.originalBa2 -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
+    (Get-ChildItem -LiteralPath $dir.originalBa2 -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
         [PSCustomObject]@{ Name = $_.Name; Size = $_.Length }
     } | Format-Table | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     "<" * $LineWidth
@@ -369,8 +378,6 @@ if (-not $SkipPowerShellVersionCheck) {
         Write-Custom ""
         $extraErrorText = @(
             "This script will not function properly if it is not run with PowerShell version 5.1.x or 7.2.x."
-            ""
-            "Make sure to run this script by opening the folder where it resides, right-clicking the script, and choosing `"Run with PowerShell`" from the menu."
         )
         Write-CustomError "Invalid PowerShell version." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
         Exit-Script 1
@@ -532,7 +539,7 @@ foreach ($object in $repackFiles.GetEnumerator()) {
         $fileName = $file.Substring(0, $file.LastIndexOf('.'))
 
         # do wildcard matching
-        $potentialRepackFiles = @(Get-ChildItem -Path $dir.repack7z -File -Filter "$fileName*")
+        $potentialRepackFiles = @(Get-ChildItem -LiteralPath $dir.repack7z -File -Filter "$fileName*")
         if ($potentialRepackFiles.Count -gt 0) { $existingFiles++ }
     }
     if ($existingFiles -gt 0) { $existingRepackFiles."$($object.Key)" = $object.Value; $repackFlags."$($object.Key)" = $true }
@@ -595,7 +602,7 @@ switch ($ForceOperationMode) {
         #   one or more original BA2 size doesn't match expected original BA2 size AND
         #   those same archives original BA2 size matches expected alternate BA2 size
         elseif (
-            (Get-ChildItem $dir.patchedFiles -File -Recurse -ErrorAction SilentlyContinue).Count -eq 0 -and
+            (Get-ChildItem -LiteralPath $dir.patchedFiles -File -Recurse -ErrorAction SilentlyContinue).Count -eq 0 -and
             $originalBa2SizeMismatches.Count -gt 0 -and
             $alternateOriginalBa2SizeMatches.Count -gt 0
         ) {
@@ -688,7 +695,7 @@ if ($existingRepackFiles.Count -gt 0) {
 
                     # do wildcard matching
                     # get files that match file name with anything after the end of the filename
-                    $potentialRepackFiles = @(Get-ChildItem -Path $dir.repack7z -File -Filter "$fileName*")
+                    $potentialRepackFiles = @(Get-ChildItem -LiteralPath $dir.repack7z -File -Filter "$fileName*")
                     # @($potentialRepackFiles | Where-Object
                     #   pipe potential repack files into Where-Object
                     # { $_.Length -eq
@@ -727,7 +734,7 @@ if ($existingRepackFiles.Count -gt 0) {
 
                             Write-CustomLog "    Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
                             # check size before checking hash
-                            if (@($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem $relFile).Length }).Count -eq 0) {
+                            if (@($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $relFile).Length }).Count -eq 0) {
                                 $extraErrorText = @(
                                     "The size of this repack archive doesn't match any known archives."
                                     ""
@@ -1153,7 +1160,7 @@ else {
                         ScriptBlock              = {
                             param([Hashtable] $FileRecord, [Hashtable] $Dir)
                             # enable capability to calculate CRC32 checksums
-                            Add-Type -TypeDefinition (Get-Content "$($Dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
+                            Add-Type -TypeDefinition (Get-Content -LiteralPath "$($Dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
                             . "$($Dir.tools)\lib\Functions.ps1"
                             # hash the file
                             $hash = (Get-FileHash -LiteralPath "$($Dir.patchedFiles)\$($FileRecord.Path)" -Algorithm CRC32 -ErrorAction SilentlyContinue).Hash
@@ -1494,7 +1501,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Push-Location $dir.workingFiles
         $relativeFileList = (Get-ChildItem -File -Recurse | Resolve-Path -Relative).Substring(2)
         Pop-Location
-        $relativeFileList = $relativeFileList | Where-Object { Test-Path "$($dir.patchedFiles)\$_" }
+        $relativeFileList = $relativeFileList | Where-Object { Test-Path -LiteralPath "$($dir.patchedFiles)\$_" }
         $argList = @{
             InputObject              = $relativeFileList
             ScriptBlock              = {
@@ -1590,9 +1597,9 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         # create patched archive
         Write-Custom "      Creating patched archive..." -NoNewline
         Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
-        Write-CustomLog "archive2.exe `"$($dir.workingFiles)`" -format=`"DDS`" -create=`"$patchedBa2File`" -root=`"$(Resolve-Path $dir.workingFiles)`"" -Log "tool"
+        Write-CustomLog "archive2.exe `"$($dir.workingFiles)`" -format=`"DDS`" -create=`"$patchedBa2File`" -root=`"$(Resolve-Path -LiteralPath $dir.workingFiles)`"" -Log "tool"
         $toolTimer.Restart()
-        $stdout, $stderr = (archive2.exe "$($dir.workingFiles)" -format="DDS" -create="$patchedBa2File" -root="$(Resolve-Path $dir.workingFiles)" 2>&1).
+        $stdout, $stderr = (archive2.exe "$($dir.workingFiles)" -format="DDS" -create="$patchedBa2File" -root="$(Resolve-Path -LiteralPath $dir.workingFiles)" 2>&1).
         Where({ $_ -is [string] -and $_ -ne "" }, "Split")
         Write-CustomLog "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
         Write-CustomLog "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
@@ -1704,7 +1711,8 @@ else {
         if (Test-Path -LiteralPath $dir.patchedFiles) {
             Remove-Item -LiteralPath $dir.patchedFiles -Force -Recurse
         }
-        if (-not (Get-ChildItem $dir.defaultPatchedBa2)) {
+        if (-not (Get-ChildItem -LiteralPath $dir.defaultPatchedBa2)) {
+            # remove the default patched BA2 folder if it's empty
             Remove-Item -LiteralPath $dir.defaultPatchedBa2
         }
     }

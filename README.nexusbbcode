@@ -319,6 +319,8 @@ These (and only these) parameters are supported.
 Most of these were added for my own convenience while testing or for debugging purposes. I take no responsibility if your computer implodes when using them.
 
 - [font=Courier New][color=#b2b2b2]NoClearScreen[/color][/font]: Prevents the script from clearing the screen when starting up
+- [font=Courier New][color=#b2b2b2]OriginalBa2Folder[/color][/font]: Changes the OriginalBa2 folder
+- [font=Courier New][color=#b2b2b2]PatchedBa2Folder[/color][/font]: Changes the PatchedBa2 folder
 - [font=Courier New][color=#b2b2b2]ForceOperationMode <Custom|Hybrid|Standard>[/color][/font]: Forces "Custom", "Hybrid", or "Standard" mode of operation
 - [font=Courier New][color=#b2b2b2]SkipPowerShellVersionCheck[/color][/font]: Skip checking that this script is being run by a supported version of PowerShell
 - [font=Courier New][color=#b2b2b2]SkipProblematicDirectoryCheck[/color][/font]: Skip checking that this script is not being run from a problematic directory

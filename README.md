@@ -359,6 +359,8 @@ Unsupported Command Line Parameters
 Most of these were added for my own convenience while testing or for debugging purposes. I take no responsibility if your computer implodes when using them.
 
 - `NoClearScreen`: Prevents the script from clearing the screen when starting up
+- `OriginalBa2Folder`: Changes the OriginalBa2 folder
+- `PatchedBa2Folder`: Changes the PatchedBa2 folder
 - `ForceOperationMode <Custom|Hybrid|Standard>`: Forces "Custom", "Hybrid", or "Standard" mode of operation
 - `SkipPowerShellVersionCheck`: Skip checking that this script is being run by a supported version of PowerShell
 - `SkipProblematicDirectoryCheck`: Skip checking that this script is not being run from a problematic directory

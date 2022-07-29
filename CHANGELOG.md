@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.3.5](#v135)
     - [v1.3.4](#v134)
     - [v1.3.3](#v133)
     - [v1.3.2](#v132)
@@ -19,6 +20,20 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.3.5
+------
+- [Installer] Fixed some potential failures when the user has unusual characters in the path to some folders
+- [Installer] Added support for a fallback method of finding the Fallout 4 directory
+- [Installer] Added `OriginalBa2Folder` parameter
+- [Installer] Added `PatchedBa2Folder` parameter
+- [Installer] Version bumped to `1.20.12`
+- [Functions] Fixed `Get-Fallout4DataFolder` returning an empty path for the `Steam` discovery method if the path had unusual characters in it
+- [Functions] Added `SteamFallback` discovery method to `Get-Fallout4DataFolder` function
+- [Functions] Utilize `SteamFallback` data in `Get-OriginalBa2File` function
+- [Functions] Version bumped to `1.26.2`
+
+([TOC](#table-of-contents))
 
 v1.3.4
 ------

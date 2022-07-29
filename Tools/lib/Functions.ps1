@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 26, 1))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 26, 2))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -113,8 +113,8 @@ function Get-Fallout4DataFolder {
         "Registry" {
             # attempt to get the install path of Fallout 4 from the registry
             $fallout4RegistryFolder = (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Bethesda Softworks\Fallout4" -ErrorAction SilentlyContinue)."installed path"
-            if (-not $fallout4RegistryFolder -or -not (Test-Path $fallout4RegistryFolder)) { return "" }
-            # if it exists, set the location of the Fallout 4 folder
+            if (-not $fallout4RegistryFolder -or -not (Test-Path -LiteralPath "$fallout4RegistryFolder\Fallout4.exe")) { return "" }
+            # if the Fallout 4 executable exists, set the location of the Fallout 4 folder
             $fallout4Folder = $fallout4RegistryFolder
             break
         }
@@ -124,15 +124,15 @@ function Get-Fallout4DataFolder {
             if (-not $steamDir) { return "" }
             # set the location of the file that has the configuration of Steam's library folders
             $steamLibraryFile = "$steamDir\config\libraryfolders.vdf"
-            if (-not (Test-Path $steamLibraryFile)) { return "" }
+            if (-not (Test-Path -LiteralPath $steamLibraryFile)) { return "" }
             # search the steam library file for the game ID of Fallout 4
-            #   (Select-String "^\s+`"377160`"" -Path $steamLibraryFile)
+            #   (Select-String "^\s+`"377160`"" -LiteralPath $steamLibraryFile)
             # get the line number it's found at
             #   .LineNumber
-            $fallout4EntryLineNumber = (Select-String "^\s+`"377160`"" -Path $steamLibraryFile).LineNumber
+            $fallout4EntryLineNumber = (Select-String "^\s+`"377160`"" -LiteralPath $steamLibraryFile).LineNumber
             if (-not $fallout4EntryLineNumber) { return "" }
             # search for "path" entries in the steam library file, making sure it's an array
-            #   (@(Select-String "^\s+`"path`"" -Path $steamLibraryFile)
+            #   (@(Select-String "^\s+`"path`"" -LiteralPath $steamLibraryFile)
             # find the path entry just before the fallout 4 ID, will be an entry similar to '       "path"      "C:\Foo"'
             #   .Where({$_.LineNumber -lt $fallout4EntryLineNumber}, "Last")
             # split the line using " as a delimiter
@@ -141,12 +141,39 @@ function Get-Fallout4DataFolder {
             #   .Trim()
             # get the last entry that's not an empty string, which should be the location of the steam library where Fallout 4 is
             #   .Where({$_}, "Last")
-            $steamLibraryPath = (@(Select-String "^\s+`"path`"" -Path $steamLibraryFile).Where({ $_.LineNumber -lt $fallout4EntryLineNumber }, "Last").Line -split "`"").Trim().Where({ $_ }, "Last")
+            $steamLibraryPath = (@(Select-String "^\s+`"path`"" -LiteralPath $steamLibraryFile).Where({ $_.LineNumber -lt $fallout4EntryLineNumber }, "Last").Line -split "`"").Trim().Where({ $_ }, "Last")
             if (-not $steamLibraryPath) { return "" }
             # set the location of the Fallout 4 folder gotten through this method
             $fallout4SteamFolder = "$steamLibraryPath\steamapps\common\Fallout 4"
-            if (-not (Test-Path $fallout4SteamFolder)) { return "" }
-            # if it exists, set the location of the Fallout 4 folder
+            if (-not (Test-Path -LiteralPath $fallout4SteamFolder)) { return "" }
+            # if the Fallout 4 executable exists, set the location of the Fallout 4 folder
+            $fallout4Folder = $fallout4SteamFolder
+            break
+        }
+        "SteamFallback" {
+            # attempt to get steam install path from the registry
+            $steamDir = (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Valve\Steam" -ErrorAction SilentlyContinue).InstallPath
+            if (-not $steamDir) { return "" }
+            # set the location of the file that has the configuration of Steam's library folders
+            $steamLibraryFile = "$steamDir\config\libraryfolders.vdf"
+            if (-not (Test-Path -LiteralPath $steamLibraryFile)) { return "" }
+            # search for "path" entries in the steam library file, making sure it's an array
+            #   (@(Select-String "^\s+`"path`"" -LiteralPath $steamLibraryFile)
+            # split the line using " as a delimiter
+            #   .Line -split "`"")
+            # trim any whitespace from the resulting array entries
+            #   .Trim()
+            # get entries that are not an empty string and not equal to "path", which should be steam library locations
+            #   .Where({ $_ -and $_ -ne "path" })
+            $steamLibraryPaths = (@(Select-String "^\s+`"path`"" -LiteralPath $steamLibraryFile).Line -split "`"").Trim().Where({ $_ -and $_ -ne "path" })
+            if (-not $steamLibraryPaths) { return "" }
+            # test potentials locations of the Fallout 4 folder gotten through this method
+            foreach ($library in $steamLibraryPaths) {
+                $fallout4SteamFolder = "$library\steamapps\common\Fallout 4"
+                if (-not (Test-Path -LiteralPath "$fallout4SteamFolder\Fallout4.exe")) { $fallout4SteamFolder = "" }
+            }
+            if (-not $fallout4SteamFolder) { return "" }
+            # if the Fallout 4 executable exists, set the location of the Fallout 4 folder
             $fallout4Folder = $fallout4SteamFolder
             break
         }
@@ -156,7 +183,7 @@ function Get-Fallout4DataFolder {
     }
     # set the location of the fallout 4 data folder
     $fallout4DataFolder = [IO.Path]::GetFullPath("$fallout4Folder\Data")
-    if (-not (Test-Path $fallout4DataFolder)) { return "" }
+    if (-not (Test-Path -LiteralPath $fallout4DataFolder)) { return "" }
     # if it exists, return the location of the fallout 4 data folder
     return $fallout4DataFolder
 }
@@ -339,7 +366,8 @@ function Get-OriginalBa2File {
         [Parameter()] [string] $FileName,
         [Parameter()] [string] $FolderOriginal = $dir.originalBa2,
         [Parameter()] [string] $FolderRegistry = $dir.fallout4DataRegistry,
-        [Parameter()] [string] $FolderSteam = $dir.fallout4DataSteam
+        [Parameter()] [string] $FolderSteam = $dir.fallout4DataSteam,
+        [Parameter()] [string] $FolderSteamFallback = $dir.fallout4DataSteamFallback
     )
 
     $toReturn = "$FolderOriginal\$FileName"
@@ -347,6 +375,7 @@ function Get-OriginalBa2File {
         $FolderOriginal
         $FolderRegistry
         $FolderSteam
+        $FolderSteamFallback
     )
     foreach ($folder in $folderList) {
         if (Test-Path -LiteralPath "$folder\$FileName") {
@@ -408,7 +437,7 @@ function Invoke-Parallel {
         # This is the name of the variable used to reference the particular input object being operated on in the script block, defaults to 'Object'
         [Parameter()] [string] $InputObjectParameterName = 'Object',
         # This is the directory to start in, defaults to the current folder
-        [Parameter()] [ValidateScript({ Test-Path $_ -PathType Container })] [string] $StartingDirectory = (Get-Location),
+        [Parameter()] [ValidateScript({ Test-Path -LiteralPath $_ -PathType Container })] [string] $StartingDirectory = (Get-Location),
         # This is the number of items to send to each invocation of Invoke-ParallelActual. If you experience memory pressure, lower this number.
         [Parameter()] [UInt64] $RunspacePoolJobLimit = [UInt64]::MaxValue,
         # The minimum number of threads, defaults to 1

@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 26, 2))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 26, 3))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -167,10 +167,10 @@ function Get-Fallout4DataFolder {
             #   .Where({ $_ -and $_ -ne "path" })
             $steamLibraryPaths = (@(Select-String "^\s+`"path`"" -LiteralPath $steamLibraryFile).Line -split "`"").Trim().Where({ $_ -and $_ -ne "path" })
             if (-not $steamLibraryPaths) { return "" }
-            # test potentials locations of the Fallout 4 folder gotten through this method
+            # test potential locations of the Fallout 4 folder gotten through this method
             foreach ($library in $steamLibraryPaths) {
                 $fallout4SteamFolder = "$library\steamapps\common\Fallout 4"
-                if (-not (Test-Path -LiteralPath "$fallout4SteamFolder\Fallout4.exe")) { $fallout4SteamFolder = "" }
+                if (Test-Path -LiteralPath "$fallout4SteamFolder\Fallout4.exe") { break } else { $fallout4SteamFolder = "" }
             }
             if (-not $fallout4SteamFolder) { return "" }
             # if the Fallout 4 executable exists, set the location of the Fallout 4 folder

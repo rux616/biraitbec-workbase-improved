@@ -411,7 +411,7 @@ All my code in this tool is licensed under the [GPL 3.0](https://www.gnu.org/lic
 Everything else in this mod created by me is [CC-BY-SA](https://creativecommons.org/licenses/by-sa/4.0/legalcode) licensed.
 
 This tool is bundled with the following programs, each having their own copyrights and licenses:
-- [7-Zip Standalone Console v21.07 (2021-12-26) by Igor Pavlov](https://www.7-zip.org/)
+- [7-Zip 64-bit v22.01 (2022-07-15) by Igor Pavlov](https://www.7-zip.org/)
 - [Archive2 v1.1.0.4 by Bethesda Game Studios, part of the Fallout 4 Creation Kit](https://bethesda.net/en/game/bethesda-launcher)
 - [BSA Browser v1.14.1 by AlexxEG](https://www.nexusmods.com/skyrimspecialedition/mods/1756)
 - [xxhsum v0.8.1 by Cyan4973](https://cyan4973.github.io/xxHash/)

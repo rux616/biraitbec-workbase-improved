@@ -65,7 +65,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 3, 6)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 20, 12)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 21, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -203,9 +203,9 @@ $writeCustomPrevNoNewLineLength = 0
 # save the original PATH variable
 $originalPath = $env:PATH
 
-# 7-Zip Standalone Console v21.07 (2021-12-26) by Igor Pavlov
+# 7-Zip 64-bit v22.01 (2022-07-15) by Igor Pavlov
 # https://www.7-zip.org/
-$env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\7-zip\x64").Path + ";" + $env:PATH
+$env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\7-zip").Path + ";" + $env:PATH
 
 # Archive2 v1.1.0.4 by Bethesda Game Studios
 # Part of the Fallout 4 Creation Kit
@@ -1001,16 +1001,16 @@ else {
                     Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
 
                     # do the actual extraction and save the command line used to the tool log
-                    Write-CustomLog "7za.exe x -y -bb2 -bd -o`"$outDir`" `"$relFile`" `"$(if ($extra) {$extra -join '" "'})`"" -Log "tool"
+                    Write-CustomLog "7z.exe x -y -bb2 -bd -o`"$outDir`" `"$relFile`" `"$(if ($extra) {$extra -join '" "'})`"" -Log "tool"
                     $toolTimer.Restart()
-                    $stdout, $stderr = (7za.exe x -y -bb2 -bd -o"$outDir" "$relFile" "$(if ($extra) {$extra -join '" "'})" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
+                    $stdout, $stderr = (7z.exe x -y -bb2 -bd -o"$outDir" "$relFile" "$(if ($extra) {$extra -join '" "'})" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
                     Write-CustomLog "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
                     Write-CustomLog "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
 
                     # check if extracting the archive succeeded
                     if ($LASTEXITCODE -ne 0) {
                         $extraErrorText = @(
-                            "The program used to extract repack archives (7za.exe) has indicated that an error occurred while extracting one of said archives. Unfortunately, 7za.exe doesn't output an error that can be interpreted by this script."
+                            "The program used to extract repack archives (7z.exe) has indicated that an error occurred while extracting one of said archives. Unfortunately, 7z.exe doesn't output an error that can be interpreted by this script."
                         )
                         $extraLogText = @(
                             $stderr
@@ -1021,7 +1021,7 @@ else {
 
                     # if using extended validation mode, get file details (checksums) from archive and process the results
                     if ($ExtendedValidationMode) {
-                        $archiveTechnicalInformation = 7za.exe l -slt "$relFile" "$(if ($extra) {$extra -join '" "'})"
+                        $archiveTechnicalInformation = 7z.exe l -slt "$relFile" "$(if ($extra) {$extra -join '" "'})"
                         foreach ($line in $archiveTechnicalInformation |
                                 Select-Object -Skip 18 |
                                 Where-Object { $_ -match "^Path.*" -or $_ -match "^CRC.*" }) {

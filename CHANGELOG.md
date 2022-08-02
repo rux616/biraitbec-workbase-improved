@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.4.0](#v140)
     - [v1.3.6](#v136)
     - [v1.3.5](#v135)
     - [v1.3.4](#v134)
@@ -21,6 +22,17 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.4.0
+------
+- [7-Zip] Upgraded to 7-Zip 64-bit v22.01 (2022-07-15)
+- [Installer] Changed calls from old 7-zip executable to new 7-Zip executable
+- [Installer] Version bumped to `1.20.13`
+- [Hashes] Added support for Luxor HD v1.2
+- [Hashes] Marked Luxor HD v1.1 as old
+- [Hashes] Version bumped to `1.10.0`
+
+([TOC](#table-of-contents))
 
 v1.3.6
 ------

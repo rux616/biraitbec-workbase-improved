@@ -1,3 +1,18 @@
+# for future reference use the following URL format to download archived files:
+# https://www.nexusmods.com/Core/Libs/Common/Widgets/ModRequirementsPopUp?id=<fileID>&game_id=<gameID>
+# "<fileID>":
+#   - can be found via page inspection
+# "<gameID>":
+#   - Fallout 4 = 1151
+#   - Skyrim SE = 1704
+#
+# alternately this form also seems to work:
+# https://www.nexusmods.com/fallout4/mods/<modID>?tab=files&file_id=<fileID>
+# "<modID>":
+#   - in the URL
+# "<fileID>":
+#   - can be found via page inspection
+
 [CmdletBinding(DefaultParameterSetName = "Path")]
 param (
     [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Path", Position = 0)]
@@ -6,15 +21,14 @@ param (
     [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = "LiteralPath", Position = 0)]
     [PSObject] $LiteralPath,
 
-    # [Parameter(Mandatory)]
-    [string] $NexusAPIKey = "foo",
+    [Parameter(Mandatory)]
+    [string] $NexusAPIKey,
 
-    # [Parameter(Mandatory)]
     [string] $GameDomain = "fallout4"
 )
 
 begin {
-    # $ErrorActionPreference = 'Stop'
+    $ErrorActionPreference = 'Stop'
 
     $dir = @{}
     $dir.currentDirectory = $pwd.Path
@@ -32,13 +46,9 @@ begin {
     Invoke-RestMethod -Uri $apiValidate -Headers @{ apikey = $NexusAPIKey } -ErrorVariable "ValidateRestError" | Out-Null
     if ($ValidateRestError) { exit 1 }
 
-    # 7-Zip 64-bit v22.01 (2022-07-15) by Igor Pavlov
-    # https://www.7-zip.org/
-    # $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\7-zip").Path + ";" + $env:PATH
-
     # xxhsum v0.8.1 by cyan4973
     # https://cyan4973.github.io/xxHash/
-    # $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\xxHash").Path + ";" + $env:PATH
+    $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\xxHash").Path + ";" + $env:PATH
 }
 
 process {
@@ -76,24 +86,35 @@ process {
             Path = $file
         }
         $hash = (Get-FileHash -Algorithm MD5 -Path $file).Hash
-        Add-Member -InputObject $modObject -MemberType NoteProperty -Name "MD5" -Value $Hash.ToLower()
+        Add-Member -InputObject $modObject -MemberType NoteProperty -Name "MD5" -Value $hash.ToLower()
+        $hash = (xxhsum.exe -H128 $file).Substring(0, 32)
+        Add-Member -InputObject $modObject -MemberType NoteProperty -Name "XXH128" -Value $hash.ToLower()
         try {
-            $response = Invoke-RestMethod -Uri "${apiModsBase}/md5_search/$($hash.ToLower()).json" -Headers @{ apikey = $NexusAPIKey }
+            $response = Invoke-RestMethod -Uri "${apiModsBase}/md5_search/$($modObject.MD5).json" -Headers @{ apikey = $NexusAPIKey }
         }
         catch { $response = $null }
         if ($null -eq $response) {
             $modName = $null
             $modID = $null
             $fileName = $null
+            $fileID = $null
+            $fileVersion = $null
+            $fileSize = (Get-ChildItem $file).Length
         }
         else {
             $modName = $response.mod.name
             $modID = $response.mod.mod_id
             $fileName = $response.file_details.file_name
+            $fileID = $response.file_details.file_id
+            $fileVersion = $response.file_details.version
+            $fileSize = $response.file_details.size_in_bytes
         }
         Add-Member -InputObject $modObject -MemberType NoteProperty -Name "ModName" -Value $modName
         Add-Member -InputObject $modObject -MemberType NoteProperty -Name "ModID" -Value $modID
         Add-Member -InputObject $modObject -MemberType NoteProperty -Name "FileName" -Value $fileName
+        Add-Member -InputObject $modObject -MemberType NoteProperty -Name "FileID" -Value $fileID
+        Add-Member -InputObject $modObject -MemberType NoteProperty -Name "FileVersion" -Value $fileVersion
+        Add-Member -InputObject $modObject -MemberType NoteProperty -Name "FileSize" -Value $fileSize
         $modObject
     }
 }

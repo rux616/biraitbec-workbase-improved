@@ -23,7 +23,7 @@
 # power set maker: https://www.mathsisfun.com/sets/power-set-maker.html
 # all hashes are created using the XXH128 hashing algorithm: https://github.com/Cyan4973/xxHash
 
-Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 10, 0)) -Option Constant
+Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 11, 0)) -Option Constant
 
 
 # repack hashes
@@ -74,22 +74,24 @@ Add-Hash -VariableName $var -Hash "20697A2177195BBB0C86BAD7A6697CC3" -Tag $tag -
 $alternateOriginalBa2Hashes = @{}; $var = "alternateOriginalBa2Hashes"
 
 # luxor - https://www.nexusmods.com/fallout4/mods/52423
+$tag = "Luxor HD v1.2.2"
+Add-Hash -VariableName $var -Hash "421357013AA387ECB410D98859D0E2E8" -Tag $tag -FileName $ba2Files.dlcCoastTextures -FileSize 3813332861
+Add-Hash -VariableName $var -Hash "6A59C096F5AB40FB2C1AD3671EAFC933" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 11501728362
+Add-Hash -VariableName $var -Hash "7E30D3E72EF37DF67C60977F42133CEA" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 13079516253
+Add-Hash -VariableName $var -Hash "78F8EAB45BB3D77BE029D0561B8C27B2" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 9776031231
+Add-Hash -VariableName $var -Hash "6C4C09A124AC0BD3F7DA5B1F4612976C" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 8902404149
+Add-Hash -VariableName $var -Hash "FAD95A23F95909C784CB44602E5502E6" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 6134070024
+Add-Hash -VariableName $var -Hash "0B6791BD24A8773690595258F1564D15" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 3966323125
+Add-Hash -VariableName $var -Hash "D6D76BBD482C8D08244244B32272E736" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 542753900
+Add-Hash -VariableName $var -Hash "4F0753B8F1CCEF7137D8B87DA9FF9D48" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 599887766
+Add-Hash -VariableName $var -Hash "CF085DE6D2C8520B7A9B9E78DC3D3BE2" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 2822001116
+$tag = "Luxor HD v1.2.1"
+Add-Hash -VariableName $var -Hash "C775180F3DB788B3C4B2E21B1678A24E" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures -FileSize 6168439908
 $tag = "Luxor HD v1.2"
-Add-Hash -VariableName $var -Hash "83A4A077F089D3602DCB891EE2F18697" -Tag $tag -FileName $ba2Files.dlcCoastTextures -FileSize 3797888798
-Add-Hash -VariableName $var -Hash "BBE4BD41D4622B1F8EE0D1CFDAEEFD20" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures -FileSize 6177772631
-Add-Hash -VariableName $var -Hash "CF894CD2875396220E17596A00E81893" -Tag $tag -FileName $ba2Files.dlcRobotTextures -FileSize 969911298
-Add-Hash -VariableName $var -Hash "8498356E901F2354861B71CC629DCE8C" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 97174815
-Add-Hash -VariableName $var -Hash "4A802640F610E8165D1171D4D0211B58" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 486840325
-Add-Hash -VariableName $var -Hash "DBD758FE9183387A05F578D6595B5ED7" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 513805413
-Add-Hash -VariableName $var -Hash "CB4C9F4FD462C2785873600A74371B1E" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 11491115571
-Add-Hash -VariableName $var -Hash "293536BD59D9718628A010016DF3FBD8" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 13083071438
-Add-Hash -VariableName $var -Hash "F7927B794AB2D2FA5AA4C28CC2E1C3AB" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 9644627792
-Add-Hash -VariableName $var -Hash "410FCE43A47607F7BAAC3D58740AE6F9" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 8893336806
-Add-Hash -VariableName $var -Hash "95DDC341DA9314B498017D7FCECABE0B" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 6143455834
-Add-Hash -VariableName $var -Hash "A95EA7CD078049F90D62FD9BD2AA1782" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 3965416485
-Add-Hash -VariableName $var -Hash "EBE8F44787EB83E5EBD4386116D33132" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 545959220
-Add-Hash -VariableName $var -Hash "00CD48C075095F2174D5186425522B7D" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 602176127
-Add-Hash -VariableName $var -Hash "85A94D3DD71EA2F59E994085280F52F1" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 2828619274
+Add-Hash -VariableName $var -Hash "3F018CF0C9C843C8DFC6E63CFF68B3A2" -Tag $tag -FileName $ba2Files.dlcRobotTextures -FileSize 968567386
+Add-Hash -VariableName $var -Hash "CA956847F8DA8835447CD8CE6AA09D08" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 97033590
+Add-Hash -VariableName $var -Hash "466856E3959F1C27E54CA3836244F3E7" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 485695557
+Add-Hash -VariableName $var -Hash "C371025F6195B84FB6F5558B4A7050A4" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 513277179
 
 # phyop - https://www.nexusmods.com/fallout4/mods/27038
 # phyop custom
@@ -260,6 +262,24 @@ Add-Hash -VariableName $var -Hash "EEB2DEC0B53178F91E64088C3BADC60A" -Tag $tag -
 $oldAlternateOriginalBa2Hashes = @{}; $var = "oldAlternateOriginalBa2Hashes"
 
 # luxor
+$tag = "OLD - Luxor HD v1.2.1"
+Add-Hash -VariableName $var -Hash "0CC257DF59D36C5546E7FB3B47A29FAF" -Tag $tag -FileName $ba2Files.dlcCoastTextures -FileSize 3811217607
+$tag = "OLD - Luxor HD v1.2"
+Add-Hash -VariableName $var -Hash "83A4A077F089D3602DCB891EE2F18697" -Tag $tag -FileName $ba2Files.dlcCoastTextures -FileSize 3797888798
+Add-Hash -VariableName $var -Hash "BBE4BD41D4622B1F8EE0D1CFDAEEFD20" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures -FileSize 6177772631
+Add-Hash -VariableName $var -Hash "CF894CD2875396220E17596A00E81893" -Tag $tag -FileName $ba2Files.dlcRobotTextures -FileSize 969911298
+Add-Hash -VariableName $var -Hash "8498356E901F2354861B71CC629DCE8C" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 97174815
+Add-Hash -VariableName $var -Hash "4A802640F610E8165D1171D4D0211B58" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 486840325
+Add-Hash -VariableName $var -Hash "DBD758FE9183387A05F578D6595B5ED7" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 513805413
+Add-Hash -VariableName $var -Hash "CB4C9F4FD462C2785873600A74371B1E" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 11491115571
+Add-Hash -VariableName $var -Hash "293536BD59D9718628A010016DF3FBD8" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 13083071438
+Add-Hash -VariableName $var -Hash "F7927B794AB2D2FA5AA4C28CC2E1C3AB" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 9644627792
+Add-Hash -VariableName $var -Hash "410FCE43A47607F7BAAC3D58740AE6F9" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 8893336806
+Add-Hash -VariableName $var -Hash "95DDC341DA9314B498017D7FCECABE0B" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 6143455834
+Add-Hash -VariableName $var -Hash "A95EA7CD078049F90D62FD9BD2AA1782" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 3965416485
+Add-Hash -VariableName $var -Hash "EBE8F44787EB83E5EBD4386116D33132" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 545959220
+Add-Hash -VariableName $var -Hash "00CD48C075095F2174D5186425522B7D" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 602176127
+Add-Hash -VariableName $var -Hash "85A94D3DD71EA2F59E994085280F52F1" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 2828619274
 $tag = "OLD - Luxor HD v1.1"
 Add-Hash -VariableName $var -Hash "99A5ED22EEFB9B66D0592817AF6B1FEC" -Tag $tag -FileName $ba2Files.dlcCoastTextures -FileSize 3797812759
 Add-Hash -VariableName $var -Hash "F038C72799A1DE28C61C4C980F468AA6" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures -FileSize 6078554867

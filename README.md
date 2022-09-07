@@ -141,8 +141,22 @@ Currently, the following original BA2 archives are supported:
 
 - Vanilla (game version 1.10.163.0, steam build ID 4460038)
     - (All archives)
-- Luxor's Fallout 4 HD Overhaul (v1.1)
-    - (All archives)
+- Luxor's Fallout 4 HD Overhaul (mod version 1.2.2)
+    - `DLCCoast - Textures.ba2` (file Version 1.2.2)
+    - `DLCNukaWorld - Textures.ba2` (file version 1.2.1)
+    - `DLCRobot - Textures.ba2` (file version 1.2)
+    - `DLCworkshop01 - Textures.ba2` (file version 1.2)
+    - `DLCworkshop02 - Textures.ba2` (file version 1.2)
+    - `DLCworkshop03 - Textures.ba2` (file version 1.2)
+    - `Fallout4 - Textures1.ba2` (file version 1.2.2)
+    - `Fallout4 - Textures2.ba2` (file version 1.2.2)
+    - `Fallout4 - Textures3.ba2` (file version 1.2.2)
+    - `Fallout4 - Textures4.ba2` (file version 1.2.2)
+    - `Fallout4 - Textures5.ba2` (file version 1.2.2)
+    - `Fallout4 - Textures6.ba2` (file version 1.2.2)
+    - `Fallout4 - Textures7.ba2` (file version 1.2.2)
+    - `Fallout4 - Textures8.ba2` (file version 1.2.2)
+    - `Fallout4 - Textures9.ba2` (file version 1.2.2)
 - PhyOp's Overhauled Optimized Textures (v1.2a)
     - Custom
         - `DLCCoast - Textures.ba2`
@@ -390,6 +404,8 @@ Known Issues
     - Type the command `Installer.cmd` and hit "Enter".
 - The script appears stuck at "Patched BA2 archive folder:".
     - The script has opened up a window to enable you to choose the folder where the patched BA2 archives will go. Sometimes this window gets hidden behind others, so hit the Windows+Tab key combination, look for a window titled "Browse For Folder", then click on it.
+- In some cases, there is something called Group Policy that may be applied to a computer. If Group Policy disables PowerShell scripts, this script simply will not work. The Group Policy disabling PowerShell must itself be disabled before this script will work.
+- Don't rename the repack files. This script has some limited flexibility for recognizing file names appended with things like "(1)" or " - Copy" and such, but not much more than that.
 
 ([TOC](#table-of-contents))
 

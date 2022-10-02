@@ -23,7 +23,7 @@
 # power set maker: https://www.mathsisfun.com/sets/power-set-maker.html
 # all hashes are created using the XXH128 hashing algorithm: https://github.com/Cyan4973/xxHash
 
-Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 11, 0)) -Option Constant
+Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 12, 0)) -Option Constant
 
 
 # repack hashes
@@ -252,6 +252,24 @@ Add-Hash -VariableName $var -Hash "7DA61F4705765169D4FA1BF9E82FA800" -Tag $tag -
 # phyop light potato fixes
 $tag = "PhyOp (Light) Potato Face Sculpting Fix v1.2a"
 Add-Hash -VariableName $var -Hash "EEB2DEC0B53178F91E64088C3BADC60A" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 438217732
+
+# performout - https://www.nexusmods.com/fallout4/mods/61750
+$tag = "Performout v2.0"
+Add-Hash -VariableName $var -Hash "268C2B1CBEA6A05E520E3E4084D8AC57" -Tag $tag -FileName $ba2Files.dlcCoastTextures -FileSize 66843114
+Add-Hash -VariableName $var -Hash "D36F9CC4017075D51ECD46FD4B603499" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures -FileSize 207107235
+Add-Hash -VariableName $var -Hash "206E4F1A83F1C1B2AC4F06C4C13DC186" -Tag $tag -FileName $ba2Files.dlcRobotTextures -FileSize 10676176
+Add-Hash -VariableName $var -Hash "5AF319B89C52536BB7DAB2A4D22D7A08" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 863020
+Add-Hash -VariableName $var -Hash "3FA0171C8ACA2BAABEC5F7B9AE746A66" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 11570113
+Add-Hash -VariableName $var -Hash "79644803AA8A611A2FA217BF76A6026C" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 16917726
+Add-Hash -VariableName $var -Hash "49D6C898A590C4EBA60CF12A6FDC846D" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 514939145
+Add-Hash -VariableName $var -Hash "71EB2BDD5A5FA76117EB78C5E6BAB179" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 407966902
+Add-Hash -VariableName $var -Hash "84652400F7ADF6BB04D66478266CD38A" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 357409624
+Add-Hash -VariableName $var -Hash "018BBBA281D01404C6ECF1D0AA0A819C" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 384381191
+Add-Hash -VariableName $var -Hash "E0B41C3E56D8E0DA5AA8E41BE96C9BD5" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 486558504
+Add-Hash -VariableName $var -Hash "18291F1AF4C3081A77E21F915E99E798" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 270356535
+Add-Hash -VariableName $var -Hash "6B5D794BAECA388E5B1C73D6A69E25D1" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 7963288
+Add-Hash -VariableName $var -Hash "61B179F02B4A02F9F393D78FBEAA2BD0" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 29133243
+Add-Hash -VariableName $var -Hash "E3D90E87EA280BAB77807D7D50BA40FF" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 101635728
 
 
 # old alternate original ba2 hashes

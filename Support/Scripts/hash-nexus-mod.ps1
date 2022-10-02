@@ -31,11 +31,10 @@ begin {
     $ErrorActionPreference = 'Stop'
 
     $dir = @{}
-    $dir.currentDirectory = $pwd.Path
     $dir.scriptDirectory = Split-Path $MyInvocation.MyCommand.Path -Parent
-    $dir.logs = "..\..\Logs"
-    $dir.temp = "..\..\Temp"
-    $dir.tools = "..\..\Tools"
+    $dir.logs = "$($dir.scriptDirectory)\..\..\Logs"
+    $dir.temp = "$($dir.scriptDirectory)\..\..\Temp"
+    $dir.tools = "$($dir.scriptDirectory)\..\..\Tools"
     $dir
 
     $apiBase = "https://api.nexusmods.com/v1"

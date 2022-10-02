@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.6.0](#v160)
     - [v1.5.0](#v150)
     - [v1.4.0](#v140)
     - [v1.3.6](#v136)
@@ -23,6 +24,13 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.6.0
+------
+- [Hashes] Added support for Performout v2.0 (base game files v2.0, DLC files v1.0)
+- [Hashes] Version bumped to `1.12.0`
+
+([TOC](#table-of-contents))
 
 v1.5.0
 ------

@@ -125,11 +125,11 @@ There are three modes of operation for BiRaitBec WorkBase Improved:
     - Automatic extraction of repack archives: Yes
     - Use vanilla original BA2 archives in conjunction with the repack archives.
 - Hybrid
-    - Original BA2 archives: At least one alternate (PhyOp/Luxor)
+    - Original BA2 archives: At least one alternate (Luxor/PhyOp/Performout)
     - Automatic extraction of repack archives: Yes
     - Use alternate original BA2 archives in conjunction with the repack archives.
 - Custom
-    - Original BA2 archives: Vanilla or at least one alternate (PhyOp/Luxor)
+    - Original BA2 archives: Vanilla or at least one alternate (Luxor/PhyOp/Performout)
     - Automatic extraction of repack archives: No
     - Use custom assets
 
@@ -317,7 +317,7 @@ Common
 ------
 NOTE: The script will automatically attempt to locate and use original BA2 archives from the Fallout 4 Data folder if it doesn't find them in the `OriginalBa2` folder.
 
-Currently supports the BA2s from vanilla, [Luxor's Fallout 4 HD Overhaul](https://www.nexusmods.com/fallout4/mods/52423), and [PhyOp's Overhauled Optimized Textures](https://www.nexusmods.com/fallout4/mods/27038?).
+Currently supports the BA2s from vanilla, [Luxor's Fallout 4 HD Overhaul](https://www.nexusmods.com/fallout4/mods/52423), [PhyOp's Overhauled Optimized Textures](https://www.nexusmods.com/fallout4/mods/27038), and [Rickintosh's Performout](https://www.nexusmods.com/fallout4/mods/61750).
 
 - [Optional] Copy the original BA2 archives from the Fallout 4 Data folder to the `OriginalBa2` folder.
 
@@ -341,10 +341,10 @@ Notes:
 
 Hybrid
 ------
-This mode is similar to "Standard" mode in that it's a mostly automatic process, but it allows alternate original BA2 archives (PhyOp/Luxor) to be used instead, sacrificing patched BA2 archive validation to do so.
+This mode is similar to "Standard" mode in that it's a mostly automatic process, but it allows alternate original BA2 archives (Luxor/PhyOp/Performout) to be used instead, sacrificing patched BA2 archive validation to do so.
 
 - Put the repack files you have downloaded into the `Repack7z` folder.
-- Put the alternate original BA2 files (PhyOp/Luxor) into the `OriginalBa2` folder.
+- Put the alternate original BA2 files (Luxor/PhyOp/Performout) into the `OriginalBa2` folder.
 - Double click on "Installer.cmd". (If it just opens up in Notepad or something, right click it and choose "Open" instead.)
 - A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the `PatchedBa2` folder, but you can choose a different folder. **Do not choose the Fallout 4 Data folder.**
 - The script will then proceed to validate and extract the the repack archives, then create (but **NOT** validate) the patched BA2 archives.
@@ -461,6 +461,7 @@ Credits and Thanks
 - ScreamingLake and CyberDanz: For administering the [Community Modding discord server and the updated BRB guide](https://discord.gg/DfFYJtt8p4)
 - luxor8071: For the [Fallout 4 HD Overhaul](https://www.nexusmods.com/fallout4/mods/52423) mod
 - Phylith: For the [PhyOp - Overhauled Optimized Textures](https://www.nexusmods.com/fallout4/mods/27038) mod
+- Rikintosh: For the [Rickintosh's Performout](https://www.nexusmods.com/fallout4/mods/61750) mod
 - Lively: For helping me make the error messaging easier to understand
 - Aegis27: For helping me make the error messaging easier to understand
 - Kaethela: For being an excellent guinea pig and helping me track down the issue with USB drives

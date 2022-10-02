@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.6.1](#v161)
     - [v1.6.0](#v160)
     - [v1.5.0](#v150)
     - [v1.4.0](#v140)
@@ -24,6 +25,12 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.6.1
+------
+- [Readme] Added some verbiage explaining that Rickintosh's Performout is now supported
+
+([TOC](#table-of-contents))
 
 v1.6.0
 ------

@@ -142,7 +142,7 @@ Currently, the following original BA2 archives are supported:
 - Vanilla (game version 1.10.163.0, steam build ID 4460038)
     - (All archives)
 - Luxor's Fallout 4 HD Overhaul (mod version 1.2.2)
-    - `DLCCoast - Textures.ba2` (file Version 1.2.2)
+    - `DLCCoast - Textures.ba2` (file version 1.2.2)
     - `DLCNukaWorld - Textures.ba2` (file version 1.2.1)
     - `DLCRobot - Textures.ba2` (file version 1.2)
     - `DLCworkshop01 - Textures.ba2` (file version 1.2)
@@ -294,6 +294,22 @@ Currently, the following original BA2 archives are supported:
         - `Fallout4 - Textures9.ba2`
     - Light Potato Face Sculpting Fix
         - `Fallout4 - Textures4.ba2`
+- Rikintosh's Performout (v2.0)
+    - `DLCCoast - Textures.ba2` (file version 1.0)
+    - `DLCNukaWorld - Textures.ba2` (file version 1.0)
+    - `DLCRobot - Textures.ba2` (file version 1.0)
+    - `DLCworkshop01 - Textures.ba2` (file version 1.0)
+    - `DLCworkshop02 - Textures.ba2` (file version 1.0)
+    - `DLCworkshop03 - Textures.ba2` (file version 1.0)
+    - `Fallout4 - Textures1.ba2` (file version 2.0)
+    - `Fallout4 - Textures2.ba2` (file version 2.0)
+    - `Fallout4 - Textures3.ba2` (file version 2.0)
+    - `Fallout4 - Textures4.ba2` (file version 2.0)
+    - `Fallout4 - Textures5.ba2` (file version 2.0)
+    - `Fallout4 - Textures6.ba2` (file version 2.0)
+    - `Fallout4 - Textures7.ba2` (file version 2.0)
+    - `Fallout4 - Textures8.ba2` (file version 2.0)
+    - `Fallout4 - Textures9.ba2` (file version 2.0)
 
 ([TOC](#table-of-contents))
 

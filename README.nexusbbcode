@@ -123,7 +123,7 @@ Currently, the following original BA2 archives are supported:
 - Vanilla (game version 1.10.163.0, steam build ID 4460038)
     - (All archives)
 - Luxor's Fallout 4 HD Overhaul (mod version 1.2.2)
-    - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font] (file Version 1.2.2)
+    - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font] (file version 1.2.2)
     - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font] (file version 1.2.1)
     - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font] (file version 1.2)
     - [font=Courier New][color=#b2b2b2]DLCworkshop01 - Textures.ba2[/color][/font] (file version 1.2)
@@ -275,6 +275,22 @@ Currently, the following original BA2 archives are supported:
         - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font]
     - Light Potato Face Sculpting Fix
         - [font=Courier New][color=#b2b2b2]Fallout4 - Textures4.ba2[/color][/font]
+- Rikintosh's Performout (v2.0)
+    - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]DLCworkshop01 - Textures.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]DLCworkshop02 - Textures.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]DLCworkshop03 - Textures.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures1.ba2[/color][/font] (file version 2.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures2.ba2[/color][/font] (file version 2.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures3.ba2[/color][/font] (file version 2.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures4.ba2[/color][/font] (file version 2.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures5.ba2[/color][/font] (file version 2.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures6.ba2[/color][/font] (file version 2.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures7.ba2[/color][/font] (file version 2.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font] (file version 2.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font] (file version 2.0)
 
 [size=4][b][u]Common:[/u][/b][/size]
 NOTE: The script will automatically attempt to locate and use original BA2 archives from the Fallout 4 Data folder if it doesn't find them in the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder.
@@ -361,7 +377,7 @@ This script has a lot of built-in checks that will tend to have very clear error
 - The script appears stuck at "Patched BA2 archive folder:".
     - The script has opened up a window to enable you to choose the folder where the patched BA2 archives will go. Sometimes this window gets hidden behind others, so hit the Windows+Tab key combination, look for a window titled "Browse For Folder", then click on it.
 - In some cases, there is something called Group Policy that may be applied to a computer. If Group Policy disables PowerShell scripts, this script simply will not work. The Group Policy disabling PowerShell must itself be disabled before this script will work.
-- Don't rename the repack files, this script has some limited flexibility for recognizing file names appended with things like "(1)" or " - Copy" and such, but not much more than that.
+- Don't rename the repack files. This script has some limited flexibility for recognizing file names appended with things like "(1)" or " - Copy" and such, but not much more than that.
 
 [size=4][b][u]Logs:[/u][/b][/size]
 Logs will be located in the [font=Courier New][color=#b2b2b2]Logs[/color][/font] sub-folder. There will be 2 or 4 files generated per run, depending on how far the process gets: [font=Courier New][color=#b2b2b2]current.install.log[/color][/font] and [font=Courier New][color=#b2b2b2]install_<timestamp>.log[/color][/font], and [font=Courier New][color=#b2b2b2]current.tool.log[/color][/font] and [font=Courier New][color=#b2b2b2]tool_<timestamp>.log[/color][/font], where [font=Courier New][color=#b2b2b2]<timestamp>[/color][/font] is the timestamp of when the process was started, for example [font=Courier New][color=#b2b2b2]20220201T205350Z[/color][/font]. The [font=Courier New][color=#b2b2b2]current.*.log[/color][/font] files will be overwritten every run, while the [font=Courier New][color=#b2b2b2]*_<timestamp>.log[/color][/font] files serve as a more permanent record.

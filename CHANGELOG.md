@@ -30,6 +30,7 @@ Changelogs
 v1.6.2
 ------
 - [Hashes] Fixed hashes and sizes for Luxor HD v1.2.2 archives
+- [Hashes] Version bumped to `1.12.1`
 
 ([TOC](#table-of-contents))
 

@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.6.2](#v162)
     - [v1.6.1](#v161)
     - [v1.6.0](#v160)
     - [v1.5.0](#v150)
@@ -25,6 +26,12 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.6.2
+------
+- [Hashes] Fixed hashes and sizes for Luxor HD v1.2.2 archives
+
+([TOC](#table-of-contents))
 
 v1.6.1
 ------

@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.6.3](#v163)
     - [v1.6.2](#v162)
     - [v1.6.1](#v161)
     - [v1.6.0](#v160)
@@ -26,6 +27,13 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.6.3
+------
+- [Installer] Ignore MSFT XVDD drives when enumerating disks
+- [Installer] Version bumped to `1.21.1`
+
+([TOC](#table-of-contents))
 
 v1.6.2
 ------

@@ -64,8 +64,8 @@ param (
 
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 6, 2)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 21, 0)) -Option Constant
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 6, 3)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 21, 1)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -139,7 +139,7 @@ $optionalOriginalArchives = @(
 # the drive information
 Get-PhysicalDisk -ErrorAction SilentlyContinue | Out-Null
 
-$driveInfo = Get-PhysicalDisk |
+$driveInfo = Get-PhysicalDisk | Where-Object { $_.FriendlyName -ne "MSFT XVDD" } |
     ForEach-Object {
         $physicalDisk = $_
         Get-Partition -DiskNumber $_.DeviceId |

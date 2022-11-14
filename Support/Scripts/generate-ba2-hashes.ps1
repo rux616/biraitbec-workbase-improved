@@ -16,6 +16,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
+# --------------------------------------------------------------------------------------------------
+# this script generates hashes of the contents of the BA2 archives
+# these hashes are intended for use with the extended validation mode of WBI
+# --------------------------------------------------------------------------------------------------
+
+
 Clear-Host
 
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()

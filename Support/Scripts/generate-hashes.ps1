@@ -16,6 +16,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
+# --------------------------------------------------------------------------------------------------
+# this script generates and hashes the matrix of official end-state BA2 archives
+# --------------------------------------------------------------------------------------------------
+
+
 Clear-Host
 
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()

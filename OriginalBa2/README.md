@@ -40,6 +40,8 @@ Currently, the following original BA2 archives are supported:
     - `Fallout4 - Textures7.ba2` (file version 1.2.2)
     - `Fallout4 - Textures8.ba2` (file version 1.2.2)
     - `Fallout4 - Textures9.ba2` (file version 1.2.2)
+- Luxor's Fallout 4 HD Overhaul 2k (mod version 1.0)
+    - (All archives)
 - PhyOp's Overhauled Optimized Textures (v1.2a)
     - Custom
         - `DLCCoast - Textures.ba2`

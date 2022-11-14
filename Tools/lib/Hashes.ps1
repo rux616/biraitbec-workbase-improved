@@ -23,7 +23,7 @@
 # power set maker: https://www.mathsisfun.com/sets/power-set-maker.html
 # all hashes are created using the XXH128 hashing algorithm: https://github.com/Cyan4973/xxHash
 
-Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 12, 1)) -Option Constant
+Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 13, 0)) -Option Constant
 
 
 # repack hashes
@@ -92,6 +92,24 @@ Add-Hash -VariableName $var -Hash "CF894CD2875396220E17596A00E81893" -Tag $tag -
 Add-Hash -VariableName $var -Hash "8498356E901F2354861B71CC629DCE8C" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 97174815
 Add-Hash -VariableName $var -Hash "4A802640F610E8165D1171D4D0211B58" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 486840325
 Add-Hash -VariableName $var -Hash "DBD758FE9183387A05F578D6595B5ED7" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 513805413
+
+# luxor 2k - https://www.nexusmods.com/fallout4/mods/65720
+$tag = "Luxor HD 2k v1.0"
+Add-Hash -VariableName $var -Hash "8A461E55E6D2D0C26790454D45201A32" -Tag $tag -FileName $ba2Files.dlcCoastTextures -FileSize 2759899146
+Add-Hash -VariableName $var -Hash "3FC77EF1D7FF04172A75F2E1107A2778" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures -FileSize 4431369170
+Add-Hash -VariableName $var -Hash "A9A94E0975C2E2B0CE8AEEB33E56535E" -Tag $tag -FileName $ba2Files.dlcRobotTextures -FileSize 759263226
+Add-Hash -VariableName $var -Hash "E60E4CAC0B481C768C9FDCA2391CCD04" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 91455361
+Add-Hash -VariableName $var -Hash "C12E5588698B844C6604E6136FA097B6" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 416458978
+Add-Hash -VariableName $var -Hash "000FDE77A478A9087E35C739FF07D1C9" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 415789573
+Add-Hash -VariableName $var -Hash "7F99E585BDBD6E59C3D3BA79F0712279" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7318298500
+Add-Hash -VariableName $var -Hash "AB506DD6E8D124AEABFD9F04D9689874" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 7844726751
+Add-Hash -VariableName $var -Hash "FE15E913E5541CCA4A10B512FFCCB37C" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 6597723809
+Add-Hash -VariableName $var -Hash "AD3A1ACF58506F62F67C4215CC3A8B9B" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 5826142618
+Add-Hash -VariableName $var -Hash "35366B7CBDB481BE6D4987899D4A3597" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 3961376510
+Add-Hash -VariableName $var -Hash "86CC31A6CA9FF1660F41EAA65FB18AC0" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 3439025621
+Add-Hash -VariableName $var -Hash "EBE8F44787EB83E5EBD4386116D33132" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 545959220
+Add-Hash -VariableName $var -Hash "00CD48C075095F2174D5186425522B7D" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 602176127
+Add-Hash -VariableName $var -Hash "BA5F7DC96C805E91C02DC158A15655F4" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1517261752
 
 # phyop - https://www.nexusmods.com/fallout4/mods/27038
 # phyop custom

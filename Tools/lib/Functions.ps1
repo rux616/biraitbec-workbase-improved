@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 26, 3))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 26, 4))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -72,14 +72,32 @@ function Exit-Script {
     param (
         [int] $ExitCode = 0,
         [switch] $Immediate = $NoPauseOnExit,
+        [switch] $BypassLog,
         [System.Diagnostics.Stopwatch] $ScriptTimer = $scriptTimer,
         [System.ConsoleColor] $OriginalBackgroundColor = $OriginalBackgroundColor
     )
 
     $ScriptTimer.Stop()
-    Write-Custom ""
-    Write-Custom "Elapsed time: " -NoNewLine
-    Write-CustomInfo "$(Write-PrettyTimeSpan $ScriptTimer.Elapsed)" -NoJustifyRight
+
+    $argList = @{
+        Message   = ""
+        BypassLog = $BypassLog
+    }
+    Write-Custom @argList
+
+    $argList = @{
+        Message   = "Elapsed time: "
+        BypassLog = $BypassLog
+        NoNewLine = $true
+    }
+    Write-Custom @argList
+
+    $argList = @{
+        Message        = "$(Write-PrettyTimeSpan $ScriptTimer.Elapsed)"
+        BypassLog      = $BypassLog
+        NoJustifyRight = $true
+    }
+    Write-CustomInfo @argList
 
     if ($multiFactorErrorFlag) {
         Write-CustomError @(
@@ -88,17 +106,22 @@ function Exit-Script {
             ""
             "Please try the script again to confirm any issues are repeatable, then report any recurring errors on the Nexus Mods mod page (https://www.nexusmods.com/fallout4/mods/57782) or the GitHub project (https://github.com/rux616/biraitbec-workbase-improved). When you do so, please also upload the `"install.current.log`" file in the `"$(($dir.Logs).Split("\")[-1])`" folder to a website like TextUploader.com (https://textuploader.com/) or Pastebin (https://pastebin.com/), and include the link."
         ) -NoJustifyRight -BypassLog
+        If (-not $BypassLog) {
+            Write-CustomLog "", "Multi Factor Error Flag: $true"
+        }
     }
 
     if (-not $Immediate) {
         Write-Custom "" -BypassLog
         Wait-KeyPress
     }
-    Write-CustomLog "", "Exit Code: $ExitCode"
+    if (-not $BypassLog) {
+        Write-CustomLog "", "Exit Code: $ExitCode"
+    }
 
     # reset things
     $Host.UI.RawUI.BackgroundColor = $OriginalBackgroundColor
-    $env:Path = $originalPath
+    $env:PATH = $originalPath
 
     exit $ExitCode
 }

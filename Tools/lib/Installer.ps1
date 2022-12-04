@@ -65,7 +65,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 21, 1)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 21, 2)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -74,7 +74,7 @@ Set-Variable "TagJoiner" -Value "+" -Option Constant
 Set-Variable "OriginalBackgroundColor" -Value $Host.UI.RawUI.BackgroundColor -Option Constant
 
 $dir = @{}
-$dir.currentDirectory = $pwd.Path
+$dir.currentDirectory = (Resolve-Path -LiteralPath "$(Split-Path $MyInvocation.MyCommand.Path -Parent)\..\..").Path
 $dir.defaultPatchedBa2 = ".\PatchedBa2"
 $dir.fallout4DataRegistry = ""
 $dir.fallout4DataSteam = ""
@@ -191,6 +191,7 @@ else {
     16
 }
 
+Set-Location -LiteralPath $dir.currentDirectory
 $sectionTimer = New-Object System.Diagnostics.Stopwatch
 $archiveTimer = New-Object System.Diagnostics.Stopwatch
 $toolTimer = New-Object System.Diagnostics.Stopwatch
@@ -231,11 +232,28 @@ Write-Host "Loading hashes..."
 . "$($dir.tools)\lib\Hashes.ps1"
 
 
+# check pwd
+# ---------
+
+# abort if square brackets found in path
+if ($dir.currentDirectory.Contains("[") -or $dir.currentDirectory.Contains("]")) {
+    $extraErrorText = @(
+        "The folder that contains WorkBase Improved, or some folder above it, contains square brackets ('[' and/or ']') in the name. This script must be run from a path which does not include those characters."
+        ""
+        "Please rename the folder(s) and remove the square brackets before attempting to run this script again."
+    )
+    Write-CustomError "Path contains square brackets" -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight -BypassLog
+    Exit-Script 1 -BypassLog
+}
+
+
 # check files
 # -----------
 
+# abort if SHA256 hash of Crc32.cs doesn't match expected value, load otherwise
 if ((Get-FileHash -LiteralPath "$($dir.tools)\lib\Crc32.cs" -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash -ne "53C3DE02CFAD47B2C9D02B2EDEDA0CCD25E38652CD2A1D7AA348F038026D5EAF") {
-    Write-CustomError "The contents of `"$($dir.tools)\lib\Crc32.cs`" do not match what's expected. Try re-extracting the WorkBase Improved files again. If this error persists, please contact the author." -Prefix "ERROR: " -NoJustifyRight
+    Write-CustomError "The contents of `"$($dir.tools)\lib\Crc32.cs`" do not match what's expected. Try re-extracting the WorkBase Improved files again. If this error persists, please contact the author." -Prefix "ERROR: " -NoJustifyRight -BypassLog
+    Exit-Script 1 -BypassLog
 }
 else {
     Add-Type -TypeDefinition (Get-Content -LiteralPath "$($dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
@@ -306,8 +324,8 @@ Write-CustomLog @(
     ""
     "  Windows Version: $(Get-WindowsVersion)"
     "  PowerShell Version: $($PSVersionTable.PSVersion)"
-    "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) { "$msvcp110dllVersion (Hash: $msvcp110dllHash, Size: $msvcp110dllSize bytes)" } else { "(Not Found)" })
-    "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { "$msvcr110dllVersion (Hash: $msvcr110dllHash, Size: $msvcr110dllSize bytes)" } else { "(Not Found)" })
+    "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) { "$msvcp110dllVersion (Path: $msvcp110dllPath, Hash: $msvcp110dllHash, Size: $msvcp110dllSize bytes)" } else { "(Not Found)" })
+    "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { "$msvcr110dllVersion (Path: $msvcr110dllPath, Hash: $msvcr110dllHash, Size: $msvcr110dllSize bytes)" } else { "(Not Found)" })
     ""
     "  WorkingFiles Directory: $($dir.workingFiles)"
     ""

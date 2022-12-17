@@ -42,6 +42,8 @@ param (
     [switch] $SkipChoosingPatchedBa2Dir,
     # Skip the validation of the repack archives
     [switch] $SkipRepackValidation,
+    # Skip the free space check on the various drives
+    [switch] $SkipFreeSpaceCheck,
     # Skip the extraction of the repack archives
     [switch] $SkipRepackExtraction,
     # Skip validation of any existing patched BA2 archives
@@ -65,7 +67,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 21, 2)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 22, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -75,18 +77,18 @@ Set-Variable "OriginalBackgroundColor" -Value $Host.UI.RawUI.BackgroundColor -Op
 
 $dir = @{}
 $dir.currentDirectory = (Resolve-Path -LiteralPath "$(Split-Path $MyInvocation.MyCommand.Path -Parent)\..\..").Path
-$dir.defaultPatchedBa2 = ".\PatchedBa2"
-$dir.fallout4DataRegistry = ""
-$dir.fallout4DataSteam = ""
-$dir.fallout4DataSteamFallback = ""
-$dir.logs = ".\Logs"
-$dir.originalBa2 = $OriginalBa2Folder
-$dir.patchedBa2 = $PatchedBa2Folder
-$dir.patchedFiles = ".\PatchedFiles"
-$dir.repack7z = ".\Repack7z"
-$dir.temp = ".\Temp"
-$dir.tools = ".\Tools"
-$dir.workingFiles = ".\WorkingFiles"
+$dir.defaultPatchedBa2 = ".\PatchedBa2"     # default location of the patched BA2s
+$dir.fallout4DataRegistry = ""              # Fallout 4 Data folder acquired through the Registry method
+$dir.fallout4DataSteam = ""                 # Fallout 4 Data folder acquired through the Steam method
+$dir.fallout4DataSteamFallback = ""         # Fallout 4 Data folder acquired through the Steam Fallback method
+$dir.logs = ".\Logs"                        # folder where the logs will go
+$dir.originalBa2 = $OriginalBa2Folder       # where original BA2 files live if not in the game's Data folder
+$dir.patchedBa2 = $PatchedBa2Folder         # where the patched BA2 files will go
+$dir.patchedFiles = ".\PatchedFiles"        # where the repack files are extracted to
+$dir.repack7z = ".\Repack7z"                # where the repack archives are read from
+$dir.temp = ".\Temp"                        # temp location where certain files of repacks are extracted to
+$dir.tools = ".\Tools"                      # where all the tools and WBI helper scripts live
+$dir.workingFiles = ".\WorkingFiles"        # where original BA2 is extracted to and then textures from patched files are copied on top of
 
 $repackFiles = [ordered]@{}
 $repackFiles.Performance = @(
@@ -895,6 +897,179 @@ if ($validateArchivesFailed) {
 if (-not $ba2Filenames.Count) {
     Write-CustomSuccess "", "Existing patched archives validated successfully; nothing to do!" -NoJustifyRight
     Exit-Script 0
+}
+
+
+# check free space
+# ----------------
+
+$sectionTimer.Restart()
+Write-CustomLog "Section: check free space"
+
+Write-Custom ""
+Write-Custom "Checking free space:" -NoNewline
+
+if ($SkipFreeSpaceCheck) {
+    Write-CustomWarning "[SKIPPED]"
+}
+else {
+    try {
+        $restyleRepackExtractedSize = 813373680
+        $averageCompressionRatio = 1.85
+        $spaceNeeded = @{}
+
+        # PatchedFiles:
+        # - size of expanded repack files: 7-zip can read these directly
+        $spaceNeeded.patchedFiles = 0
+        # finding the size of the repack files only needs to happen if the mode of operation is not Custom
+        if (-not $repackFlags.Custom) {
+            foreach ($repackSet in $repackFiles.GetEnumerator()) {
+                foreach ($repackFile in $repackSet.Value.GetEnumerator()) {
+                    $relFile = $dir.repack7z + "\" + $repackFile
+                    $stdout, $stderr = (7z.exe l "$relFile").Where({ $_ -is [string] -and $_ -ne "" }, "Split")
+                    if ($LASTEXITCODE -ne 0) {
+                        $extraErrorText = @(
+                            "The program used to examine repack archives (7z.exe) has indicated that an error occurred while listing one of said archives. Unfortunately, 7z.exe doesn't output an error that can be interpreted by this script."
+                        )
+                        $extraLogText = @(
+                            "STDERR:"
+                            $stderr
+                            "Exit code: $LASTEXITCODE"
+                        )
+                        throw "Examining `"$relFile`" failed."
+                    }
+                    $spaceNeeded.patchedFiles += ($stdout | Select-Object -Last 1) -Split " " | Where-Object { $_ -ne "" } | Select-Object -Index 2
+                }
+            }
+        }
+
+        # WorkingFiles:
+        # - size of expanded original BA2: using $ba2Filenames, scan for largest original BA2 archive, multiply size by avg compression ratio
+        # - size of copied patched files: get size of existing folder or size of .patchedFiles
+        $spaceNeeded.workingFiles = 0
+        # size of expanded original BA2s
+        foreach ($file in $ba2Filenames) {
+            $file = Get-ChildItem $(Get-OriginalBa2File $file) -ErrorAction SilentlyContinue
+            $spaceNeeded.workingFiles = [Math]::Max($file.Length, $spaceNeeded.workingFiles)
+        }
+        $spaceNeeded.workingFiles = [Math]::Round($spaceNeeded.workingFiles * $averageCompressionRatio)
+        # size of copied patched files
+        if ($repackFlags.Custom) {
+            $spaceNeeded.workingFiles += (Get-PathSize $dir.patchedFiles).Size
+        }
+        else {
+            $spaceNeeded.workingFiles += $spaceNeeded.patchedFiles
+        }
+
+        # temp:
+        # - check for restyle pack: (44 740 480 for husky, 757 448 080 for evil institute, 11 185 120 for perk background replacer)
+        # - some small number of megabytes for anything not restyle
+        # set to largest possible, which is restyle
+        $spaceNeeded.temp = $restyleRepackExtractedSize
+
+        # PatchedBa2:
+        # - get size of existing patched files folder OR the .PatchedFiles variable
+        # - multiply by 1/$averageCompressionRatio
+        # - add the size of the original BA2s
+        # - subtract the size of the existing patched BA2s
+        $spaceNeeded.patchedBa2 = 0
+        # if custom or hybrid, gather size of patched files and the size of the original BA2 files
+        if ($repackFlags.Custom -or $repackFlags.Hybrid) {
+            if ($repackFlags.Custom) {
+                $spaceNeeded.patchedBa2 += (Get-PathSize $dir.patchedFiles).Size
+            }
+            else {
+                $spaceNeeded.patchedBa2 += $spaceNeeded.patchedFiles
+            }
+            $spaceNeeded.patchedBa2 = [Math]::Round($spaceNeeded.patchedBa2 * (1 / $averageCompressionRatio))
+            # get size of originalBa2 files that need to be created
+            foreach ($file in $ba2Filenames) {
+                $spaceNeeded.patchedBa2 += (Get-ChildItem $(Get-OriginalBa2File $file) -ErrorAction SilentlyContinue).Length
+            }
+        }
+        # if standard mode, gather the size of the expected patched BA2s from the hashes
+        else {
+            foreach ($file in $ba2Filenames) {
+                $spaceNeeded.patchedBa2 += (
+                    $patchedBa2Hashes.Values | Where-Object {
+                        $_.Tags -contains $repackTag -and
+                        $_.FileName -eq $file
+                    }
+                ).FileSize
+            }
+        }
+        # subtract size of existing files
+        $existingPatchedBa2Size = ($ba2Filenames | ForEach-Object { $dir.patchedBa2 + "\" + $_ } | Get-PathSize | Measure-Object -Sum Size).Sum
+        $spaceNeeded.patchedBa2 -= $existingPatchedBa2Size
+
+        # drive space needed for each drive (gathered from each specific folder)
+        $driveSpaceNeeded = @{}
+        $driveSpaceNeeded[(Resolve-PathAnyway $dir.currentDirectory).Substring(0, 1)] += $spaceNeeded.patchedFiles
+        $driveSpaceNeeded[(Resolve-PathAnyway $dir.workingFiles).Substring(0, 1)] += $spaceNeeded.workingFiles
+        $driveSpaceNeeded[(Resolve-PathAnyway $dir.currentDirectory).Substring(0, 1)] += $spaceNeeded.temp
+        $driveSpaceNeeded[(Resolve-PathAnyway $dir.patchedBa2).Substring(0, 1)] += $spaceNeeded.patchedBa2
+
+        # collection of drives that don't have enough free space
+        $driveSpaceNeeded = $driveSpaceNeeded.GetEnumerator() | ForEach-Object {
+            $drive = $_.Key
+            $drive = $driveInfo | Where-Object { $_.DriveLetter -eq $drive }
+            if ($_.Value -gt $drive.SizeFree) {
+                [PSCustomObject]@{
+                    DriveLetter  = $drive.DriveLetter
+                    SizeFree     = $drive.SizeFree
+                    SizeRequired = $_.Value
+                    SizeNeeded   = $_.Value - $drive.SizeFree
+                }
+            }
+        }
+
+        # if there are drives that don't have enough free space, say so
+        if ($driveSpaceNeeded) {
+            # define the table format for display
+            $driveSpaceTableFormat = [object]@(
+                @{ Name = "Drive"; Expression = { $_.DriveLetter }; Width = 6; Alignment = "left" }
+                @{ Name = "Space Free"; Expression = { Write-PrettySize $_.SizeFree }; Width = 10; Alignment = "right" }
+                @{ Name = "Space Required"; Expression = { Write-PrettySize $_.SizeRequired }; Width = 15; Alignment = "right" }
+                @{ Name = "Need to Free"; Expression = { Write-PrettySize $_.SizeNeeded }; Width = 13; Alignment = "right" }
+            )
+            #
+            $preText = if ($existingPatchedBa2Size) {
+                "Even taking into account the $(Write-PrettySize $existingPatchedBa2Size) of existing " +
+                "patched BA2 archives in `"$($dir.patchedBa2)`" that will be replaced, t"
+            }
+            else {
+                "T"
+            }
+            $extraErrorText = @(
+                $preText +
+                "here is not enough free space available on your computer. Please check the following " +
+                "table to see how much additional space needs to be freed up on each drive."
+                ""
+                ($driveSpaceNeeded | Format-Table -Property $driveSpaceTableFormat | Out-String) -split "`r`n" | Where-Object { $_ }
+            )
+            throw "Insufficient free space"
+        }
+        else {
+            Write-CustomSuccess "[DONE]"
+        }
+    }
+    catch {
+        Write-CustomError "[ERROR]"
+        Write-CustomError $_ -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+        Write-CustomLog $_.InvocationInfo.PositionMessage -ExtraContext $extraLogText -Prefix "ERROR: "
+        $checkFreeSpaceFailed = $true
+    }
+
+    $drivesToCareAbout
+    $spaceNeeded
+    $driveSpaceNeeded
+    Write-PrettySize ($spaceNeeded.Values | Measure-Object -Sum).Sum
+}
+
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+
+if ($checkFreeSpaceFailed) {
+    Exit-Script 1
 }
 
 

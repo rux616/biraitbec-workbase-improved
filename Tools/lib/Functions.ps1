@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 26, 4))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 27, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -383,6 +383,23 @@ function Get-Folder {
     return $folder
 }
 
+function Get-PathSize {
+    [CmdletBinding()]
+    param (
+        [Parameter(ValueFromPipeline)]
+        [string[]] $Path
+    )
+
+    process {
+        foreach ($item in $Path) {
+            [pscustomobject]@{
+                Path = $item
+                Size = [long](Get-ChildItem -LiteralPath $item -File -Recurse -ErrorAction SilentlyContinue | Measure-Object -Sum Length).Sum
+            }
+        }
+    }
+}
+
 function Get-OriginalBa2File {
     [CmdletBinding()]
     param (
@@ -621,6 +638,30 @@ function Out-WrapLine {
         }
         $toReturn
     }
+}
+
+function Resolve-PathAnyway {
+    param (
+        [Parameter(Position = 0)]
+        [string] $Path
+    )
+
+    # try to resolve the literal path first to handle the case of [] being in the path
+    $fileName = Resolve-Path -LiteralPath $Path -ErrorAction SilentlyContinue -ErrorVariable resolvePathError
+    # if the literal path didn't resolve, the path is probably a relative path, which seems to give the LiteralPath
+    # parameter of Resolve-Path problems
+    if (-not $fileName -and $resolvePathError[0].TargetObject.StartsWith(".")) {
+        $fileName = Resolve-Path -Path $Path -ErrorAction SilentlyContinue -ErrorVariable resolvePathError
+    }
+
+    if (-not $fileName) {
+        $fileName = $resolvePathError[0].TargetObject
+    }
+    elseif ($fileName.GetType().Name -eq "PathInfo" ) {
+        $fileName = $fileName.Path
+    }
+
+    return $fileName
 }
 
 function Wait-KeyPress {

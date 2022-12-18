@@ -67,7 +67,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 22, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 22, 1)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -918,9 +918,12 @@ else {
         $averageCompressionRatio = 1.85
         $spaceNeeded = @{}
 
+        Write-CustomLog "Average Compression Ratio Constant: $averageCompressionRatio" -Prefix "  "
+
         # PatchedFiles:
         # - size of expanded repack files: 7-zip can read these directly
         $spaceNeeded.patchedFiles = 0
+        Write-CustomLog "PatchedFiles (extracted repack file size):" -Prefix "  "
         # finding the size of the repack files only needs to happen if the mode of operation is not Custom
         if (-not $repackFlags.Custom) {
             foreach ($repackSet in $repackFiles.GetEnumerator()) {
@@ -938,34 +941,51 @@ else {
                         )
                         throw "Examining `"$relFile`" failed."
                     }
-                    $spaceNeeded.patchedFiles += ($stdout | Select-Object -Last 1) -Split " " | Where-Object { $_ -ne "" } | Select-Object -Index 2
+                    [long]$expandedFileSize = ($stdout | Select-Object -Last 1) -Split " " | Where-Object { $_ -ne "" } | Select-Object -Index 2
+                    $spaceNeeded.patchedFiles += $expandedFileSize
+                    Write-CustomLog "$repackFile ($($expandedFileSize.ToString("N0")) bytes)" -Prefix "    "
                 }
             }
         }
+        else {
+            Write-CustomLog "(N/A - Custom mode)" -Prefix "    "
+        }
+        Write-CustomLog "Needed: $($spaceNeeded.patchedFiles.ToString("N0")) bytes" -Prefix "    "
 
         # WorkingFiles:
         # - size of expanded original BA2: using $ba2Filenames, scan for largest original BA2 archive, multiply size by avg compression ratio
         # - size of copied patched files: get size of existing folder or size of .patchedFiles
         $spaceNeeded.workingFiles = 0
+        Write-CustomLog "WorkingFiles:" -Prefix "  "
         # size of expanded original BA2s
         foreach ($file in $ba2Filenames) {
             $file = Get-ChildItem $(Get-OriginalBa2File $file) -ErrorAction SilentlyContinue
-            $spaceNeeded.workingFiles = [Math]::Max($file.Length, $spaceNeeded.workingFiles)
+            if ($file.Length -gt $spaceNeeded.workingFiles) {
+                $largestFile = $file
+                $spaceNeeded.workingFiles = $file.Length
+            }
         }
         $spaceNeeded.workingFiles = [Math]::Round($spaceNeeded.workingFiles * $averageCompressionRatio)
+        Write-CustomLog "Largest original BA2: $($largestFile.Name) ($($largestFile.Length.ToString("N0")) bytes -> ~$($spaceNeeded.workingFiles.ToString("N0")) bytes)" -Prefix "    "
         # size of copied patched files
         if ($repackFlags.Custom) {
-            $spaceNeeded.workingFiles += (Get-PathSize $dir.patchedFiles).Size
+            $patchedFileSizeToAdd = (Get-PathSize $dir.patchedFiles).Size
+            Write-CustomLog "PatchedFiles directory size (Custom): $($patchedFileSizeToAdd.ToString("N0")) bytes" -Prefix "    "
         }
         else {
-            $spaceNeeded.workingFiles += $spaceNeeded.patchedFiles
+            $patchedFileSizeToAdd = $spaceNeeded.patchedFiles
+            Write-CustomLog "PatchedFiles repack size: $($patchedFileSizeToAdd.ToString("N0")) bytes" -Prefix "    "
         }
+        $spaceNeeded.workingFiles += $patchedFileSizeToAdd
+        Write-CustomLog "Needed: $($spaceNeeded.workingFiles.ToString("N0")) bytes" -Prefix "    "
 
         # temp:
         # - check for restyle pack: (44 740 480 for husky, 757 448 080 for evil institute, 11 185 120 for perk background replacer)
         # - some small number of megabytes for anything not restyle
         # set to largest possible, which is restyle
         $spaceNeeded.temp = $restyleRepackExtractedSize
+        Write-CustomLog "Temp:" -Prefix "  "
+        Write-CustomLog "Needed: $($spaceNeeded.temp.ToString("N0")) bytes" -Prefix "    "
 
         # PatchedBa2:
         # - get size of existing patched files folder OR the .PatchedFiles variable
@@ -973,6 +993,7 @@ else {
         # - add the size of the original BA2s
         # - subtract the size of the existing patched BA2s
         $spaceNeeded.patchedBa2 = 0
+        Write-CustomLog "PatchedBA2s:" -Prefix "  "
         # if custom or hybrid, gather size of patched files and the size of the original BA2 files
         if ($repackFlags.Custom -or $repackFlags.Hybrid) {
             if ($repackFlags.Custom) {
@@ -998,9 +1019,12 @@ else {
                 ).FileSize
             }
         }
+        Write-CustomLog "Expected file size needed: $($spaceNeeded.patchedBa2.ToString("N0"))" -Prefix "    "
         # subtract size of existing files
-        $existingPatchedBa2Size = ($ba2Filenames | ForEach-Object { $dir.patchedBa2 + "\" + $_ } | Get-PathSize | Measure-Object -Sum Size).Sum
+        [long]$existingPatchedBa2Size = ($ba2Filenames | ForEach-Object { $dir.patchedBa2 + "\" + $_ } | Get-PathSize | Measure-Object -Sum Size).Sum
+        Write-CustomLog "Existing patched BA2 file size: $($existingPatchedBa2Size.ToString("N0")) bytes" -Prefix "    "
         $spaceNeeded.patchedBa2 -= $existingPatchedBa2Size
+        Write-CustomLog "Needed: $($spaceNeeded.patchedBa2.ToString("N0")) bytes" -Prefix "    "
 
         # drive space needed for each drive (gathered from each specific folder)
         $driveSpaceNeeded = @{}
@@ -1008,6 +1032,9 @@ else {
         $driveSpaceNeeded[(Resolve-PathAnyway $dir.workingFiles).Substring(0, 1)] += $spaceNeeded.workingFiles
         $driveSpaceNeeded[(Resolve-PathAnyway $dir.currentDirectory).Substring(0, 1)] += $spaceNeeded.temp
         $driveSpaceNeeded[(Resolve-PathAnyway $dir.patchedBa2).Substring(0, 1)] += $spaceNeeded.patchedBa2
+
+        Write-CustomLog "Space needed per drive:" -Prefix "  "
+        Write-CustomLog ($driveSpaceNeeded.GetEnumerator() | ForEach-Object { "$($_.Key): $($_.Value.ToString("N0")) bytes" }) -Prefix "    "
 
         # collection of drives that don't have enough free space
         $driveSpaceNeeded = $driveSpaceNeeded.GetEnumerator() | ForEach-Object {
@@ -1059,11 +1086,6 @@ else {
         Write-CustomLog $_.InvocationInfo.PositionMessage -ExtraContext $extraLogText -Prefix "ERROR: "
         $checkFreeSpaceFailed = $true
     }
-
-    $drivesToCareAbout
-    $spaceNeeded
-    $driveSpaceNeeded
-    Write-PrettySize ($spaceNeeded.Values | Measure-Object -Sum).Sum
 }
 
 Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"

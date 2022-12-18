@@ -26,8 +26,12 @@ param (
     [ValidateScript({ Test-Path -LiteralPath $_ -PathType Container })] [string] $OriginalBa2Folder = ".\OriginalBa2",
     # Changes the PatchedBa2 folder
     [string] $PatchedBa2Folder = ".\PatchedBa2",
+    # Changes the WorkingFiles folder
+    [string] $WorkingFilesFolder,
     # Forces 'Custom', 'Hybrid', or 'Automatic' mode of operation
     [ValidateSet("Custom", "Hybrid", "Standard")] [string] $ForceOperationMode,
+    # Forces WorkingFiles folder to be in the TEMP folder, is overridden by 'WorkingFilesFolder' if both are used
+    [switch] $ForceTempWorkingFiles,
     # Activates Extended Validation mode
     [switch] $ExtendedValidationMode,
     # Make it so that the DLC archives are optional instead of required to have a successful run
@@ -67,7 +71,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 22, 5)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -230,9 +234,16 @@ if ($dir.currentDirectory.Contains("[") -or $dir.currentDirectory.Contains("]"))
 
 # adjust workingFile path
 # -----------------------
+# if the working files folder is specified, it takes precedence over USB detection or forcing it to TEMP
+if ($WorkingFilesFolder) {
+    $dir.workingFiles = $WorkingFilesFolder
+}
 # archive2 becomes non-deterministic if the data it is putting into an archive comes from a USB drive, so if WBI is being ran
 # from a USB drive, switch $dir.workingFiles to reside in the user's temp directory instead
-if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType -eq "USB") {
+elseif (
+    ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType -eq "USB" -or
+    $ForceTempWorkingFiles
+) {
     $dir.workingFiles = Resolve-PathAnyway ([System.IO.Path]::GetTempPath() + "\" + $dir.workingFiles)
 }
 

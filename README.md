@@ -394,6 +394,8 @@ Most of these were added for my own convenience while testing or for debugging p
 - `NoClearScreen`: Prevents the script from clearing the screen when starting up
 - `OriginalBa2Folder`: Changes the OriginalBa2 folder
 - `PatchedBa2Folder`: Changes the PatchedBa2 folder
+- `WorkingFilesFolder`: Changes the WorkingFiles folder
+- `ForceTempWorkingFiles`: Forces WorkingFiles folder to be in the TEMP folder, is overridden by 'WorkingFilesFolder' if both are used
 - `ForceOperationMode <Custom|Hybrid|Standard>`: Forces "Custom", "Hybrid", or "Standard" mode of operation
 - `SkipPowerShellVersionCheck`: Skip checking that this script is being run by a supported version of PowerShell
 - `SkipProblematicDirectoryCheck`: Skip checking that this script is not being run from a problematic directory

@@ -67,7 +67,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 22, 2)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 22, 3)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -180,13 +180,13 @@ if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substr
 
 # figure out the max number of threads to use in multi-threading operations involving the respective drives
 # 2 threads for HDDs, 16 threads otherwise
-$maxWBIDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) } | Select-Object MediaType) -eq "HDD") {
+$maxWBIDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).MediaType -eq "HDD") {
     2
 }
 else {
     16
 }
-$maxWorkingFilesDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.workingFiles.Substring(0, 1) } | Select-Object MediaType) -eq "HDD") {
+$maxWorkingFilesDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.workingFiles.Substring(0, 1) }).MediaType -eq "HDD") {
     2
 }
 else {

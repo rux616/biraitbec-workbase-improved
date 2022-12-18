@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 27, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 27, 1))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -646,11 +646,11 @@ function Resolve-PathAnyway {
         [string] $Path
     )
 
-    # try to resolve the literal path first to handle the case of [] being in the path
-    $fileName = Resolve-Path -LiteralPath $Path -ErrorAction SilentlyContinue -ErrorVariable resolvePathError
-    # if the literal path didn't resolve, the path is probably a relative path, which seems to give the LiteralPath
-    # parameter of Resolve-Path problems
-    if (-not $fileName -and $resolvePathError[0].TargetObject.StartsWith(".")) {
+    # square brackets break non-literal-paths but are allowed in normal filenames, so check for them directly
+    if ($Path.IndexOfAny(@('[', ']')) -gt -1) {
+        $fileName = Resolve-Path -LiteralPath $Path -ErrorAction SilentlyContinue -ErrorVariable resolvePathError
+    }
+    else {
         $fileName = Resolve-Path -Path $Path -ErrorAction SilentlyContinue -ErrorVariable resolvePathError
     }
 

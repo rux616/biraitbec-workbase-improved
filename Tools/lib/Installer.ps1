@@ -67,7 +67,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 22, 4)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 22, 5)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -315,6 +315,10 @@ if (-not $NoClearScreen) { Clear-Host }
 # write some diagnostic information to the logs
 Write-CustomLog "Run start: $RunStartTime"
 Write-CustomLog "Run start: $RunStartTime" -log tool
+$fileListTableFormat = [object]@(
+    @{ Name = "Name"; Expression = { $_.Name }; Alignment = "left" },
+    @{ Name = "Size"; Expression = { $_.Size }; Alignment = "right" }
+)
 Write-CustomLog @(
     ">" * $LineWidth
     "Diagnostic Information:"
@@ -332,8 +336,8 @@ Write-CustomLog @(
     ""
     "  Windows Version: $(Get-WindowsVersion)"
     "  PowerShell Version: $($PSVersionTable.PSVersion)"
-    "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) { "$msvcp110dllVersion (Path: $msvcp110dllPath, Hash: $msvcp110dllHash, Size: $msvcp110dllSize bytes)" } else { "(Not Found)" })
-    "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { "$msvcr110dllVersion (Path: $msvcr110dllPath, Hash: $msvcr110dllHash, Size: $msvcr110dllSize bytes)" } else { "(Not Found)" })
+    "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) { "$msvcp110dllVersion (Path: $msvcp110dllPath, Hash: $msvcp110dllHash, Size: $($msvcp110dllSize.ToString("N0")) bytes)" } else { "(Not Found)" })
+    "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { "$msvcr110dllVersion (Path: $msvcr110dllPath, Hash: $msvcr110dllHash, Size: $($msvcr110dllSize.ToString("N0")) bytes)" } else { "(Not Found)" })
     ""
     "  WorkingFiles Directory: $($dir.workingFiles)"
     ""
@@ -363,13 +367,13 @@ Write-CustomLog @(
     ""
     "  Files in Repack7z directory: $(if ((Get-ChildItem -LiteralPath $dir.repack7z -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
     (Get-ChildItem -LiteralPath $dir.repack7z -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
-        [PSCustomObject]@{ Name = $_.Name; Size = $_.Length }
-    } | Format-Table | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
+        [PSCustomObject]@{ Name = $_.Name; Size = $_.Length.ToString("N0") }
+    } | Format-Table -Property $fileListTableFormat | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     ""
     "  Files in OriginalBa2 directory: $(if ((Get-ChildItem -LiteralPath $dir.originalBa2 -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
     (Get-ChildItem -LiteralPath $dir.originalBa2 -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
-        [PSCustomObject]@{ Name = $_.Name; Size = $_.Length }
-    } | Format-Table | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
+        [PSCustomObject]@{ Name = $_.Name; Size = $_.Length.ToString("N0") }
+    } | Format-Table -Property $fileListTableFormat | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     "<" * $LineWidth
 )
 
@@ -736,7 +740,7 @@ if ($existingRepackFiles.Count -gt 0) {
                     if ($potentialRepackFiles.Count -gt 0) {
                         if ($potentialRepackFiles.Count -gt 1) {
                             Write-CustomLog "    Found multiple candidate files for ${file}:"
-                            foreach ($potentialFile in $potentialRepackFiles) { Write-CustomLog "      $($potentialFile.Name) ($($potentialFile.Length) bytes)" }
+                            foreach ($potentialFile in $potentialRepackFiles) { Write-CustomLog "      $($potentialFile.Name) ($($potentialFile.Length.ToString("N0")) bytes)" }
                         }
                         $altFile = $potentialRepackFiles[-1].Name
                         $altRelFile = "$($dir.repack7z)\$($potentialRepackFiles[-1].Name)"
@@ -758,7 +762,7 @@ if ($existingRepackFiles.Count -gt 0) {
                         else {
                             Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
 
-                            Write-CustomLog "    Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
+                            Write-CustomLog "    Size: $((Get-ChildItem -LiteralPath $relFile).Length.ToString("N0")) bytes"
                             # check size before checking hash
                             if (@($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $relFile).Length }).Count -eq 0) {
                                 $extraErrorText = @(
@@ -863,7 +867,7 @@ if ($existingPatchedArchives.Count -gt 0) {
                         Write-CustomWarning "  [SIZE MISMATCH]"
                         continue
                     }
-                    Write-CustomLog "  Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
+                    Write-CustomLog "  Size: $((Get-ChildItem -LiteralPath $relFile).Length.ToString("N0")) bytes"
                     $hash = (Get-FileHash -LiteralPath $relFile -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
                     Write-CustomLog "  Hash: $hash"
                     if ($patchedBa2Hashes[$hash].FileName -eq $file) {
@@ -1544,7 +1548,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
                 $extraLogText = @("(No extra log info.)")
                 throw "Archive not found."
             }
-            Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length) bytes"
+            Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length.ToString("N0")) bytes"
             if (
                 ($originalBa2Hashes.GetEnumerator() | Where-Object {
                     $_.Value.FileName -eq $file -and
@@ -1566,7 +1570,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
                     ""
                     "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
                 )
-                $extraLogText = @("Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length) bytes")
+                $extraLogText = @("Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length.ToString("N0")) bytes")
                 throw "Size mismatch."
             }
             $hash = (Get-FileHash -LiteralPath $originalBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
@@ -1699,7 +1703,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
                 )
                 $extraLogText = @(
                     $results | Sort-Object { $_.FileRecord.FileName } | ForEach-Object {
-                        "`"$($_.FileRecord.FileName)`" (Size: $($_.Size) bytes, Hash: $($_.Hash)) failed validation. Expected size: $($_.FileRecord.FileSize) bytes, expected hash: $($_.FileRecord.Hash)"
+                        "`"$($_.FileRecord.FileName)`" (Size: $($_.Size.ToString("N0")) bytes, Hash: $($_.Hash)) failed validation. Expected size: $($_.FileRecord.FileSize.ToString("N0")) bytes, expected hash: $($_.FileRecord.Hash)"
                     }
                     if ($errorRecords) {
                         "-" * 10
@@ -1801,7 +1805,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
                 )
                 $extraLogText = @(
                     $results | Sort-Object { $_.FileRecord.FileName } | ForEach-Object {
-                        "`"$($_.WorkingFile.File)`" (Size: $($_.WorkingFile.Size) bytes, Hash: $($_.WorkingFile.Hash)) failed validation. Expected size: $($_.PatchedFile.Size) bytes, expected hash: $($_.PatchedFile.Hash)"
+                        "`"$($_.WorkingFile.File)`" (Size: $($_.WorkingFile.Size.ToString("N0")) bytes, Hash: $($_.WorkingFile.Hash)) failed validation. Expected size: $($_.PatchedFile.Size.ToString("N0")) bytes, expected hash: $($_.PatchedFile.Hash)"
                     }
                     if ($errorRecords) {
                         "-" * 10
@@ -1846,7 +1850,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             Write-Custom "      Validating patched archive..." -NoNewline
         }
         Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
-        Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $patchedBa2File).Length) bytes"
+        Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $patchedBa2File).Length.ToString("N0")) bytes"
         if (
             -not ($repackFlags.Custom -or $repackFlags.Hybrid) -and
             # get patched BA2 hash records where the file name matches, the tag is present, and the file size matches
@@ -1856,7 +1860,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
                 "The size of this patched archive doesn't match any known archives."
             )
             $extraLogText = @(
-                "Size: $((Get-ChildItem -LiteralPath $patchedBa2File).Length) bytes"
+                "Size: $((Get-ChildItem -LiteralPath $patchedBa2File).Length.ToString("N0")) bytes"
             )
             if (-not $ForcePatchedBa2Hashing) {
                 $throwDelayedSizeMismatchError = $true

@@ -67,7 +67,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 22, 1)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 22, 2)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -175,7 +175,7 @@ $driveInfoTableFormat = [object]@(
 # archive2 becomes non-deterministic if the data it is putting into an archive comes from a USB drive, so if WBI is being ran
 # from a USB drive, switch $dir.workingFiles to reside in the user's temp directory instead
 if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType -eq "USB") {
-    $dir.workingFiles = [System.IO.Path]::GetTempPath() + "WorkingFiles"
+    $dir.workingFiles = Resolve-PathAnyway ([System.IO.Path]::GetTempPath() + "\" + $dir.workingFiles)
 }
 
 # figure out the max number of threads to use in multi-threading operations involving the respective drives

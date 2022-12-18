@@ -67,7 +67,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 22, 3)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 22, 4)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -172,27 +172,6 @@ $driveInfoTableFormat = [object]@(
     @{ Name = "Total"; Expression = { Write-PrettySize $_.SizeTotal }; Width = 10; Alignment = "right" }
 )
 
-# archive2 becomes non-deterministic if the data it is putting into an archive comes from a USB drive, so if WBI is being ran
-# from a USB drive, switch $dir.workingFiles to reside in the user's temp directory instead
-if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType -eq "USB") {
-    $dir.workingFiles = Resolve-PathAnyway ([System.IO.Path]::GetTempPath() + "\" + $dir.workingFiles)
-}
-
-# figure out the max number of threads to use in multi-threading operations involving the respective drives
-# 2 threads for HDDs, 16 threads otherwise
-$maxWBIDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).MediaType -eq "HDD") {
-    2
-}
-else {
-    16
-}
-$maxWorkingFilesDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.workingFiles.Substring(0, 1) }).MediaType -eq "HDD") {
-    2
-}
-else {
-    16
-}
-
 Set-Location -LiteralPath $dir.currentDirectory
 $sectionTimer = New-Object System.Diagnostics.Stopwatch
 $archiveTimer = New-Object System.Diagnostics.Stopwatch
@@ -246,6 +225,33 @@ if ($dir.currentDirectory.Contains("[") -or $dir.currentDirectory.Contains("]"))
     )
     Write-CustomError "Path contains square brackets" -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight -BypassLog
     Exit-Script 1 -BypassLog
+}
+
+
+# adjust workingFile path
+# -----------------------
+# archive2 becomes non-deterministic if the data it is putting into an archive comes from a USB drive, so if WBI is being ran
+# from a USB drive, switch $dir.workingFiles to reside in the user's temp directory instead
+if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType -eq "USB") {
+    $dir.workingFiles = Resolve-PathAnyway ([System.IO.Path]::GetTempPath() + "\" + $dir.workingFiles)
+}
+
+
+# determine max threading for drives
+# ----------------------------------
+# figure out the max number of threads to use in multi-threading operations involving the respective drives
+# 2 threads for HDDs, 16 threads otherwise
+$maxWBIDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).MediaType -eq "HDD") {
+    2
+}
+else {
+    16
+}
+$maxWorkingFilesDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq (Resolve-PathAnyway $dir.workingFiles).Substring(0, 1) }).MediaType -eq "HDD") {
+    2
+}
+else {
+    16
 }
 
 

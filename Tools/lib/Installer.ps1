@@ -71,7 +71,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 1)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -683,7 +683,7 @@ elseif ($repackTag -eq "Unchanged") {
     }
 }
 
-Write-CustomLog "", "Repack tag: $repackTag"
+Write-CustomLog "", "Repack tag:", $repackTag
 
 if ($repackFlags.Custom -or $repackFlags.Hybrid) {
     Write-CustomLog @(

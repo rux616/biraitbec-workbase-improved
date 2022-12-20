@@ -71,7 +71,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 2)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 3)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -409,15 +409,14 @@ Write-Custom @(
 ) -JustifyCenter -BypassLog
 
 
-# check to make sure that this is being run with PowerShell 5.1.x or 7.2.x
-# ------------------------------------------------------------------------
+# check to make sure that this is being run with PowerShell 5.1.x
+# ---------------------------------------------------------------
 
 if (-not $SkipPowerShellVersionCheck) {
-    if (($PSVersionTable.PSVersion.Major -ne 5 -and $PSVersionTable.PSVersion.Minor -ne 1) -and
-        ($PSVersionTable.PSVersion.Major -ne 7 -and $PSVersionTable.PSVersion.Minor -ne 2)) {
+    if ($PSVersionTable.PSVersion.Major -ne 5 -and $PSVersionTable.PSVersion.Minor -ne 1) {
         Write-Custom ""
         $extraErrorText = @(
-            "This script will not function properly if it is not run with PowerShell version 5.1.x or 7.2.x."
+            "This script will not function properly if it is not run with PowerShell version 5.1.x."
         )
         Write-CustomError "Invalid PowerShell version." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
         Exit-Script 1

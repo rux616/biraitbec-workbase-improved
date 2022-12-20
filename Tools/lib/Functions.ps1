@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 27, 1))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 28, 0))
 
 function Add-Hash {
     [CmdletBinding()]
@@ -120,6 +120,15 @@ function Exit-Script {
     }
 
     # reset things
+    if (
+        -not $SkipFinalCleanup -and
+        -not $null -eq $repackTag -and
+        -not $repackTag.Custom -and
+        -not $null -eq $dir.patchedFiles -and
+        (Test-Path -LiteralPath $dir.patchedFiles)
+    ) {
+        Remove-Item -LiteralPath $dir.patchedFiles -Force -Recurse -ErrorAction SilentlyContinue
+    }
     $Host.UI.RawUI.BackgroundColor = $OriginalBackgroundColor
     $env:PATH = $originalPath
 
@@ -381,6 +390,54 @@ function Get-Folder {
         $folder += $folderDialog.SelectedPath
     }
     return $folder
+}
+
+function Get-ExistingPatchedFilesFolderChoice {
+    Add-Type -AssemblyName PresentationFramework
+
+    [xml]$xaml = @"
+<Window
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    Title="BiRaitBec WorkBase Improved" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" SizeToContent="WidthAndHeight">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Label Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="4" Margin="10,10,10,10" Padding="0,0,0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Top" VerticalAlignment="Stretch">
+            <TextBlock TextWrapping="Wrap" Text="An existing PatchedFiles folder already exists, what would you like to do with it?"/>
+        </Label>
+        <Button x:Name="ButtonRename" Grid.Column="0" Grid.Row="1" Content="_Rename" Margin="20,10,20,10" Padding="5,1,5,1" IsDefault="True"/>
+        <Button x:Name="ButtonIgnore" Grid.Column="1" Grid.Row="1" Content="_Ignore" Margin="20,10,20,10" Padding="5,1,5,1"/>
+        <Button x:Name="ButtonDelete" Grid.Column="2" Grid.Row="1" Content="_Delete" Margin="20,10,20,10" Padding="5,1,5,1"/>
+        <Button x:Name="ButtonCancel" Grid.Column="3" Grid.Row="1" Content="Cancel" Margin="20,10,20,10" Padding="5,1,5,1" IsCancel="True"/>
+    </Grid>
+</Window>
+"@
+
+    $reader = New-Object System.Xml.XmlNodeReader $xaml
+    $window = [Windows.Markup.XamlReader]::Load($reader)
+
+    $buttonRename = $window.FindName("ButtonRename")
+    $buttonIgnore = $window.FindName("ButtonIgnore")
+    $buttonDelete = $window.FindName("ButtonDelete")
+
+    $script:buttonClicked = $null
+    $buttonRename.Add_Click({ $script:buttonClicked = "rename"; $window.DialogResult = $true; $window.Close() })
+    $buttonIgnore.Add_Click({ $script:buttonClicked = "ignore"; $window.DialogResult = $true; $window.Close() })
+    $buttonDelete.Add_Click({ $script:buttonClicked = "delete"; $window.DialogResult = $true; $window.Close() })
+
+    $window.ShowDialog() | Out-Null
+
+    $script:buttonClicked
 }
 
 function Get-PathSize {

@@ -71,7 +71,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 3)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 4)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -562,10 +562,7 @@ Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$(
 # ------------------------------------------
 
 $sectionTimer.Restart()
-Write-CustomLog "Section: determine mode of operation and create tag"
-
-Write-CustomLog ""
-Write-Custom "Mode of operation:" -NoNewLine
+Write-CustomLog "Section: determine mode of operation and create tag", ""
 
 $repackFlags = [ordered]@{}
 $repackFiles.Keys | ForEach-Object { $repackFlags.$_ = $false }
@@ -584,11 +581,6 @@ foreach ($object in $repackFiles.GetEnumerator()) {
     if ($existingFiles -gt 0) { $existingRepackFiles."$($object.Key)" = $object.Value; $repackFlags."$($object.Key)" = $true }
 }
 $repackFiles = $existingRepackFiles
-
-# if not using Performance, Main, or Quality, don't need to install the Vault Fix
-if (-not $repackFlags.Performance -and -not $repackFlags.Main -and -not $repackFlags.Quality) {
-    $repackFlags."Vault Fix" = $false
-}
 
 # get the list of original archive size mismatches, then take that list and see how many of those mismatches match sizes for alternate original archives
 
@@ -650,11 +642,19 @@ switch ($ForceOperationMode) {
     }
 }
 
+Write-CustomLog "Raw repack flags:", ($repackFlags.Keys | ForEach-Object { "  $_" }), ""
+
+# if not using Performance, Main, or Quality, don't need to install the Vault Fix
+if (-not $repackFlags.Performance -and -not $repackFlags.Main -and -not $repackFlags.Quality) {
+    $repackFlags."Vault Fix" = $false
+}
+
 # if using custom mode, turn off all the other repack flags
 if ($repackFlags.Custom) {
     foreach ($key in $($repackFlags.Keys)) { if ($key -ne "Custom") { $repackFlags[$key] = $false } }
 }
 
+Write-Custom "Mode of operation:" -NoNewLine
 if ($repackFlags.Custom) { Write-CustomInfo "Custom" }
 elseif ($repackFlags.Hybrid) { Write-CustomInfo "Hybrid" }
 else { Write-CustomInfo "Standard" }

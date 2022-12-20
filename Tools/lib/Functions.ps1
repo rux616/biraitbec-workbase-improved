@@ -19,7 +19,9 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 28, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 28, 1))
+
+$writeCustomPrevNoNewLineLength = 0
 
 function Add-Hash {
     [CmdletBinding()]

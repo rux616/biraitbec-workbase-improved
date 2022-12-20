@@ -71,7 +71,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 1)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 2)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -180,7 +180,6 @@ Set-Location -LiteralPath $dir.currentDirectory
 $sectionTimer = New-Object System.Diagnostics.Stopwatch
 $archiveTimer = New-Object System.Diagnostics.Stopwatch
 $toolTimer = New-Object System.Diagnostics.Stopwatch
-$writeCustomPrevNoNewLineLength = 0
 
 
 # add tools to PATH

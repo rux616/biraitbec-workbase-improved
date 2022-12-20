@@ -32,6 +32,7 @@ $dir = @{}
 $dir.logs = ".\Logs"
 $dir.patchedBa2 = ".\PatchedBa2"
 $dir.repack7z = ".\Repack7z"
+$dir.repack7zDIsabled = ".\Repack7z.disabled"
 $dir.tools = ".\Tools"
 $env:PATH = (Resolve-Path "$($dir.tools)\xxHash").Path + ";" + $env:PATH
 
@@ -116,10 +117,11 @@ function Remove-TempFolders {
 
 # initial reset
 "*************", "initial reset", "*************"
+if (-not (Test-Path -LiteralPath $dir.repack7zDisabled)) { New-Item $dir.repack7zDisabled -ItemType Directory }
 foreach ($key in  $repackFiles.Keys) {
     foreach ($file in $repackFiles.$key) {
-        if (Test-Path -LiteralPath "$($dir.repack7z)\$file.disabled") {
-            Rename-Item -LiteralPath "$($dir.repack7z)\$file.disabled" -NewName "$file"
+        if (Test-Path -LiteralPath "$($dir.repack7zDisabled)\$file") {
+            Move-Item -Path "$($dir.repack7zDisabled)\$file" -Destination "$($dir.repack7z)\$file"
         }
     }
 }
@@ -135,13 +137,13 @@ foreach ($keySet in $allKeyCombinations) {
     $inverseKeySet = $repackFiles.Keys | Where-Object { $_ -notin $keySet }
     foreach ($key in $inverseKeySet) {
         foreach ($file in $repackFiles.$key) {
-            Rename-Item -LiteralPath "$($dir.repack7z)\$file" -NewName "$file.disabled"
+            Move-Item -Path "$($dir.repack7z)\$file" -Destination "$($dir.repack7zDisabled)\$file"
         }
     }
 
     # execute
     "  - execute"
-    Start-Process powershell { .\Installer.ps1 -SkipRepackHashing -SkipExistingPatchedHashing -SkipChoosingPatchedBa2Dir -NoPauseOnExit -AllowUnchanged } -Wait
+    Start-Process powershell { .\Tools\lib\Installer.ps1 -SkipChoosingPatchedBa2Dir -SkipRepackValidation -SkipExistingPatchedValidation -SkipFreeSpaceCheck -SkipOriginalBa2Validation -NoPauseOnExit -AllowUnchanged } -Wait
 
     # log
     "  - log"
@@ -163,7 +165,7 @@ foreach ($keySet in $allKeyCombinations) {
     "  - reset"
     foreach ($key in $inverseKeySet) {
         foreach ($file in $repackFiles.$key) {
-            Rename-Item -LiteralPath "$($dir.repack7z)\$file.disabled" -NewName "$file"
+            Move-Item -Path "$($dir.repack7zDisabled)\$file" -Destination "$($dir.repack7z)\$file"
         }
     }
     Remove-TempFolders

@@ -71,7 +71,7 @@ param (
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 4)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 5)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -1193,8 +1193,9 @@ else {
                                 Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondWood01_s.DDS" -Destination "$($dir.temp)\DiamondWood01_s.DDS" -ErrorAction Stop
                             }
                             # special case: if main is being used with performance, save textures from performance for later use
+                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\Buildings\CinderBlockRustStains01_d.DDS" -Destination "$($dir.temp)\CinderBlockRustStains01_d.DDS" -ErrorAction Stop
+                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\Buildings\Roofing01_d.DDS" -Destination "$($dir.temp)\Roofing01_d.DDS" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled02Clinic_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled02Clinic_Damage_d.dds" -ErrorAction Stop
-                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria01_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria01_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria03_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria03_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltSecretWindow01_d.dds" -Destination "$($dir.temp)\VltSecretWindow01_d.dds" -ErrorAction Stop
@@ -1335,14 +1336,16 @@ else {
                                 }
                             }
                             # special case: if on main and using performance, copy previously-saved textures
+                            Copy-Item -LiteralPath "$($dir.temp)\CinderBlockRustStains01_d.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\Buildings\CinderBlockRustStains01_d.DDS" -ErrorAction Stop
+                            Copy-Item -LiteralPath "$($dir.temp)\Roofing01_d.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\Buildings\Roofing01_d.DDS" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled02Clinic_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled02Clinic_Damage_d.dds" -ErrorAction Stop
-                            Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria01_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria01_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria03_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria03_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.temp)\VltSecretWindow01_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltSecretWindow01_d.dds" -ErrorAction Stop
                             if ($ExtendedValidationMode) {
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\Buildings\CinderBlockRustStains01_d.DDS" }).CRC = "56235027"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\Buildings\Roofing01_d.DDS" }).CRC = "DB92803D"
                                 ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled02Clinic_Damage_d.dds" }).CRC = "81F209CA"
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria01_Damage_d.dds" }).CRC = "3E8ABAF8"
                                 ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" }).CRC = "4B0F2DCE"
                                 ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria03_Damage_d.dds" }).CRC = "E289DD52"
                                 ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltSecretWindow01_d.dds" }).CRC = "27950FEB"

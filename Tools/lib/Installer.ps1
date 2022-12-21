@@ -70,7 +70,7 @@ param (
 
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 8, 0)) -Option Constant
 Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 5)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant

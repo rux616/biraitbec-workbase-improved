@@ -46,14 +46,12 @@ jobs:
         shell: powershell
         run: |
           New-Item -Path .\build -ItemType Directory -ErrorAction Stop | Out-Null
-          7z.exe a -mx9 -spf -t7z .\build\BiRaitBec_WorkBase_Improved.7z `@".\.github\build_manifest"
-      - shell: powershell
-        run: Rename-Item ".\build\BiRaitBec_WorkBase_Improved.7z" -NewName BiRaitBec_WorkBase_Improved_$($env:GITHUB_REF -split "/" | Select-Object -Last 1).7z
+          7z.exe a -mx9 -spf -t7z .\build\BiRaitBec_WorkBase_Improved_${{ github.ref_name }}.7z `@".\.github\build_manifest"
       - name: Upload artifact to actions
         uses: actions/upload-artifact@v3
         with:
-          path: .\build\BiRaitBec_WorkBase_Improved*.7z
+          path: .\build\BiRaitBec_WorkBase_Improved_${{ github.ref_name }}.7z
       - name: Publish artifact to release
         uses: softprops/action-gh-release@v1
         with:
-          files: .\build\BiRaitBec_WorkBase_Improved*.7z
+          files: .\build\BiRaitBec_WorkBase_Improved_${{ github.ref_name }}.7z

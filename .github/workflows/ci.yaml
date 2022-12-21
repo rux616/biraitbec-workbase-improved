@@ -54,4 +54,4 @@ jobs:
       - name: Publish artifact to release
         uses: softprops/action-gh-release@v1
         with:
-          files: .\build\BiRaitBec_WorkBase_Improved_${{ github.ref_name }}.7z
+          files: ./build/BiRaitBec_WorkBase_Improved_${{ github.ref_name }}.7z

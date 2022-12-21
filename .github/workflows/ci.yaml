@@ -48,7 +48,7 @@ jobs:
           New-Item -Path .\build -ItemType Directory -ErrorAction Stop | Out-Null
           7z.exe a -mx9 -spf -t7z .\build\BiRaitBec_WorkBase_Improved.7z `@".\.github\build_manifest"
       - shell: powershell
-        run: Rename-Item ".\build\BiRaitBec_WorkBase_Improved.7z" -NewItem BiRaitBec_WorkBase_Improved_$($env:GITHUB_REF -split "/" | Select-Object -Last 1).7z
+        run: Rename-Item ".\build\BiRaitBec_WorkBase_Improved.7z" -NewName BiRaitBec_WorkBase_Improved_$($env:GITHUB_REF -split "/" | Select-Object -Last 1).7z
       - name: Upload artifact to actions
         uses: actions/upload-artifact@v3
         with:

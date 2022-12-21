@@ -47,6 +47,7 @@ Features
 --------
 - Checks to see if the script is being run from a protected folder (Program Files, the user profile folder, etc.)
 - Checks to make sure the needed Visual C++ 2012 Update 4 (or later) redistributable files are installed
+- Checks to make sure enough free space is available
 - Will only (re)build archives it needs
 - Incremental status is printed to the screen
 - Logs are generated in the `Logs` folder
@@ -141,19 +142,19 @@ Currently, the following original BA2 archives are supported:
 
 - Vanilla (game version 1.10.163.0, steam build ID 4460038)
     - (All archives)
-- Luxor's Fallout 4 HD Overhaul (mod version 1.2.2)
-    - `DLCCoast - Textures.ba2` (file version 1.2.2)
+- Luxor's Fallout 4 HD Overhaul (mod version 1.3)
+    - `DLCCoast - Textures.ba2` (file version 1.3)
     - `DLCNukaWorld - Textures.ba2` (file version 1.2.1)
     - `DLCRobot - Textures.ba2` (file version 1.2)
     - `DLCworkshop01 - Textures.ba2` (file version 1.2)
     - `DLCworkshop02 - Textures.ba2` (file version 1.2)
     - `DLCworkshop03 - Textures.ba2` (file version 1.2)
-    - `Fallout4 - Textures1.ba2` (file version 1.2.2)
-    - `Fallout4 - Textures2.ba2` (file version 1.2.2)
-    - `Fallout4 - Textures3.ba2` (file version 1.2.2)
-    - `Fallout4 - Textures4.ba2` (file version 1.2.2)
-    - `Fallout4 - Textures5.ba2` (file version 1.2.2)
-    - `Fallout4 - Textures6.ba2` (file version 1.2.2)
+    - `Fallout4 - Textures1.ba2` (file version 1.3)
+    - `Fallout4 - Textures2.ba2` (file version 1.3)
+    - `Fallout4 - Textures3.ba2` (file version 1.3)
+    - `Fallout4 - Textures4.ba2` (file version 1.3)
+    - `Fallout4 - Textures5.ba2` (file version 1.3)
+    - `Fallout4 - Textures6.ba2` (file version 1.3)
     - `Fallout4 - Textures7.ba2` (file version 1.2.2)
     - `Fallout4 - Textures8.ba2` (file version 1.2.2)
     - `Fallout4 - Textures9.ba2` (file version 1.2.2)
@@ -393,12 +394,15 @@ Most of these were added for my own convenience while testing or for debugging p
 - `NoClearScreen`: Prevents the script from clearing the screen when starting up
 - `OriginalBa2Folder`: Changes the OriginalBa2 folder
 - `PatchedBa2Folder`: Changes the PatchedBa2 folder
+- `WorkingFilesFolder`: Changes the WorkingFiles folder
+- `ForceTempWorkingFiles`: Forces WorkingFiles folder to be in the TEMP folder, is overridden by 'WorkingFilesFolder' if both are used
 - `ForceOperationMode <Custom|Hybrid|Standard>`: Forces "Custom", "Hybrid", or "Standard" mode of operation
 - `SkipPowerShellVersionCheck`: Skip checking that this script is being run by a supported version of PowerShell
 - `SkipProblematicDirectoryCheck`: Skip checking that this script is not being run from a problematic directory
 - `SkipVisualCppRedistFileCheck`: Skip checking the Visual C++ Redistributable file versions
 - `SkipChoosingPatchedBa2Dir`: Don't display the dialog box to choose the patched BA2 folder and instead choose the default (`.\PatchedBa2`)
 - `SkipRepackValidation`: Skip the validation of the repack archives
+- `SkipFreeSpaceCheck`: Skip the free space check on the various drives
 - `SkipRepackExtraction`: Skip the extraction of the repack archives
 - `SkipExistingPatchedValidation`: Skip validation of any existing patched BA2 archives
 - `ForcePatchedBa2Hashing`: Force the script to hash a patched BA2 file after creation, even if the size doesn't match any known archives

@@ -26,8 +26,12 @@ param (
     [ValidateScript({ Test-Path -LiteralPath $_ -PathType Container })] [string] $OriginalBa2Folder = ".\OriginalBa2",
     # Changes the PatchedBa2 folder
     [string] $PatchedBa2Folder = ".\PatchedBa2",
+    # Changes the WorkingFiles folder
+    [string] $WorkingFilesFolder,
     # Forces 'Custom', 'Hybrid', or 'Automatic' mode of operation
     [ValidateSet("Custom", "Hybrid", "Standard")] [string] $ForceOperationMode,
+    # Forces WorkingFiles folder to be in the TEMP folder, is overridden by 'WorkingFilesFolder' if both are used
+    [switch] $ForceTempWorkingFiles,
     # Activates Extended Validation mode
     [switch] $ExtendedValidationMode,
     # Make it so that the DLC archives are optional instead of required to have a successful run
@@ -42,6 +46,8 @@ param (
     [switch] $SkipChoosingPatchedBa2Dir,
     # Skip the validation of the repack archives
     [switch] $SkipRepackValidation,
+    # Skip the free space check on the various drives
+    [switch] $SkipFreeSpaceCheck,
     # Skip the extraction of the repack archives
     [switch] $SkipRepackExtraction,
     # Skip validation of any existing patched BA2 archives
@@ -64,8 +70,8 @@ param (
 
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 7, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 21, 1)) -Option Constant
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 8, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 5)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -74,19 +80,19 @@ Set-Variable "TagJoiner" -Value "+" -Option Constant
 Set-Variable "OriginalBackgroundColor" -Value $Host.UI.RawUI.BackgroundColor -Option Constant
 
 $dir = @{}
-$dir.currentDirectory = $pwd.Path
-$dir.defaultPatchedBa2 = ".\PatchedBa2"
-$dir.fallout4DataRegistry = ""
-$dir.fallout4DataSteam = ""
-$dir.fallout4DataSteamFallback = ""
-$dir.logs = ".\Logs"
-$dir.originalBa2 = $OriginalBa2Folder
-$dir.patchedBa2 = $PatchedBa2Folder
-$dir.patchedFiles = ".\PatchedFiles"
-$dir.repack7z = ".\Repack7z"
-$dir.temp = ".\Temp"
-$dir.tools = ".\Tools"
-$dir.workingFiles = ".\WorkingFiles"
+$dir.currentDirectory = (Resolve-Path -LiteralPath "$(Split-Path $MyInvocation.MyCommand.Path -Parent)\..\..").Path
+$dir.defaultPatchedBa2 = ".\PatchedBa2"     # default location of the patched BA2s
+$dir.fallout4DataRegistry = ""              # Fallout 4 Data folder acquired through the Registry method
+$dir.fallout4DataSteam = ""                 # Fallout 4 Data folder acquired through the Steam method
+$dir.fallout4DataSteamFallback = ""         # Fallout 4 Data folder acquired through the Steam Fallback method
+$dir.logs = ".\Logs"                        # folder where the logs will go
+$dir.originalBa2 = $OriginalBa2Folder       # where original BA2 files live if not in the game's Data folder
+$dir.patchedBa2 = $PatchedBa2Folder         # where the patched BA2 files will go
+$dir.patchedFiles = ".\PatchedFiles"        # where the repack files are extracted to
+$dir.repack7z = ".\Repack7z"                # where the repack archives are read from
+$dir.temp = ".\Temp"                        # temp location where certain files of repacks are extracted to
+$dir.tools = ".\Tools"                      # where all the tools and WBI helper scripts live
+$dir.workingFiles = ".\WorkingFiles"        # where original BA2 is extracted to and then textures from patched files are copied on top of
 
 $repackFiles = [ordered]@{}
 $repackFiles.Performance = @(
@@ -170,31 +176,10 @@ $driveInfoTableFormat = [object]@(
     @{ Name = "Total"; Expression = { Write-PrettySize $_.SizeTotal }; Width = 10; Alignment = "right" }
 )
 
-# archive2 becomes non-deterministic if the data it is putting into an archive comes from a USB drive, so if WBI is being ran
-# from a USB drive, switch $dir.workingFiles to reside in the user's temp directory instead
-if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType -eq "USB") {
-    $dir.workingFiles = [System.IO.Path]::GetTempPath() + "WorkingFiles"
-}
-
-# figure out the max number of threads to use in multi-threading operations involving the respective drives
-# 2 threads for HDDs, 16 threads otherwise
-$maxWBIDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) } | Select-Object MediaType) -eq "HDD") {
-    2
-}
-else {
-    16
-}
-$maxWorkingFilesDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.workingFiles.Substring(0, 1) } | Select-Object MediaType) -eq "HDD") {
-    2
-}
-else {
-    16
-}
-
+Set-Location -LiteralPath $dir.currentDirectory
 $sectionTimer = New-Object System.Diagnostics.Stopwatch
 $archiveTimer = New-Object System.Diagnostics.Stopwatch
 $toolTimer = New-Object System.Diagnostics.Stopwatch
-$writeCustomPrevNoNewLineLength = 0
 
 
 # add tools to PATH
@@ -231,11 +216,62 @@ Write-Host "Loading hashes..."
 . "$($dir.tools)\lib\Hashes.ps1"
 
 
+# check pwd
+# ---------
+
+# abort if square brackets found in path
+if ($dir.currentDirectory.Contains("[") -or $dir.currentDirectory.Contains("]")) {
+    $extraErrorText = @(
+        "The folder that contains WorkBase Improved, or some folder above it, contains square brackets ('[' and/or ']') in the name. This script must be run from a path which does not include those characters."
+        ""
+        "Please rename the folder(s) and remove the square brackets before attempting to run this script again."
+    )
+    Write-CustomError "Path contains square brackets" -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight -BypassLog
+    Exit-Script 1 -BypassLog
+}
+
+
+# adjust workingFile path
+# -----------------------
+# if the working files folder is specified, it takes precedence over USB detection or forcing it to TEMP
+if ($WorkingFilesFolder) {
+    $dir.workingFiles = $WorkingFilesFolder
+}
+# archive2 becomes non-deterministic if the data it is putting into an archive comes from a USB drive, so if WBI is being ran
+# from a USB drive, switch $dir.workingFiles to reside in the user's temp directory instead
+elseif (
+    ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType -eq "USB" -or
+    $ForceTempWorkingFiles
+) {
+    $dir.workingFiles = Resolve-PathAnyway ([System.IO.Path]::GetTempPath() + "\" + $dir.workingFiles)
+}
+
+
+# determine max threading for drives
+# ----------------------------------
+# figure out the max number of threads to use in multi-threading operations involving the respective drives
+# 2 threads for HDDs, 16 threads otherwise
+$maxWBIDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).MediaType -eq "HDD") {
+    2
+}
+else {
+    16
+}
+$maxWorkingFilesDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq (Resolve-PathAnyway $dir.workingFiles).Substring(0, 1) }).MediaType -eq "HDD") {
+    2
+}
+else {
+    16
+}
+
+
 # check files
 # -----------
 
+# abort if SHA256 hash of Crc32.cs doesn't match expected value, load otherwise
 if ((Get-FileHash -LiteralPath "$($dir.tools)\lib\Crc32.cs" -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash -ne "53C3DE02CFAD47B2C9D02B2EDEDA0CCD25E38652CD2A1D7AA348F038026D5EAF") {
-    Write-CustomError "The contents of `"$($dir.tools)\lib\Crc32.cs`" do not match what's expected. Try re-extracting the WorkBase Improved files again. If this error persists, please contact the author." -Prefix "ERROR: " -NoJustifyRight
+    Write-CustomError "The contents of `"$($dir.tools)\lib\Crc32.cs`" do not match what's expected. Try re-extracting the WorkBase Improved files again. If this error persists, please contact the author." -Prefix "ERROR: " -NoJustifyRight -BypassLog
+    Exit-Script 1 -BypassLog
 }
 else {
     Add-Type -TypeDefinition (Get-Content -LiteralPath "$($dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
@@ -289,6 +325,10 @@ if (-not $NoClearScreen) { Clear-Host }
 # write some diagnostic information to the logs
 Write-CustomLog "Run start: $RunStartTime"
 Write-CustomLog "Run start: $RunStartTime" -log tool
+$fileListTableFormat = [object]@(
+    @{ Name = "Name"; Expression = { $_.Name }; Alignment = "left" },
+    @{ Name = "Size"; Expression = { $_.Size }; Alignment = "right" }
+)
 Write-CustomLog @(
     ">" * $LineWidth
     "Diagnostic Information:"
@@ -306,8 +346,8 @@ Write-CustomLog @(
     ""
     "  Windows Version: $(Get-WindowsVersion)"
     "  PowerShell Version: $($PSVersionTable.PSVersion)"
-    "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) { "$msvcp110dllVersion (Hash: $msvcp110dllHash, Size: $msvcp110dllSize bytes)" } else { "(Not Found)" })
-    "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { "$msvcr110dllVersion (Hash: $msvcr110dllHash, Size: $msvcr110dllSize bytes)" } else { "(Not Found)" })
+    "  msvcp110.dll Version: " + $(if ($msvcp110dllVersion) { "$msvcp110dllVersion (Path: $msvcp110dllPath, Hash: $msvcp110dllHash, Size: $($msvcp110dllSize.ToString("N0")) bytes)" } else { "(Not Found)" })
+    "  msvcr110.dll Version: " + $(if ($msvcr110dllVersion) { "$msvcr110dllVersion (Path: $msvcr110dllPath, Hash: $msvcr110dllHash, Size: $($msvcr110dllSize.ToString("N0")) bytes)" } else { "(Not Found)" })
     ""
     "  WorkingFiles Directory: $($dir.workingFiles)"
     ""
@@ -337,13 +377,13 @@ Write-CustomLog @(
     ""
     "  Files in Repack7z directory: $(if ((Get-ChildItem -LiteralPath $dir.repack7z -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
     (Get-ChildItem -LiteralPath $dir.repack7z -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
-        [PSCustomObject]@{ Name = $_.Name; Size = $_.Length }
-    } | Format-Table | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
+        [PSCustomObject]@{ Name = $_.Name; Size = $_.Length.ToString("N0") }
+    } | Format-Table -Property $fileListTableFormat | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     ""
     "  Files in OriginalBa2 directory: $(if ((Get-ChildItem -LiteralPath $dir.originalBa2 -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
     (Get-ChildItem -LiteralPath $dir.originalBa2 -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
-        [PSCustomObject]@{ Name = $_.Name; Size = $_.Length }
-    } | Format-Table | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
+        [PSCustomObject]@{ Name = $_.Name; Size = $_.Length.ToString("N0") }
+    } | Format-Table -Property $fileListTableFormat | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     "<" * $LineWidth
 )
 
@@ -369,15 +409,14 @@ Write-Custom @(
 ) -JustifyCenter -BypassLog
 
 
-# check to make sure that this is being run with PowerShell 5.1.x or 7.2.x
-# ------------------------------------------------------------------------
+# check to make sure that this is being run with PowerShell 5.1.x
+# ---------------------------------------------------------------
 
 if (-not $SkipPowerShellVersionCheck) {
-    if (($PSVersionTable.PSVersion.Major -ne 5 -and $PSVersionTable.PSVersion.Minor -ne 1) -and
-        ($PSVersionTable.PSVersion.Major -ne 7 -and $PSVersionTable.PSVersion.Minor -ne 2)) {
+    if ($PSVersionTable.PSVersion.Major -ne 5 -and $PSVersionTable.PSVersion.Minor -ne 1) {
         Write-Custom ""
         $extraErrorText = @(
-            "This script will not function properly if it is not run with PowerShell version 5.1.x or 7.2.x."
+            "This script will not function properly if it is not run with PowerShell version 5.1.x."
         )
         Write-CustomError "Invalid PowerShell version." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
         Exit-Script 1
@@ -523,10 +562,7 @@ Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$(
 # ------------------------------------------
 
 $sectionTimer.Restart()
-Write-CustomLog "Section: determine mode of operation and create tag"
-
-Write-CustomLog ""
-Write-Custom "Mode of operation:" -NoNewLine
+Write-CustomLog "Section: determine mode of operation and create tag", ""
 
 $repackFlags = [ordered]@{}
 $repackFiles.Keys | ForEach-Object { $repackFlags.$_ = $false }
@@ -545,11 +581,6 @@ foreach ($object in $repackFiles.GetEnumerator()) {
     if ($existingFiles -gt 0) { $existingRepackFiles."$($object.Key)" = $object.Value; $repackFlags."$($object.Key)" = $true }
 }
 $repackFiles = $existingRepackFiles
-
-# if not using Performance, Main, or Quality, don't need to install the Vault Fix
-if (-not $repackFlags.Performance -and -not $repackFlags.Main -and -not $repackFlags.Quality) {
-    $repackFlags."Vault Fix" = $false
-}
 
 # get the list of original archive size mismatches, then take that list and see how many of those mismatches match sizes for alternate original archives
 
@@ -611,11 +642,19 @@ switch ($ForceOperationMode) {
     }
 }
 
+Write-CustomLog "Raw repack flags:", ($repackFlags.Keys | ForEach-Object { "  $_" }), ""
+
+# if not using Performance, Main, or Quality, don't need to install the Vault Fix
+if (-not $repackFlags.Performance -and -not $repackFlags.Main -and -not $repackFlags.Quality) {
+    $repackFlags."Vault Fix" = $false
+}
+
 # if using custom mode, turn off all the other repack flags
 if ($repackFlags.Custom) {
     foreach ($key in $($repackFlags.Keys)) { if ($key -ne "Custom") { $repackFlags[$key] = $false } }
 }
 
+Write-Custom "Mode of operation:" -NoNewLine
 if ($repackFlags.Custom) { Write-CustomInfo "Custom" }
 elseif ($repackFlags.Hybrid) { Write-CustomInfo "Hybrid" }
 else { Write-CustomInfo "Standard" }
@@ -642,7 +681,7 @@ elseif ($repackTag -eq "Unchanged") {
     }
 }
 
-Write-CustomLog "", "Repack tag: $repackTag"
+Write-CustomLog "", "Repack tag:", $repackTag
 
 if ($repackFlags.Custom -or $repackFlags.Hybrid) {
     Write-CustomLog @(
@@ -710,7 +749,7 @@ if ($existingRepackFiles.Count -gt 0) {
                     if ($potentialRepackFiles.Count -gt 0) {
                         if ($potentialRepackFiles.Count -gt 1) {
                             Write-CustomLog "    Found multiple candidate files for ${file}:"
-                            foreach ($potentialFile in $potentialRepackFiles) { Write-CustomLog "      $($potentialFile.Name) ($($potentialFile.Length) bytes)" }
+                            foreach ($potentialFile in $potentialRepackFiles) { Write-CustomLog "      $($potentialFile.Name) ($($potentialFile.Length.ToString("N0")) bytes)" }
                         }
                         $altFile = $potentialRepackFiles[-1].Name
                         $altRelFile = "$($dir.repack7z)\$($potentialRepackFiles[-1].Name)"
@@ -732,7 +771,7 @@ if ($existingRepackFiles.Count -gt 0) {
                         else {
                             Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
 
-                            Write-CustomLog "    Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
+                            Write-CustomLog "    Size: $((Get-ChildItem -LiteralPath $relFile).Length.ToString("N0")) bytes"
                             # check size before checking hash
                             if (@($repack7zHashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $relFile).Length }).Count -eq 0) {
                                 $extraErrorText = @(
@@ -837,7 +876,7 @@ if ($existingPatchedArchives.Count -gt 0) {
                         Write-CustomWarning "  [SIZE MISMATCH]"
                         continue
                     }
-                    Write-CustomLog "  Size: $((Get-ChildItem -LiteralPath $relFile).Length) bytes"
+                    Write-CustomLog "  Size: $((Get-ChildItem -LiteralPath $relFile).Length.ToString("N0")) bytes"
                     $hash = (Get-FileHash -LiteralPath $relFile -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
                     Write-CustomLog "  Hash: $hash"
                     if ($patchedBa2Hashes[$hash].FileName -eq $file) {
@@ -877,6 +916,201 @@ if ($validateArchivesFailed) {
 if (-not $ba2Filenames.Count) {
     Write-CustomSuccess "", "Existing patched archives validated successfully; nothing to do!" -NoJustifyRight
     Exit-Script 0
+}
+
+
+# check free space
+# ----------------
+
+$sectionTimer.Restart()
+Write-CustomLog "Section: check free space"
+
+Write-Custom ""
+Write-Custom "Checking free space:" -NoNewline
+
+if ($SkipFreeSpaceCheck) {
+    Write-CustomWarning "[SKIPPED]"
+}
+else {
+    try {
+        $restyleRepackExtractedSize = 813373680
+        $averageCompressionRatio = 1.85
+        $spaceNeeded = @{}
+
+        Write-CustomLog "Average Compression Ratio Constant: $averageCompressionRatio" -Prefix "  "
+
+        # PatchedFiles:
+        # - size of expanded repack files: 7-zip can read these directly
+        $spaceNeeded.patchedFiles = 0
+        Write-CustomLog "PatchedFiles (extracted repack file size):" -Prefix "  "
+        # finding the size of the repack files only needs to happen if the mode of operation is not Custom
+        if (-not $repackFlags.Custom) {
+            foreach ($repackSet in $repackFiles.GetEnumerator()) {
+                foreach ($repackFile in $repackSet.Value.GetEnumerator()) {
+                    $relFile = $dir.repack7z + "\" + $repackFile
+                    $stdout, $stderr = (7z.exe l "$relFile").Where({ $_ -is [string] -and $_ -ne "" }, "Split")
+                    if ($LASTEXITCODE -ne 0) {
+                        $extraErrorText = @(
+                            "The program used to examine repack archives (7z.exe) has indicated that an error occurred while listing one of said archives. Unfortunately, 7z.exe doesn't output an error that can be interpreted by this script."
+                        )
+                        $extraLogText = @(
+                            "STDERR:"
+                            $stderr
+                            "Exit code: $LASTEXITCODE"
+                        )
+                        throw "Examining `"$relFile`" failed."
+                    }
+                    [long]$expandedFileSize = ($stdout | Select-Object -Last 1) -Split " " | Where-Object { $_ -ne "" } | Select-Object -Index 2
+                    $spaceNeeded.patchedFiles += $expandedFileSize
+                    Write-CustomLog "$repackFile ($($expandedFileSize.ToString("N0")) bytes)" -Prefix "    "
+                }
+            }
+        }
+        else {
+            Write-CustomLog "(N/A - Custom mode)" -Prefix "    "
+        }
+        Write-CustomLog "Needed: $($spaceNeeded.patchedFiles.ToString("N0")) bytes" -Prefix "    "
+
+        # WorkingFiles:
+        # - size of expanded original BA2: using $ba2Filenames, scan for largest original BA2 archive, multiply size by avg compression ratio
+        # - size of copied patched files: get size of existing folder or size of .patchedFiles
+        $spaceNeeded.workingFiles = 0
+        Write-CustomLog "WorkingFiles:" -Prefix "  "
+        # size of expanded original BA2s
+        foreach ($file in $ba2Filenames) {
+            $file = Get-ChildItem $(Get-OriginalBa2File $file) -ErrorAction SilentlyContinue
+            if ($file.Length -gt $spaceNeeded.workingFiles) {
+                $largestFile = $file
+                $spaceNeeded.workingFiles = $file.Length
+            }
+        }
+        $spaceNeeded.workingFiles = [Math]::Round($spaceNeeded.workingFiles * $averageCompressionRatio)
+        Write-CustomLog "Largest original BA2: $($largestFile.Name) ($($largestFile.Length.ToString("N0")) bytes -> ~$($spaceNeeded.workingFiles.ToString("N0")) bytes)" -Prefix "    "
+        # size of copied patched files
+        if ($repackFlags.Custom) {
+            $patchedFileSizeToAdd = (Get-PathSize $dir.patchedFiles).Size
+            Write-CustomLog "PatchedFiles directory size (Custom): $($patchedFileSizeToAdd.ToString("N0")) bytes" -Prefix "    "
+        }
+        else {
+            $patchedFileSizeToAdd = $spaceNeeded.patchedFiles
+            Write-CustomLog "PatchedFiles repack size: $($patchedFileSizeToAdd.ToString("N0")) bytes" -Prefix "    "
+        }
+        $spaceNeeded.workingFiles += $patchedFileSizeToAdd
+        Write-CustomLog "Needed: $($spaceNeeded.workingFiles.ToString("N0")) bytes" -Prefix "    "
+
+        # temp:
+        # - check for restyle pack: (44 740 480 for husky, 757 448 080 for evil institute, 11 185 120 for perk background replacer)
+        # - some small number of megabytes for anything not restyle
+        # set to largest possible, which is restyle
+        $spaceNeeded.temp = $restyleRepackExtractedSize
+        Write-CustomLog "Temp:" -Prefix "  "
+        Write-CustomLog "Needed: $($spaceNeeded.temp.ToString("N0")) bytes" -Prefix "    "
+
+        # PatchedBa2:
+        # - get size of existing patched files folder OR the .PatchedFiles variable
+        # - multiply by 1/$averageCompressionRatio
+        # - add the size of the original BA2s
+        # - subtract the size of the existing patched BA2s
+        $spaceNeeded.patchedBa2 = 0
+        Write-CustomLog "PatchedBA2s:" -Prefix "  "
+        # if custom or hybrid, gather size of patched files and the size of the original BA2 files
+        if ($repackFlags.Custom -or $repackFlags.Hybrid) {
+            if ($repackFlags.Custom) {
+                $spaceNeeded.patchedBa2 += (Get-PathSize $dir.patchedFiles).Size
+            }
+            else {
+                $spaceNeeded.patchedBa2 += $spaceNeeded.patchedFiles
+            }
+            $spaceNeeded.patchedBa2 = [Math]::Round($spaceNeeded.patchedBa2 * (1 / $averageCompressionRatio))
+            # get size of originalBa2 files that need to be created
+            foreach ($file in $ba2Filenames) {
+                $spaceNeeded.patchedBa2 += (Get-ChildItem $(Get-OriginalBa2File $file) -ErrorAction SilentlyContinue).Length
+            }
+        }
+        # if standard mode, gather the size of the expected patched BA2s from the hashes
+        else {
+            foreach ($file in $ba2Filenames) {
+                $spaceNeeded.patchedBa2 += (
+                    $patchedBa2Hashes.Values | Where-Object {
+                        $_.Tags -contains $repackTag -and
+                        $_.FileName -eq $file
+                    }
+                ).FileSize
+            }
+        }
+        Write-CustomLog "Expected file size needed: $($spaceNeeded.patchedBa2.ToString("N0"))" -Prefix "    "
+        # subtract size of existing files
+        [long]$existingPatchedBa2Size = ($ba2Filenames | ForEach-Object { $dir.patchedBa2 + "\" + $_ } | Get-PathSize | Measure-Object -Sum Size).Sum
+        Write-CustomLog "Existing patched BA2 file size: $($existingPatchedBa2Size.ToString("N0")) bytes" -Prefix "    "
+        $spaceNeeded.patchedBa2 -= $existingPatchedBa2Size
+        Write-CustomLog "Needed: $($spaceNeeded.patchedBa2.ToString("N0")) bytes" -Prefix "    "
+
+        # drive space needed for each drive (gathered from each specific folder)
+        $driveSpaceNeeded = @{}
+        $driveSpaceNeeded[(Resolve-PathAnyway $dir.currentDirectory).Substring(0, 1)] += $spaceNeeded.patchedFiles
+        $driveSpaceNeeded[(Resolve-PathAnyway $dir.workingFiles).Substring(0, 1)] += $spaceNeeded.workingFiles
+        $driveSpaceNeeded[(Resolve-PathAnyway $dir.currentDirectory).Substring(0, 1)] += $spaceNeeded.temp
+        $driveSpaceNeeded[(Resolve-PathAnyway $dir.patchedBa2).Substring(0, 1)] += $spaceNeeded.patchedBa2
+
+        Write-CustomLog "Space needed per drive:" -Prefix "  "
+        Write-CustomLog ($driveSpaceNeeded.GetEnumerator() | ForEach-Object { "$($_.Key): $($_.Value.ToString("N0")) bytes" }) -Prefix "    "
+
+        # collection of drives that don't have enough free space
+        $driveSpaceNeeded = $driveSpaceNeeded.GetEnumerator() | ForEach-Object {
+            $drive = $_.Key
+            $drive = $driveInfo | Where-Object { $_.DriveLetter -eq $drive }
+            if ($_.Value -gt $drive.SizeFree) {
+                [PSCustomObject]@{
+                    DriveLetter  = $drive.DriveLetter
+                    SizeFree     = $drive.SizeFree
+                    SizeRequired = $_.Value
+                    SizeNeeded   = $_.Value - $drive.SizeFree
+                }
+            }
+        }
+
+        # if there are drives that don't have enough free space, say so
+        if ($driveSpaceNeeded) {
+            # define the table format for display
+            $driveSpaceTableFormat = [object]@(
+                @{ Name = "Drive"; Expression = { $_.DriveLetter }; Width = 6; Alignment = "left" }
+                @{ Name = "Space Free"; Expression = { Write-PrettySize $_.SizeFree }; Width = 10; Alignment = "right" }
+                @{ Name = "Space Required"; Expression = { Write-PrettySize $_.SizeRequired }; Width = 15; Alignment = "right" }
+                @{ Name = "Need to Free"; Expression = { Write-PrettySize $_.SizeNeeded }; Width = 13; Alignment = "right" }
+            )
+            #
+            $preText = if ($existingPatchedBa2Size) {
+                "Even taking into account the $(Write-PrettySize $existingPatchedBa2Size) of existing " +
+                "patched BA2 archives in `"$($dir.patchedBa2)`" that will be replaced, t"
+            }
+            else {
+                "T"
+            }
+            $extraErrorText = @(
+                $preText +
+                "here is not enough free space available on your computer. Please check the following " +
+                "table to see how much additional space needs to be freed up on each drive."
+                ""
+                ($driveSpaceNeeded | Format-Table -Property $driveSpaceTableFormat | Out-String) -split "`r`n" | Where-Object { $_ }
+            )
+            throw "Insufficient free space"
+        }
+        else {
+            Write-CustomSuccess "[DONE]"
+        }
+    }
+    catch {
+        Write-CustomError "[ERROR]"
+        Write-CustomError $_ -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+        Write-CustomLog $_.InvocationInfo.PositionMessage -ExtraContext $extraLogText -Prefix "ERROR: "
+        $checkFreeSpaceFailed = $true
+    }
+}
+
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+
+if ($checkFreeSpaceFailed) {
+    Exit-Script 1
 }
 
 
@@ -959,8 +1193,9 @@ else {
                                 Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\diamondcity\DiamondWood01_s.DDS" -Destination "$($dir.temp)\DiamondWood01_s.DDS" -ErrorAction Stop
                             }
                             # special case: if main is being used with performance, save textures from performance for later use
+                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\Buildings\CinderBlockRustStains01_d.DDS" -Destination "$($dir.temp)\CinderBlockRustStains01_d.DDS" -ErrorAction Stop
+                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Architecture\Buildings\Roofing01_d.DDS" -Destination "$($dir.temp)\Roofing01_d.DDS" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled02Clinic_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled02Clinic_Damage_d.dds" -ErrorAction Stop
-                            Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria01_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria01_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria03_Damage_d.dds" -Destination "$($dir.temp)\VltHallResPaneled07Cafeteria03_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.patchedFiles)\Textures\Interiors\Vault\VltSecretWindow01_d.dds" -Destination "$($dir.temp)\VltSecretWindow01_d.dds" -ErrorAction Stop
@@ -1101,14 +1336,16 @@ else {
                                 }
                             }
                             # special case: if on main and using performance, copy previously-saved textures
+                            Copy-Item -LiteralPath "$($dir.temp)\CinderBlockRustStains01_d.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\Buildings\CinderBlockRustStains01_d.DDS" -ErrorAction Stop
+                            Copy-Item -LiteralPath "$($dir.temp)\Roofing01_d.DDS" -Destination "$($dir.patchedFiles)\Textures\Architecture\Buildings\Roofing01_d.DDS" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled02Clinic_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled02Clinic_Damage_d.dds" -ErrorAction Stop
-                            Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria01_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria01_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria02_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.temp)\VltHallResPaneled07Cafeteria03_Damage_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltHallResPaneled07Cafeteria03_Damage_d.dds" -ErrorAction Stop
                             Copy-Item -LiteralPath "$($dir.temp)\VltSecretWindow01_d.dds" -Destination "$($dir.patchedFiles)\Textures\Interiors\Vault\VltSecretWindow01_d.dds" -ErrorAction Stop
                             if ($ExtendedValidationMode) {
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\Buildings\CinderBlockRustStains01_d.DDS" }).CRC = "56235027"
+                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Architecture\Buildings\Roofing01_d.DDS" }).CRC = "DB92803D"
                                 ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled02Clinic_Damage_d.dds" }).CRC = "81F209CA"
-                                ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria01_Damage_d.dds" }).CRC = "3E8ABAF8"
                                 ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria02_Damage_d.dds" }).CRC = "4B0F2DCE"
                                 ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltHallResPaneled07Cafeteria03_Damage_d.dds" }).CRC = "E289DD52"
                                 ($repack7zFileRecords | Where-Object { $_.Path -eq "Textures\Interiors\Vault\VltSecretWindow01_d.dds" }).CRC = "27950FEB"
@@ -1323,7 +1560,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
                 $extraLogText = @("(No extra log info.)")
                 throw "Archive not found."
             }
-            Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length) bytes"
+            Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length.ToString("N0")) bytes"
             if (
                 ($originalBa2Hashes.GetEnumerator() | Where-Object {
                     $_.Value.FileName -eq $file -and
@@ -1345,7 +1582,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
                     ""
                     "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
                 )
-                $extraLogText = @("Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length) bytes")
+                $extraLogText = @("Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length.ToString("N0")) bytes")
                 throw "Size mismatch."
             }
             $hash = (Get-FileHash -LiteralPath $originalBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
@@ -1478,7 +1715,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
                 )
                 $extraLogText = @(
                     $results | Sort-Object { $_.FileRecord.FileName } | ForEach-Object {
-                        "`"$($_.FileRecord.FileName)`" (Size: $($_.Size) bytes, Hash: $($_.Hash)) failed validation. Expected size: $($_.FileRecord.FileSize) bytes, expected hash: $($_.FileRecord.Hash)"
+                        "`"$($_.FileRecord.FileName)`" (Size: $($_.Size.ToString("N0")) bytes, Hash: $($_.Hash)) failed validation. Expected size: $($_.FileRecord.FileSize.ToString("N0")) bytes, expected hash: $($_.FileRecord.Hash)"
                     }
                     if ($errorRecords) {
                         "-" * 10
@@ -1580,7 +1817,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
                 )
                 $extraLogText = @(
                     $results | Sort-Object { $_.FileRecord.FileName } | ForEach-Object {
-                        "`"$($_.WorkingFile.File)`" (Size: $($_.WorkingFile.Size) bytes, Hash: $($_.WorkingFile.Hash)) failed validation. Expected size: $($_.PatchedFile.Size) bytes, expected hash: $($_.PatchedFile.Hash)"
+                        "`"$($_.WorkingFile.File)`" (Size: $($_.WorkingFile.Size.ToString("N0")) bytes, Hash: $($_.WorkingFile.Hash)) failed validation. Expected size: $($_.PatchedFile.Size.ToString("N0")) bytes, expected hash: $($_.PatchedFile.Hash)"
                     }
                     if ($errorRecords) {
                         "-" * 10
@@ -1625,7 +1862,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             Write-Custom "      Validating patched archive..." -NoNewline
         }
         Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
-        Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $patchedBa2File).Length) bytes"
+        Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $patchedBa2File).Length.ToString("N0")) bytes"
         if (
             -not ($repackFlags.Custom -or $repackFlags.Hybrid) -and
             # get patched BA2 hash records where the file name matches, the tag is present, and the file size matches
@@ -1635,7 +1872,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
                 "The size of this patched archive doesn't match any known archives."
             )
             $extraLogText = @(
-                "Size: $((Get-ChildItem -LiteralPath $patchedBa2File).Length) bytes"
+                "Size: $((Get-ChildItem -LiteralPath $patchedBa2File).Length.ToString("N0")) bytes"
             )
             if (-not $ForcePatchedBa2Hashing) {
                 $throwDelayedSizeMismatchError = $true

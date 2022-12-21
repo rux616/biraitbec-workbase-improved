@@ -19,7 +19,9 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 26, 3))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 28, 1))
+
+$writeCustomPrevNoNewLineLength = 0
 
 function Add-Hash {
     [CmdletBinding()]
@@ -72,14 +74,32 @@ function Exit-Script {
     param (
         [int] $ExitCode = 0,
         [switch] $Immediate = $NoPauseOnExit,
+        [switch] $BypassLog,
         [System.Diagnostics.Stopwatch] $ScriptTimer = $scriptTimer,
         [System.ConsoleColor] $OriginalBackgroundColor = $OriginalBackgroundColor
     )
 
     $ScriptTimer.Stop()
-    Write-Custom ""
-    Write-Custom "Elapsed time: " -NoNewLine
-    Write-CustomInfo "$(Write-PrettyTimeSpan $ScriptTimer.Elapsed)" -NoJustifyRight
+
+    $argList = @{
+        Message   = ""
+        BypassLog = $BypassLog
+    }
+    Write-Custom @argList
+
+    $argList = @{
+        Message   = "Elapsed time: "
+        BypassLog = $BypassLog
+        NoNewLine = $true
+    }
+    Write-Custom @argList
+
+    $argList = @{
+        Message        = "$(Write-PrettyTimeSpan $ScriptTimer.Elapsed)"
+        BypassLog      = $BypassLog
+        NoJustifyRight = $true
+    }
+    Write-CustomInfo @argList
 
     if ($multiFactorErrorFlag) {
         Write-CustomError @(
@@ -88,17 +108,31 @@ function Exit-Script {
             ""
             "Please try the script again to confirm any issues are repeatable, then report any recurring errors on the Nexus Mods mod page (https://www.nexusmods.com/fallout4/mods/57782) or the GitHub project (https://github.com/rux616/biraitbec-workbase-improved). When you do so, please also upload the `"install.current.log`" file in the `"$(($dir.Logs).Split("\")[-1])`" folder to a website like TextUploader.com (https://textuploader.com/) or Pastebin (https://pastebin.com/), and include the link."
         ) -NoJustifyRight -BypassLog
+        If (-not $BypassLog) {
+            Write-CustomLog "", "Multi Factor Error Flag: $true"
+        }
     }
 
     if (-not $Immediate) {
         Write-Custom "" -BypassLog
         Wait-KeyPress
     }
-    Write-CustomLog "", "Exit Code: $ExitCode"
+    if (-not $BypassLog) {
+        Write-CustomLog "", "Exit Code: $ExitCode"
+    }
 
     # reset things
+    if (
+        -not $SkipFinalCleanup -and
+        -not $null -eq $repackTag -and
+        -not $repackTag.Custom -and
+        -not $null -eq $dir.patchedFiles -and
+        (Test-Path -LiteralPath $dir.patchedFiles)
+    ) {
+        Remove-Item -LiteralPath $dir.patchedFiles -Force -Recurse -ErrorAction SilentlyContinue
+    }
     $Host.UI.RawUI.BackgroundColor = $OriginalBackgroundColor
-    $env:Path = $originalPath
+    $env:PATH = $originalPath
 
     exit $ExitCode
 }
@@ -360,6 +394,71 @@ function Get-Folder {
     return $folder
 }
 
+function Get-ExistingPatchedFilesFolderChoice {
+    Add-Type -AssemblyName PresentationFramework
+
+    [xml]$xaml = @"
+<Window
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    Title="BiRaitBec WorkBase Improved" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" SizeToContent="WidthAndHeight">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Label Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="4" Margin="10,10,10,10" Padding="0,0,0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Top" VerticalAlignment="Stretch">
+            <TextBlock TextWrapping="Wrap" Text="An existing PatchedFiles folder already exists, what would you like to do with it?"/>
+        </Label>
+        <Button x:Name="ButtonRename" Grid.Column="0" Grid.Row="1" Content="_Rename" Margin="20,10,20,10" Padding="5,1,5,1" IsDefault="True"/>
+        <Button x:Name="ButtonIgnore" Grid.Column="1" Grid.Row="1" Content="_Ignore" Margin="20,10,20,10" Padding="5,1,5,1"/>
+        <Button x:Name="ButtonDelete" Grid.Column="2" Grid.Row="1" Content="_Delete" Margin="20,10,20,10" Padding="5,1,5,1"/>
+        <Button x:Name="ButtonCancel" Grid.Column="3" Grid.Row="1" Content="Cancel" Margin="20,10,20,10" Padding="5,1,5,1" IsCancel="True"/>
+    </Grid>
+</Window>
+"@
+
+    $reader = New-Object System.Xml.XmlNodeReader $xaml
+    $window = [Windows.Markup.XamlReader]::Load($reader)
+
+    $buttonRename = $window.FindName("ButtonRename")
+    $buttonIgnore = $window.FindName("ButtonIgnore")
+    $buttonDelete = $window.FindName("ButtonDelete")
+
+    $script:buttonClicked = $null
+    $buttonRename.Add_Click({ $script:buttonClicked = "rename"; $window.DialogResult = $true; $window.Close() })
+    $buttonIgnore.Add_Click({ $script:buttonClicked = "ignore"; $window.DialogResult = $true; $window.Close() })
+    $buttonDelete.Add_Click({ $script:buttonClicked = "delete"; $window.DialogResult = $true; $window.Close() })
+
+    $window.ShowDialog() | Out-Null
+
+    $script:buttonClicked
+}
+
+function Get-PathSize {
+    [CmdletBinding()]
+    param (
+        [Parameter(ValueFromPipeline)]
+        [string[]] $Path
+    )
+
+    process {
+        foreach ($item in $Path) {
+            [pscustomobject]@{
+                Path = $item
+                Size = [long](Get-ChildItem -LiteralPath $item -File -Recurse -ErrorAction SilentlyContinue | Measure-Object -Sum Length).Sum
+            }
+        }
+    }
+}
+
 function Get-OriginalBa2File {
     [CmdletBinding()]
     param (
@@ -598,6 +697,30 @@ function Out-WrapLine {
         }
         $toReturn
     }
+}
+
+function Resolve-PathAnyway {
+    param (
+        [Parameter(Position = 0)]
+        [string] $Path
+    )
+
+    # square brackets break non-literal-paths but are allowed in normal filenames, so check for them directly
+    if ($Path.IndexOfAny(@('[', ']')) -gt -1) {
+        $fileName = Resolve-Path -LiteralPath $Path -ErrorAction SilentlyContinue -ErrorVariable resolvePathError
+    }
+    else {
+        $fileName = Resolve-Path -Path $Path -ErrorAction SilentlyContinue -ErrorVariable resolvePathError
+    }
+
+    if (-not $fileName) {
+        $fileName = $resolvePathError[0].TargetObject
+    }
+    elseif ($fileName.GetType().Name -eq "PathInfo" ) {
+        $fileName = $fileName.Path
+    }
+
+    return $fileName
 }
 
 function Wait-KeyPress {

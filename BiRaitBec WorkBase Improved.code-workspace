@@ -15,6 +15,7 @@
 			"DWORD",
 			"endregion",
 			"Fomod",
+			"giga",
 			"hashtable",
 			"HKCU",
 			"HKLM",
@@ -28,6 +29,7 @@
 			"notin",
 			"omod",
 			"Performout",
+			"peta",
 			"Phylith",
 			"Pinvoke",
 			"PROXB",
@@ -40,8 +42,10 @@
 			"Softworks",
 			"steamapps",
 			"subfolders",
+			"tera",
 			"Wabbajack",
 			"workbase",
+			"XVDD",
 			"xxhsum"
 		],
 		"yaml.schemas": {

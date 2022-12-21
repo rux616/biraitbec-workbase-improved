@@ -5,7 +5,7 @@ name: CI
 on:
   push:
     tags:
-      - "*"
+      - "v*.*.*"
   workflow_dispatch:
 
 jobs:
@@ -47,7 +47,13 @@ jobs:
         run: |
           New-Item -Path .\build -ItemType Directory -ErrorAction Stop | Out-Null
           7z.exe a -mx9 -spf -t7z .\build\BiRaitBec_WorkBase_Improved.7z `@".\.github\build_manifest"
-      - name: Publish artifact
+      - shell: powershell
+        run: Rename-Item ".\build\BiRaitBec_WorkBase_Improved.7z" -NewItem BiRaitBec_WorkBase_Improved_$($env:GITHUB_REF -split "/" | Select-Object -Last 1).7z
+      - name: Upload artifact to actions
         uses: actions/upload-artifact@v3
         with:
-          path: .\build\BiRaitBec_WorkBase_Improved.7z
+          path: .\build\BiRaitBec_WorkBase_Improved*.7z
+      - name: Publish artifact to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: .\build\BiRaitBec_WorkBase_Improved*.7z

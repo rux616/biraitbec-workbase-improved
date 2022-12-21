@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.8.0](#v180)
     - [v1.7.0](#v170)
     - [v1.6.3](#v163)
     - [v1.6.2](#v162)
@@ -28,6 +29,45 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.8.0
+------
+- [Installer] Prevent running script from a folder that has square brackets anywhere in the path
+- [Installer] Error out if the SHA256 sum of the Crc32 hash source doesn't match what's expected
+- [Installer] Added ability to call installer script from anywhere and have it change to the correct folder
+- [Installer] Added free space check
+- [Installer] Added new `-SkipFreeSpaceCheck` parameter
+- [Installer] Getting the temp directory now uses `Resolve-PathAnyway`
+- [Installer] Fixed a bug where the number of threads being selected for HDDs was incorrect
+- [Installer] Fixed thread # selection for working files drive
+- [Installer] Bytes are now logged with thousands separators
+- [Installer] Added new `-ForceTempWorkingFiles` and `-WorkingFilesFolder` parameters
+- [Installer] Cleaned up some logs
+- [Installer] Moved some variables around
+- [Installer] Only PowerShell 5.1.x is supported now
+- [Installer] Added some more bad file fixes
+- [Installer] Version bumped to `1.23.5`
+- [InstallerCMD] Added ability to call installer script from anywhere and have it change to the correct folder
+- [Functions] Added switch to Exit-Script function to bypass writing to the log
+- [Functions] Exit-Script function now notes if the MultiFactorErrorFlag was set in the log
+- [Functions] Added `Get-PathSize` and `Resolve-PathAnyway` functions to support free space check
+- [Functions] Remove PatchedFiles when needed whenever the script exits
+- [Functions] Added (currently unused) `Get-ExistingPatchedFilesFolderChoice` function
+- [Functions] Moved some variables around
+- [Functions] Version bumped to `1.28.1`
+- [Project] Added debug config
+- [Hashes] Add hashes and sizes for Luxor HD v1.3 archives
+- [Hashes] Add more bad file hashes
+- [Hashes] Update patched BA2 hashes
+- [Hashes] Version bumped to `1.14.1`
+- [Readme] Adjusted verbiage around supported Luxor HD archives
+- [Readme] Added `SkipFreeSpaceCheck` to unsupported command line parameters section
+- [Readme] Added `WorkingFilesFolder` to unsupported command line parameters section
+- [Readme] Added `ForceTempWorkingFiles` to unsupported command line parameters section
+- [Support] Updated `generate-hashes.ps1` script to work with newest versions WBI
+- [CI] Updated CI pipeline to publish build artifact to release tag
+
+([TOC](#table-of-contents))
 
 v1.7.0
 ------

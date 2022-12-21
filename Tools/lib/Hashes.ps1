@@ -23,7 +23,7 @@
 # power set maker: https://www.mathsisfun.com/sets/power-set-maker.html
 # all hashes are created using the XXH128 hashing algorithm: https://github.com/Cyan4973/xxHash
 
-Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 13, 0)) -Option Constant
+Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 14, 1)) -Option Constant
 
 
 # repack hashes
@@ -74,14 +74,15 @@ Add-Hash -VariableName $var -Hash "20697A2177195BBB0C86BAD7A6697CC3" -Tag $tag -
 $alternateOriginalBa2Hashes = @{}; $var = "alternateOriginalBa2Hashes"
 
 # luxor - https://www.nexusmods.com/fallout4/mods/52423
+$tag = "Luxor HD v1.3"
+Add-Hash -VariableName $var -Hash "8bbbaa0b6c235c80a5d0b7da5f8e1146" -Tag $tag -FileName $ba2Files.dlcCoastTextures -FileSize 3922728210
+Add-Hash -VariableName $var -Hash "6ce434346fade2acc4a698e22ee4af1b" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 11820260508
+Add-Hash -VariableName $var -Hash "5863a3d594c747a37ac4a921cd0ba7e6" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 13162975220
+Add-Hash -VariableName $var -Hash "2e2b152c6a0fc923ac8ad7723e083f63" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 9904215473
+Add-Hash -VariableName $var -Hash "026e73919f568c16b80a62b1582513fe" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 8942517267
+Add-Hash -VariableName $var -Hash "6573a521241340412426f979b245595d" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 6149064254
+Add-Hash -VariableName $var -Hash "c7a83128cd3979ec3fbeff9698b6826e" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 3998632693
 $tag = "Luxor HD v1.2.2"
-Add-Hash -VariableName $var -Hash "6D2F84F66FB10D4E99836358BCAF9A5B" -Tag $tag -FileName $ba2Files.dlcCoastTextures -FileSize 3821808828
-Add-Hash -VariableName $var -Hash "DC58AD877A67202863C1079B7036CBD4" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 11516956397
-Add-Hash -VariableName $var -Hash "47D58B9797E1844A05C10CE4CAB0D42D" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 13098781334
-Add-Hash -VariableName $var -Hash "95FB332A83C3D942D87ECB7D9BBE3FEC" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 9795778864
-Add-Hash -VariableName $var -Hash "BDB44D931032035ED428A46D8E8E57F0" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 8917789555
-Add-Hash -VariableName $var -Hash "95DDC341DA9314B498017D7FCECABE0B" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 6143455834
-Add-Hash -VariableName $var -Hash "B19D8E7AE7CDE87D415EE2BA60B61A24" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 3974712646
 Add-Hash -VariableName $var -Hash "EBE8F44787EB83E5EBD4386116D33132" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 545959220
 Add-Hash -VariableName $var -Hash "00CD48C075095F2174D5186425522B7D" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 602176127
 Add-Hash -VariableName $var -Hash "85A94D3DD71EA2F59E994085280F52F1" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 2828619274
@@ -298,6 +299,14 @@ Add-Hash -VariableName $var -Hash "E3D90E87EA280BAB77807D7D50BA40FF" -Tag $tag -
 $oldAlternateOriginalBa2Hashes = @{}; $var = "oldAlternateOriginalBa2Hashes"
 
 # luxor
+$tag = "OLD - Luxor HD v1.2.2"
+Add-Hash -VariableName $var -Hash "6D2F84F66FB10D4E99836358BCAF9A5B" -Tag $tag -FileName $ba2Files.dlcCoastTextures -FileSize 3821808828
+Add-Hash -VariableName $var -Hash "DC58AD877A67202863C1079B7036CBD4" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 11516956397
+Add-Hash -VariableName $var -Hash "47D58B9797E1844A05C10CE4CAB0D42D" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 13098781334
+Add-Hash -VariableName $var -Hash "95FB332A83C3D942D87ECB7D9BBE3FEC" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 9795778864
+Add-Hash -VariableName $var -Hash "BDB44D931032035ED428A46D8E8E57F0" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 8917789555
+Add-Hash -VariableName $var -Hash "95DDC341DA9314B498017D7FCECABE0B" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 6143455834
+Add-Hash -VariableName $var -Hash "B19D8E7AE7CDE87D415EE2BA60B61A24" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 3974712646
 $tag = "OLD - Luxor HD v1.2.1"
 Add-Hash -VariableName $var -Hash "0CC257DF59D36C5546E7FB3B47A29FAF" -Tag $tag -FileName $ba2Files.dlcCoastTextures -FileSize 3811217607
 $tag = "OLD - Luxor HD v1.2"
@@ -441,6 +450,8 @@ $badPatchedFileHashes = @{}; $var = "badPatchedFileHashes"; $tag = "bad_file"
 # SavrenX HD 1K Buildings and Interior v1.00 - https://www.nexusmods.com/fallout4/mods/40534
 # some of these files are in the BRB main repack file 2, some are not
 Add-Hash -VariableName $var -Hash "6AE384A193AE6E6D466CB0ABAC97FD08" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\Buildings\BldgTrimDamage01_d.DDS")
+Add-Hash -VariableName $var -Hash "CB1ED197717A163045BC977A4971C8DA" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\Buildings\CinderBlockRustStains01_d.DDS")
+Add-Hash -VariableName $var -Hash "04B41FE48A25E2E7903E157131B93EA9" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\Buildings\Roofing01_d.DDS")
 Add-Hash -VariableName $var -Hash "6A1151DA6441BF3479A187CC93AAC788" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\Buildings\RoofMetal02_d.DDS")
 Add-Hash -VariableName $var -Hash "20C91BFD175F52BAC62B1D79D7318E17" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\diamondcity\DiamondMetalTrims01.DDS")
 Add-Hash -VariableName $var -Hash "298C650731620C5E307139D50BADCFD9" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\Architecture\diamondcity\DiamondMetalTrims01_d.DDS")
@@ -469,6 +480,7 @@ Add-Hash -VariableName $var -Hash "4A48489BBD79FFB0C2585CFBFF75D31E" -Tag $tag -
 Add-Hash -VariableName $var -Hash "AB3565F31F6C134C257B10AE75152927" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled05Residence05Vintage_Damage_d.DDS")
 Add-Hash -VariableName $var -Hash "FDA55B29E309FBD76351BB20909E949B" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled06AdminBlue_Damage_d.DDS")
 Add-Hash -VariableName $var -Hash "3BA80A4C733D958A06778B1458761BC0" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled07Cafeteria01_Damage_d.DDS")
+Add-Hash -VariableName $var -Hash "AC7F5A745C9C3C4BF78E6C5C2E878C70" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled07Cafeteria01_Damage_d.DDS")
 Add-Hash -VariableName $var -Hash "77F46E76156F983D07CA675ED89D9B91" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled07Cafeteria02_Damage_d.DDS")
 Add-Hash -VariableName $var -Hash "0171020D16828443A6BA230AC6B77BD3" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltHallResPaneled07Cafeteria03_Damage_d.DDS")
 Add-Hash -VariableName $var -Hash "2EED1F8C4261C56C88FE40EF07BCDCFD" -Tag $tag -FileName ($dir.patchedFiles + "\Textures\interiors\vault\VltSecretWindow01_d.DDS")
@@ -510,7 +522,7 @@ Add-Hash -VariableName $var -Hash "56B0D0056C4B47ADF83B1ADB5F9A0E77" -Tag $tag -
 Add-Hash -VariableName $var -Hash "C05C84E6D5D9D3B2519FFD27B6EF6E00" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 2206604163
 Add-Hash -VariableName $var -Hash "4CA935AE3D89FFE035D47C84F9844E21" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 2213053441
 Add-Hash -VariableName $var -Hash "D9DECE1D9D4BCC6572838DA2CFDC0044" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 2022006071
-Add-Hash -VariableName $var -Hash "3B7190C4B5B836E27544A093934726C1" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1498224787
+Add-Hash -VariableName $var -Hash "796228A4F34B43FDD408CD7446F94BF4" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1497954300
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "B8D3242176D94C1BAE32A187362533CE" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1046980722
@@ -523,7 +535,7 @@ Add-Hash -VariableName $var -Hash "AEA8084591FB722B9DA1A5C9B9F1D414" -Tag $tag -
 Add-Hash -VariableName $var -Hash "91F3AB61CA0C5826D3892AE3D5CAFD06" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 36950876
 Add-Hash -VariableName $var -Hash "5825DA871AEFAF2DE3A8B70A886BC623" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 210221142
 Add-Hash -VariableName $var -Hash "01CA1E1636F03834FC8EA7D794A6BE46" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 211643946
-Add-Hash -VariableName $var -Hash "4F434AFA30A21D6CA874930CBE2D7E21" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3796620740
+Add-Hash -VariableName $var -Hash "F4B6B85132559DD67731DD8319EB57F5" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3795610647
 Add-Hash -VariableName $var -Hash "B0810EBD63C3BAEBC2E480B1E837E00B" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 4502607073
 Add-Hash -VariableName $var -Hash "80B5336EF659199E6CD4D1FFF15F8DD0" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 3346703874
 Add-Hash -VariableName $var -Hash "D0C2C4EEADD6C79E9BB67683634365E2" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 3009575483
@@ -577,12 +589,12 @@ Add-Hash -VariableName $var -Hash "65E320BEBD368FF220915FC7E9E9D40B" -Tag $tag -
 Add-Hash -VariableName $var -Hash "CE184787F17E26F60F4E72B6F8D4EF38" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 36652439
 Add-Hash -VariableName $var -Hash "5825DA871AEFAF2DE3A8B70A886BC623" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 210221142
 Add-Hash -VariableName $var -Hash "1FA5DC19A511553CEEBC30370310E7A9" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 208811143
-Add-Hash -VariableName $var -Hash "B8DB3EE157B38B0B414B16021F8295B0" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3822295715
+Add-Hash -VariableName $var -Hash "656335CABA7B5E22997725A18172CEB4" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3822024693
 Add-Hash -VariableName $var -Hash "F985EC30D91919F9ACB0307F1D388685" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 4517660475
 Add-Hash -VariableName $var -Hash "49489A7419F6C87DA4D11BD524052175" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 3353601846
 Add-Hash -VariableName $var -Hash "F419BF55F6D35CB198DD21311A656015" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 3006946752
 Add-Hash -VariableName $var -Hash "583E968D74417F7DA9A19BFA85191D40" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 2812250435
-Add-Hash -VariableName $var -Hash "119A6D3E511DB1602BDA6AF01C0B3753" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1810958588
+Add-Hash -VariableName $var -Hash "FDDC104CB62618445E78A0715D430131" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1810688101
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "429E93294DAD3F8F71A507E2A141B292" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1305963029
@@ -600,7 +612,7 @@ Add-Hash -VariableName $var -Hash "103434A85E2665C6009958CEFE31881B" -Tag $tag -
 Add-Hash -VariableName $var -Hash "500AAE9DE86C31F6CC4C1C43C2443269" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 4300430149
 Add-Hash -VariableName $var -Hash "457AD01686A90BA1B5A83E2C861424DB" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 3875680603
 Add-Hash -VariableName $var -Hash "60042CFAF4BD9759B94DF7B2DC62606E" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 3337787537
-Add-Hash -VariableName $var -Hash "5BC46776A014D19E888A407E9FA21964" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2169769735
+Add-Hash -VariableName $var -Hash "17BD3762FD4AABF94B06C1043293C9E6" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2169499248
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "41D2EFF28A0023561A4B8676B99EBADC" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1061349213
@@ -618,7 +630,7 @@ Add-Hash -VariableName $var -Hash "56B0D0056C4B47ADF83B1ADB5F9A0E77" -Tag $tag -
 Add-Hash -VariableName $var -Hash "C05C84E6D5D9D3B2519FFD27B6EF6E00" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 2206604163
 Add-Hash -VariableName $var -Hash "EDC4E52BE43916582022C6318A93764A" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 2214953285
 Add-Hash -VariableName $var -Hash "D9DECE1D9D4BCC6572838DA2CFDC0044" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 2022006071
-Add-Hash -VariableName $var -Hash "93D9B91E3C1A95A942DD8DADC5066C2B" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1527892863
+Add-Hash -VariableName $var -Hash "F310DDB3C1DF7FE54C98D61C217ECD59" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1527622376
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "B8D3242176D94C1BAE32A187362533CE" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1046980722
@@ -636,7 +648,7 @@ Add-Hash -VariableName $var -Hash "5970F36B70F8127E1FEE485CCA1000F7" -Tag $tag -
 Add-Hash -VariableName $var -Hash "681EACEB7F6B249773F83BEEF2BD9DD9" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 2395632882
 Add-Hash -VariableName $var -Hash "84FECF77FF6079F804AFF67D6D6CC8BF" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 2213833218
 Add-Hash -VariableName $var -Hash "A5EC733C950CEE6F12A984E3A9B749AE" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 2021896241
-Add-Hash -VariableName $var -Hash "F49078D04609A3604FDB42326A99D5CA" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1504038292
+Add-Hash -VariableName $var -Hash "FFEB1BF7057F1B50B0A4C5BA9B9D2B0E" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1503767805
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "B8D3242176D94C1BAE32A187362533CE" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1046980722
@@ -649,7 +661,7 @@ Add-Hash -VariableName $var -Hash "2617439A43583FE7D15E0A6E6C53A3C5" -Tag $tag -
 Add-Hash -VariableName $var -Hash "54DA93B6785B5C72A9A44A33AC0025EF" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 35920716
 Add-Hash -VariableName $var -Hash "0E19FCD79E3A024F23A6723085374B06" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 213100442
 Add-Hash -VariableName $var -Hash "F786FBA5A5733C8DA5C7A16315B13C72" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 189455556
-Add-Hash -VariableName $var -Hash "E01437DE3F7188DFE4086DE518261FC4" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7885085497
+Add-Hash -VariableName $var -Hash "365F18A6738B62BA946858F9EDDE7B20" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7884075404
 Add-Hash -VariableName $var -Hash "5215B3E63D8A84A4531E6485A27880B0" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 7430056887
 Add-Hash -VariableName $var -Hash "F231E9FE16E475ED9D149E359C114DB8" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 5034642158
 Add-Hash -VariableName $var -Hash "D52E8ECA33D287C68510F9923E2E989C" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 4423582229
@@ -667,7 +679,7 @@ Add-Hash -VariableName $var -Hash "AEA8084591FB722B9DA1A5C9B9F1D414" -Tag $tag -
 Add-Hash -VariableName $var -Hash "91F3AB61CA0C5826D3892AE3D5CAFD06" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 36950876
 Add-Hash -VariableName $var -Hash "5825DA871AEFAF2DE3A8B70A886BC623" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 210221142
 Add-Hash -VariableName $var -Hash "01CA1E1636F03834FC8EA7D794A6BE46" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 211643946
-Add-Hash -VariableName $var -Hash "4F434AFA30A21D6CA874930CBE2D7E21" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3796620740
+Add-Hash -VariableName $var -Hash "F4B6B85132559DD67731DD8319EB57F5" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3795610647
 Add-Hash -VariableName $var -Hash "B0810EBD63C3BAEBC2E480B1E837E00B" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 4502607073
 Add-Hash -VariableName $var -Hash "80B5336EF659199E6CD4D1FFF15F8DD0" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 3346703874
 Add-Hash -VariableName $var -Hash "D0C2C4EEADD6C79E9BB67683634365E2" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 3009575483
@@ -685,7 +697,7 @@ Add-Hash -VariableName $var -Hash "AEA8084591FB722B9DA1A5C9B9F1D414" -Tag $tag -
 Add-Hash -VariableName $var -Hash "91F3AB61CA0C5826D3892AE3D5CAFD06" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 36950876
 Add-Hash -VariableName $var -Hash "5825DA871AEFAF2DE3A8B70A886BC623" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 210221142
 Add-Hash -VariableName $var -Hash "01CA1E1636F03834FC8EA7D794A6BE46" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 211643946
-Add-Hash -VariableName $var -Hash "4F434AFA30A21D6CA874930CBE2D7E21" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3796620740
+Add-Hash -VariableName $var -Hash "F4B6B85132559DD67731DD8319EB57F5" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3795610647
 Add-Hash -VariableName $var -Hash "9524FDB3A22503A49F04EBF47A97B8C0" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 4519689016
 Add-Hash -VariableName $var -Hash "5832299B6C199CDF693EE980B16B6139" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 3505516684
 Add-Hash -VariableName $var -Hash "E2CA479A2AD2FE52C3A78F303D03C385" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 3008410465
@@ -739,12 +751,12 @@ Add-Hash -VariableName $var -Hash "5D092A6410FADD30C671037CA3F745C0" -Tag $tag -
 Add-Hash -VariableName $var -Hash "54DA93B6785B5C72A9A44A33AC0025EF" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 35920716
 Add-Hash -VariableName $var -Hash "0E19FCD79E3A024F23A6723085374B06" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 213100442
 Add-Hash -VariableName $var -Hash "99A9DAE9D0DA66C6B8CF6765BA9E4A6F" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 187790820
-Add-Hash -VariableName $var -Hash "B88B32C49922BF71AF41C0CBA4C0F1E6" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7911301101
+Add-Hash -VariableName $var -Hash "CEC8E1A6A9D5B311C9A484355A7DB8FA" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7911030079
 Add-Hash -VariableName $var -Hash "D24F8864C79275ACFF9EE31E9041431C" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 7444751159
 Add-Hash -VariableName $var -Hash "2DDD13A4417E11438746C79DEF185B49" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 5041135506
 Add-Hash -VariableName $var -Hash "BF6E7D931C5E247B3AEC5ED33AE23AC5" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 4423868672
 Add-Hash -VariableName $var -Hash "37CF352A053869DA9E5A19A48ABB4A96" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 3804958810
-Add-Hash -VariableName $var -Hash "983E0E20DF650382C2E0A84A0C4B650D" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2456695652
+Add-Hash -VariableName $var -Hash "ACA08549321E443ED6B603ED12FFF34C" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2456425165
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "BC7B54A33AC96F36ACC326FD275BAE61" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1314913042
@@ -757,12 +769,12 @@ Add-Hash -VariableName $var -Hash "65E320BEBD368FF220915FC7E9E9D40B" -Tag $tag -
 Add-Hash -VariableName $var -Hash "CE184787F17E26F60F4E72B6F8D4EF38" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 36652439
 Add-Hash -VariableName $var -Hash "5825DA871AEFAF2DE3A8B70A886BC623" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 210221142
 Add-Hash -VariableName $var -Hash "1FA5DC19A511553CEEBC30370310E7A9" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 208811143
-Add-Hash -VariableName $var -Hash "B8DB3EE157B38B0B414B16021F8295B0" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3822295715
+Add-Hash -VariableName $var -Hash "656335CABA7B5E22997725A18172CEB4" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3822024693
 Add-Hash -VariableName $var -Hash "F985EC30D91919F9ACB0307F1D388685" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 4517660475
 Add-Hash -VariableName $var -Hash "49489A7419F6C87DA4D11BD524052175" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 3353601846
 Add-Hash -VariableName $var -Hash "F419BF55F6D35CB198DD21311A656015" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 3006946752
 Add-Hash -VariableName $var -Hash "583E968D74417F7DA9A19BFA85191D40" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 2812250435
-Add-Hash -VariableName $var -Hash "119A6D3E511DB1602BDA6AF01C0B3753" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1810958588
+Add-Hash -VariableName $var -Hash "FDDC104CB62618445E78A0715D430131" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1810688101
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "429E93294DAD3F8F71A507E2A141B292" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1305963029
@@ -775,12 +787,12 @@ Add-Hash -VariableName $var -Hash "65E320BEBD368FF220915FC7E9E9D40B" -Tag $tag -
 Add-Hash -VariableName $var -Hash "CE184787F17E26F60F4E72B6F8D4EF38" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 36652439
 Add-Hash -VariableName $var -Hash "5825DA871AEFAF2DE3A8B70A886BC623" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 210221142
 Add-Hash -VariableName $var -Hash "1FA5DC19A511553CEEBC30370310E7A9" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 208811143
-Add-Hash -VariableName $var -Hash "B8DB3EE157B38B0B414B16021F8295B0" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3822295715
+Add-Hash -VariableName $var -Hash "656335CABA7B5E22997725A18172CEB4" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3822024693
 Add-Hash -VariableName $var -Hash "5EDCCFBA77D25DEE3561FCDE85C72BAD" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 4534742418
 Add-Hash -VariableName $var -Hash "D266E4FA75746A78876B029627C9F4BB" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 3512414656
 Add-Hash -VariableName $var -Hash "53C9854D49B66BA3CEAEA7ED0531AAB7" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 3005781734
 Add-Hash -VariableName $var -Hash "583E968D74417F7DA9A19BFA85191D40" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 2812250435
-Add-Hash -VariableName $var -Hash "427B5984A67327B5652D809CF9BF7183" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1815624529
+Add-Hash -VariableName $var -Hash "37DDD5873F908192EFB771785E5A7FA5" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1815354042
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "429E93294DAD3F8F71A507E2A141B292" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1305963029
@@ -798,7 +810,7 @@ Add-Hash -VariableName $var -Hash "103434A85E2665C6009958CEFE31881B" -Tag $tag -
 Add-Hash -VariableName $var -Hash "500AAE9DE86C31F6CC4C1C43C2443269" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 4300430149
 Add-Hash -VariableName $var -Hash "454910A3EAB2C34FAE9C07202CE3A38E" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 3877580447
 Add-Hash -VariableName $var -Hash "60042CFAF4BD9759B94DF7B2DC62606E" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 3337787537
-Add-Hash -VariableName $var -Hash "1E000A594627F962B56DE4BA5C7B2ACB" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2199437811
+Add-Hash -VariableName $var -Hash "08E2B5B7AB74C1E9DA10BBC80258CA57" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2199167324
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "41D2EFF28A0023561A4B8676B99EBADC" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1061349213
@@ -816,7 +828,7 @@ Add-Hash -VariableName $var -Hash "96B9C27B55A28037507335A73A358FC4" -Tag $tag -
 Add-Hash -VariableName $var -Hash "BC37205FEFE1C03466C68340827061F8" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 4489458868
 Add-Hash -VariableName $var -Hash "1631496FCE5FD541714CE5D81B1D2324" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 3876460380
 Add-Hash -VariableName $var -Hash "CC426AF777FD5480EE83353966142F71" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 3337677707
-Add-Hash -VariableName $var -Hash "1A48660A52072C1ECE94462A4E4F85E9" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2175583240
+Add-Hash -VariableName $var -Hash "459F31B524A3F1E8028D1DCBEC0D2201" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2175312753
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "41D2EFF28A0023561A4B8676B99EBADC" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1061349213
@@ -834,7 +846,7 @@ Add-Hash -VariableName $var -Hash "5970F36B70F8127E1FEE485CCA1000F7" -Tag $tag -
 Add-Hash -VariableName $var -Hash "681EACEB7F6B249773F83BEEF2BD9DD9" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 2395632882
 Add-Hash -VariableName $var -Hash "84FECF77FF6079F804AFF67D6D6CC8BF" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 2213833218
 Add-Hash -VariableName $var -Hash "A5EC733C950CEE6F12A984E3A9B749AE" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 2021896241
-Add-Hash -VariableName $var -Hash "04048919E1000A3BFFD18911B39B1871" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1533706368
+Add-Hash -VariableName $var -Hash "5EFDF6B470F0E34534BBAFDDA04D8C37" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1533435881
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "B8D3242176D94C1BAE32A187362533CE" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1046980722
@@ -847,7 +859,7 @@ Add-Hash -VariableName $var -Hash "2617439A43583FE7D15E0A6E6C53A3C5" -Tag $tag -
 Add-Hash -VariableName $var -Hash "54DA93B6785B5C72A9A44A33AC0025EF" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 35920716
 Add-Hash -VariableName $var -Hash "0E19FCD79E3A024F23A6723085374B06" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 213100442
 Add-Hash -VariableName $var -Hash "F786FBA5A5733C8DA5C7A16315B13C72" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 189455556
-Add-Hash -VariableName $var -Hash "C7BADDF84CA8B2450B2AF318C0D4FD0D" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7887193206
+Add-Hash -VariableName $var -Hash "862F4878EE06209263CA8B0426ABB84D" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7886183113
 Add-Hash -VariableName $var -Hash "5215B3E63D8A84A4531E6485A27880B0" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 7430056887
 Add-Hash -VariableName $var -Hash "F231E9FE16E475ED9D149E359C114DB8" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 5034642158
 Add-Hash -VariableName $var -Hash "D52E8ECA33D287C68510F9923E2E989C" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 4423582229
@@ -865,7 +877,7 @@ Add-Hash -VariableName $var -Hash "2617439A43583FE7D15E0A6E6C53A3C5" -Tag $tag -
 Add-Hash -VariableName $var -Hash "54DA93B6785B5C72A9A44A33AC0025EF" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 35920716
 Add-Hash -VariableName $var -Hash "0E19FCD79E3A024F23A6723085374B06" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 213100442
 Add-Hash -VariableName $var -Hash "F786FBA5A5733C8DA5C7A16315B13C72" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 189455556
-Add-Hash -VariableName $var -Hash "E01437DE3F7188DFE4086DE518261FC4" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7885085497
+Add-Hash -VariableName $var -Hash "365F18A6738B62BA946858F9EDDE7B20" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7884075404
 Add-Hash -VariableName $var -Hash "6CCBB568C22F37D42226A159CB37A16A" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 7442390044
 Add-Hash -VariableName $var -Hash "5F3A55D494630C4D0E71F883BF479063" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 5193454968
 Add-Hash -VariableName $var -Hash "8CE1763F1623346B05B04702F6380A31" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 4422417211
@@ -883,7 +895,7 @@ Add-Hash -VariableName $var -Hash "AEA8084591FB722B9DA1A5C9B9F1D414" -Tag $tag -
 Add-Hash -VariableName $var -Hash "91F3AB61CA0C5826D3892AE3D5CAFD06" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 36950876
 Add-Hash -VariableName $var -Hash "5825DA871AEFAF2DE3A8B70A886BC623" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 210221142
 Add-Hash -VariableName $var -Hash "01CA1E1636F03834FC8EA7D794A6BE46" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 211643946
-Add-Hash -VariableName $var -Hash "4F434AFA30A21D6CA874930CBE2D7E21" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3796620740
+Add-Hash -VariableName $var -Hash "F4B6B85132559DD67731DD8319EB57F5" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3795610647
 Add-Hash -VariableName $var -Hash "9524FDB3A22503A49F04EBF47A97B8C0" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 4519689016
 Add-Hash -VariableName $var -Hash "5832299B6C199CDF693EE980B16B6139" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 3505516684
 Add-Hash -VariableName $var -Hash "E2CA479A2AD2FE52C3A78F303D03C385" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 3008410465
@@ -919,12 +931,12 @@ Add-Hash -VariableName $var -Hash "5D092A6410FADD30C671037CA3F745C0" -Tag $tag -
 Add-Hash -VariableName $var -Hash "54DA93B6785B5C72A9A44A33AC0025EF" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 35920716
 Add-Hash -VariableName $var -Hash "0E19FCD79E3A024F23A6723085374B06" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 213100442
 Add-Hash -VariableName $var -Hash "99A9DAE9D0DA66C6B8CF6765BA9E4A6F" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 187790820
-Add-Hash -VariableName $var -Hash "AA58DF2F567DAD761E963321591CB8E4" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7913408810
+Add-Hash -VariableName $var -Hash "42BBF431F36ACC89C1E5FC9FA29700BE" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7913137788
 Add-Hash -VariableName $var -Hash "D24F8864C79275ACFF9EE31E9041431C" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 7444751159
 Add-Hash -VariableName $var -Hash "2DDD13A4417E11438746C79DEF185B49" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 5041135506
 Add-Hash -VariableName $var -Hash "BF6E7D931C5E247B3AEC5ED33AE23AC5" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 4423868672
 Add-Hash -VariableName $var -Hash "37CF352A053869DA9E5A19A48ABB4A96" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 3804958810
-Add-Hash -VariableName $var -Hash "983E0E20DF650382C2E0A84A0C4B650D" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2456695652
+Add-Hash -VariableName $var -Hash "ACA08549321E443ED6B603ED12FFF34C" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2456425165
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "BC7B54A33AC96F36ACC326FD275BAE61" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1314913042
@@ -937,12 +949,12 @@ Add-Hash -VariableName $var -Hash "5D092A6410FADD30C671037CA3F745C0" -Tag $tag -
 Add-Hash -VariableName $var -Hash "54DA93B6785B5C72A9A44A33AC0025EF" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 35920716
 Add-Hash -VariableName $var -Hash "0E19FCD79E3A024F23A6723085374B06" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 213100442
 Add-Hash -VariableName $var -Hash "99A9DAE9D0DA66C6B8CF6765BA9E4A6F" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 187790820
-Add-Hash -VariableName $var -Hash "B88B32C49922BF71AF41C0CBA4C0F1E6" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7911301101
+Add-Hash -VariableName $var -Hash "CEC8E1A6A9D5B311C9A484355A7DB8FA" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7911030079
 Add-Hash -VariableName $var -Hash "A319C74D45F702D0DA9A5326E5BD4F70" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 7457084316
 Add-Hash -VariableName $var -Hash "7A634961574C33C42E515433B67E5D11" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 5199948316
 Add-Hash -VariableName $var -Hash "C0B685D16DCD8BDDA3FE8395E09A5F76" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 4422703654
 Add-Hash -VariableName $var -Hash "37CF352A053869DA9E5A19A48ABB4A96" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 3804958810
-Add-Hash -VariableName $var -Hash "C6429677B8DA8E990FA8B845170F1A5B" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2461361593
+Add-Hash -VariableName $var -Hash "3366A379355298C46F50134751F600FC" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2461091106
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "BC7B54A33AC96F36ACC326FD275BAE61" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1314913042
@@ -955,12 +967,12 @@ Add-Hash -VariableName $var -Hash "65E320BEBD368FF220915FC7E9E9D40B" -Tag $tag -
 Add-Hash -VariableName $var -Hash "CE184787F17E26F60F4E72B6F8D4EF38" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 36652439
 Add-Hash -VariableName $var -Hash "5825DA871AEFAF2DE3A8B70A886BC623" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 210221142
 Add-Hash -VariableName $var -Hash "1FA5DC19A511553CEEBC30370310E7A9" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 208811143
-Add-Hash -VariableName $var -Hash "B8DB3EE157B38B0B414B16021F8295B0" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3822295715
+Add-Hash -VariableName $var -Hash "656335CABA7B5E22997725A18172CEB4" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 3822024693
 Add-Hash -VariableName $var -Hash "5EDCCFBA77D25DEE3561FCDE85C72BAD" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 4534742418
 Add-Hash -VariableName $var -Hash "D266E4FA75746A78876B029627C9F4BB" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 3512414656
 Add-Hash -VariableName $var -Hash "53C9854D49B66BA3CEAEA7ED0531AAB7" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 3005781734
 Add-Hash -VariableName $var -Hash "583E968D74417F7DA9A19BFA85191D40" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 2812250435
-Add-Hash -VariableName $var -Hash "427B5984A67327B5652D809CF9BF7183" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1815624529
+Add-Hash -VariableName $var -Hash "37DDD5873F908192EFB771785E5A7FA5" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1815354042
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "429E93294DAD3F8F71A507E2A141B292" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1305963029
@@ -978,7 +990,7 @@ Add-Hash -VariableName $var -Hash "96B9C27B55A28037507335A73A358FC4" -Tag $tag -
 Add-Hash -VariableName $var -Hash "BC37205FEFE1C03466C68340827061F8" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 4489458868
 Add-Hash -VariableName $var -Hash "1631496FCE5FD541714CE5D81B1D2324" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 3876460380
 Add-Hash -VariableName $var -Hash "CC426AF777FD5480EE83353966142F71" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 3337677707
-Add-Hash -VariableName $var -Hash "70E2677369A8E38D3493EF478C59AEA7" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2205251316
+Add-Hash -VariableName $var -Hash "D73AA2676C4F65E415DD3418498A8DEF" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2204980829
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "41D2EFF28A0023561A4B8676B99EBADC" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1061349213
@@ -991,7 +1003,7 @@ Add-Hash -VariableName $var -Hash "2617439A43583FE7D15E0A6E6C53A3C5" -Tag $tag -
 Add-Hash -VariableName $var -Hash "54DA93B6785B5C72A9A44A33AC0025EF" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 35920716
 Add-Hash -VariableName $var -Hash "0E19FCD79E3A024F23A6723085374B06" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 213100442
 Add-Hash -VariableName $var -Hash "F786FBA5A5733C8DA5C7A16315B13C72" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 189455556
-Add-Hash -VariableName $var -Hash "C7BADDF84CA8B2450B2AF318C0D4FD0D" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7887193206
+Add-Hash -VariableName $var -Hash "862F4878EE06209263CA8B0426ABB84D" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7886183113
 Add-Hash -VariableName $var -Hash "6CCBB568C22F37D42226A159CB37A16A" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 7442390044
 Add-Hash -VariableName $var -Hash "5F3A55D494630C4D0E71F883BF479063" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 5193454968
 Add-Hash -VariableName $var -Hash "8CE1763F1623346B05B04702F6380A31" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 4422417211
@@ -1009,14 +1021,12 @@ Add-Hash -VariableName $var -Hash "5D092A6410FADD30C671037CA3F745C0" -Tag $tag -
 Add-Hash -VariableName $var -Hash "54DA93B6785B5C72A9A44A33AC0025EF" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 35920716
 Add-Hash -VariableName $var -Hash "0E19FCD79E3A024F23A6723085374B06" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 213100442
 Add-Hash -VariableName $var -Hash "99A9DAE9D0DA66C6B8CF6765BA9E4A6F" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 187790820
-Add-Hash -VariableName $var -Hash "AA58DF2F567DAD761E963321591CB8E4" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7913408810
+Add-Hash -VariableName $var -Hash "42BBF431F36ACC89C1E5FC9FA29700BE" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 7913137788
 Add-Hash -VariableName $var -Hash "A319C74D45F702D0DA9A5326E5BD4F70" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 7457084316
 Add-Hash -VariableName $var -Hash "7A634961574C33C42E515433B67E5D11" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 5199948316
 Add-Hash -VariableName $var -Hash "C0B685D16DCD8BDDA3FE8395E09A5F76" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 4422703654
 Add-Hash -VariableName $var -Hash "37CF352A053869DA9E5A19A48ABB4A96" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 3804958810
-Add-Hash -VariableName $var -Hash "C6429677B8DA8E990FA8B845170F1A5B" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2461361593
+Add-Hash -VariableName $var -Hash "3366A379355298C46F50134751F600FC" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 2461091106
 Add-Hash -VariableName $var -Hash "024CAE9A6D712A8EB1CF9921B1C0A2F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 722009972
-Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
-Add-Hash -VariableName $var -Hash "BC7B54A33AC96F36ACC326FD275BAE61" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1314913042
 Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 790042919
 Add-Hash -VariableName $var -Hash "BC7B54A33AC96F36ACC326FD275BAE61" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 1314913042

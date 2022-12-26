@@ -74,7 +74,7 @@ $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 #region constants and variables
 #------------------------------
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 8, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 24, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 24, 1)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -424,7 +424,7 @@ Write-CustomLog @(
     "  Command Line Parameters:"
     ((Get-Command -Name $MyInvocation.MyCommand.Path).Parameters.Keys | ForEach-Object {
         [PSCustomObject]@{Parameter = $_; Value = (Get-Variable -Name $_ -ErrorAction SilentlyContinue).Value }
-    } | Format-Table | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
+    } | Format-Table | Out-String) -Split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     ""
     "  Windows Version: $(Get-WindowsVersion)"
     "  PowerShell Version: $($PSVersionTable.PSVersion)"
@@ -436,7 +436,7 @@ Write-CustomLog @(
     "  Drive Threads (WBI Drive): $maxWBIDriveThreads"
     "  Drive Threads (Working Files Drive): $maxWorkingFilesDriveThreads"
     "  Drive Info:"
-    ($driveInfo | Format-Table -Property $driveInfoTableFormat | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
+    ($driveInfo | Format-Table -Property $driveInfoTableFormat | Out-String) -Split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     ""
     "  Number of repack archive hashes: $($repack7zHashes.Keys.Count)"
     "  Number of original BA2 hashes: $($originalBa2Hashes.Keys.Count)"
@@ -460,12 +460,12 @@ Write-CustomLog @(
     "  Files in Repack7z directory: $(if ((Get-ChildItem -LiteralPath $dir.repack7z -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
     (Get-ChildItem -LiteralPath $dir.repack7z -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
         [PSCustomObject]@{ Name = $_.Name; Size = $_.Length.ToString("N0") }
-    } | Format-Table -Property $fileListTableFormat | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
+    } | Format-Table -Property $fileListTableFormat | Out-String) -Split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     ""
     "  Files in OriginalBa2 directory: $(if ((Get-ChildItem -LiteralPath $dir.originalBa2 -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
     (Get-ChildItem -LiteralPath $dir.originalBa2 -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
         [PSCustomObject]@{ Name = $_.Name; Size = $_.Length.ToString("N0") }
-    } | Format-Table -Property $fileListTableFormat | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
+    } | Format-Table -Property $fileListTableFormat | Out-String) -Split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     "<" * $LineWidth
 )
 
@@ -724,7 +724,9 @@ switch ($ForceOperationMode) {
     }
 }
 
-Write-CustomLog "Raw repack flags:", ($repackFlags.Keys | ForEach-Object { "  $_" }), ""
+Write-CustomLog "Raw repack flags:"
+Write-CustomLog (($repackFlags | Format-Table -AutoSize -HideTableHeaders | Out-String) -Split "`r`n" | Where-Object { $_ }) -Prefix "  "
+Write-CustomLog ""
 
 # if not using Performance, Main, or Quality, don't need to install the Vault Fix
 if (-not $repackFlags.Performance -and -not $repackFlags.Main -and -not $repackFlags.Quality) {
@@ -1173,7 +1175,7 @@ else {
                 "here is not enough free space available on your computer. Please check the following " +
                 "table to see how much additional space needs to be freed up on each drive."
                 ""
-                ($driveSpaceNeeded | Format-Table -Property $driveSpaceTableFormat | Out-String) -split "`r`n" | Where-Object { $_ }
+                ($driveSpaceNeeded | Format-Table -Property $driveSpaceTableFormat | Out-String) -Split "`r`n" | Where-Object { $_ }
             )
             throw "Insufficient free space"
         }
@@ -1342,7 +1344,7 @@ else {
                         foreach ($line in $archiveTechnicalInformation |
                                 Select-Object -Skip 18 |
                                 Where-Object { $_ -match "^Path.*" -or $_ -match "^CRC.*" }) {
-                            $splitLine = $line -split " = "
+                            $splitLine = $line -Split " = "
                             switch ($splitLine | Select-Object -First 1) {
                                 "Path" {
                                     $currentRecord = @{}

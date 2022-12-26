@@ -19,8 +19,9 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 28, 1))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 28, 2))
 
+$originalPath = $env:PATH
 $writeCustomPrevNoNewLineLength = 0
 
 function Add-Hash {

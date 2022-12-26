@@ -16,9 +16,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
-# parameters
-# ----------
-
+#region parameters
+#-----------------
 param (
     # Prevents the script from clearing the screen when starting up
     [switch] $NoClearScreen,
@@ -63,19 +62,19 @@ param (
     # Don't pause on exit
     [switch] $NoPauseOnExit
 )
+#endregion
 
 
-# start script timer
-# ------------------
-
+#region start script timer
+#-------------------------
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
+#endregion
 
 
-# constants and variables
-# -----------------------
-
+#region constants and variables
+#------------------------------
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 8, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 6)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 24, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -147,28 +146,28 @@ $optionalOriginalArchives = @(
 $sectionTimer = New-Object System.Diagnostics.Stopwatch
 $archiveTimer = New-Object System.Diagnostics.Stopwatch
 $toolTimer = New-Object System.Diagnostics.Stopwatch
+#endregion
 
 
-# change location
-# ---------------
-
+#region change location
+#----------------------
 Set-Location -LiteralPath $dir.currentDirectory
+#endregion
 
 
-# imports
-# -------
-
+#region imports
+#--------------
 Write-Host "Loading functions..."
 . "$($dir.tools)\lib\Functions.ps1"
 . "$($dir.tools)\lib\Get-KnownFolderPath.ps1"
 Write-Host "Loading hashes..."
 . "$($dir.tools)\lib\Hashes.ps1"
 Write-Host "Loading WBI..."
+#endregion
 
 
-# get disk info
-# -------------
-
+#region get disk info
+#--------------------
 # Get-Disk and Get-PhysicalDisk don't seem to work on the first try in Windows 11 in virtualbox (and maybe elsewhere)
 # but do seem to work after a second call. as a workaround, call Get-PhysicalDisk once before actually trying to get
 # disk and volume information
@@ -260,11 +259,11 @@ $driveInfoTableFormat = [object]@(
     @{ Name = "% Used"; Expression = { if ($_.SizeUsedPercent -eq -1) { "Unknown" } else { "$(($_.SizeUsedPercent).ToString("f1"))%" } }; Width = 8; Alignment = "right" },
     @{ Name = "Total"; Expression = { Write-PrettySize $_.SizeTotal }; Width = 10; Alignment = "right" }
 )
+#endregion
 
 
-# add tools to PATH
-# -----------------
-
+#region add tools to PATH
+#------------------------
 # 7-Zip 64-bit v22.01 (2022-07-15) by Igor Pavlov
 # https://www.7-zip.org/
 $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\7-zip").Path + ";" + $env:PATH
@@ -281,11 +280,11 @@ $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\BSA Browser").Path + ";" +
 # xxhsum v0.8.1 by cyan4973
 # https://cyan4973.github.io/xxHash/
 $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\xxHash").Path + ";" + $env:PATH
+#endregion
 
 
-# check pwd
-# ---------
-
+#region check pwd
+#----------------
 # abort if square brackets found in path
 if ($dir.currentDirectory.Contains("[") -or $dir.currentDirectory.Contains("]")) {
     $extraErrorText = @(
@@ -296,11 +295,11 @@ if ($dir.currentDirectory.Contains("[") -or $dir.currentDirectory.Contains("]"))
     Write-CustomError "Path contains square brackets" -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight -BypassLog
     Exit-Script 1 -BypassLog
 }
+#endregion
 
 
-# adjust workingFile path
-# -----------------------
-
+#region adjust workingFile path
+#------------------------------
 $busTypeWBIDrive = ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType
 # if the working files folder is specified, it takes precedence over USB detection or forcing it to TEMP
 if ($WorkingFilesFolder) {
@@ -315,11 +314,11 @@ elseif (
 ) {
     $dir.workingFiles = Resolve-PathAnyway ([System.IO.Path]::GetTempPath() + "\" + $dir.workingFiles)
 }
+#endregion
 
 
-# determine max threading for drives
-# ----------------------------------
-
+#region determine max threading for drives
+#-----------------------------------------
 # figure out the max number of threads to use in multi-threading operations involving the respective drives
 # 2 threads for HDDs, 16 threads otherwise; if the media type is unknown, go with 2 threads for safety
 $mediaTypeWBIDrive = ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).MediaType
@@ -336,11 +335,11 @@ $maxWorkingFilesDriveThreads = if (-not $mediaTypeWorkingFilesDrive -or $mediaTy
 else {
     16
 }
+#endregion
 
 
-# check files
-# -----------
-
+#region check files
+#------------------
 # abort if SHA256 hash of Crc32.cs doesn't match expected value, load otherwise
 if ((Get-FileHash -LiteralPath "$($dir.tools)\lib\Crc32.cs" -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash -ne "53C3DE02CFAD47B2C9D02B2EDEDA0CCD25E38652CD2A1D7AA348F038026D5EAF") {
     Write-CustomError "The contents of `"$($dir.tools)\lib\Crc32.cs`" do not match what's expected. Try re-extracting the WorkBase Improved files again. If this error persists, please contact the author." -Prefix "ERROR: " -NoJustifyRight -BypassLog
@@ -349,11 +348,11 @@ if ((Get-FileHash -LiteralPath "$($dir.tools)\lib\Crc32.cs" -Algorithm SHA256 -E
 else {
     Add-Type -TypeDefinition (Get-Content -LiteralPath "$($dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
 }
+#endregion
 
 
-# late variables
-# --------------
-
+#region late variables
+#---------------------
 # more complicated than simply using $ba2Files, but allows for easier testing
 [string[]] $ba2Filenames = @($originalBa2Hashes.Keys | ForEach-Object { $originalBa2Hashes[$_].FileName }) | Sort-Object -Unique
 
@@ -369,8 +368,11 @@ $msvcr110dllPath = "$((Get-KnownFolderPath -Name System).Path)\msvcr110.dll"
 $msvcr110dllVersion = (Get-Command $msvcr110dllPath -ErrorAction SilentlyContinue).Version
 $msvcr110dllSize = (Get-Item $msvcr110dllPath -ErrorAction SilentlyContinue).Length
 $msvcr110dllHash = (Get-FileHash -LiteralPath $msvcr110dllPath -Algorithm $FileHashAlgorithm -ErrorAction SilentlyContinue).Hash
+#endregion
 
 
+#region testing area
+#-------------------
 # >>>>>>>>>>>>>>>>>>
 # testing area start
 # >>>>>>>>>>>>>>>>>>
@@ -381,11 +383,15 @@ $msvcr110dllHash = (Get-FileHash -LiteralPath $msvcr110dllPath -Algorithm $FileH
 # <<<<<<<<<<<<<<<<
 # testing area end
 # <<<<<<<<<<<<<<<<
+#endregion
 
 
-# begin script
-# ------------
+#--------------#
+# begin script #
+#--------------#
 
+#region initial housekeeping
+#---------------------------
 # clear the current.*.log files
 if (Test-Path -LiteralPath $dir.Logs) {
     Get-ChildItem -LiteralPath $dir.Logs -Filter "current.*.log" | Remove-Item
@@ -394,8 +400,11 @@ if (Test-Path -LiteralPath $dir.Logs) {
 # set the console background to a more appealing color and clear the background so it takes effect
 $Host.UI.RawUI.BackgroundColor = 'black'
 if (-not $NoClearScreen) { Clear-Host }
+#endregion
 
-# write some diagnostic information to the logs
+
+#region write some diagnostic information to the logs
+#----------------------------------------------------
 Write-CustomLog "Run start: $RunStartTime"
 Write-CustomLog "Run start: $RunStartTime" -log tool
 $fileListTableFormat = [object]@(
@@ -480,11 +489,11 @@ Write-Custom @(
     "|___| |_| |_| |_| | .__/  |_|     \___/    \_/    \___|  \__,_|"
     "                  |_|                                          "
 ) -JustifyCenter -BypassLog
+#endregion
 
 
-# check to make sure that this is being run with PowerShell 5.1.x
-# ---------------------------------------------------------------
-
+#region check to make sure that this is being run with PowerShell 5.1.x
+#----------------------------------------------------------------------
 if (-not $SkipPowerShellVersionCheck) {
     if ($PSVersionTable.PSVersion.Major -ne 5 -and $PSVersionTable.PSVersion.Minor -ne 1) {
         Write-Custom ""
@@ -495,11 +504,11 @@ if (-not $SkipPowerShellVersionCheck) {
         Exit-Script 1
     }
 }
+#endregion
 
 
-# check location to ensure the script is not located in a problematic directory
-# -----------------------------------------------------------------------------
-
+#region check location to ensure the script is not located in a problematic directory
+#------------------------------------------------------------------------------------
 if (-not $SkipProblematicDirectoryCheck) {
     $problemDirs = @(
         # system folders
@@ -542,11 +551,11 @@ if (-not $SkipProblematicDirectoryCheck) {
         }
     }
 }
+#endregion
 
 
-# check for visual c++ redist files
-# ---------------------------------
-
+#region check for visual c++ redist files
+#----------------------------------------
 if (-not $SkipVisualCppRedistFileCheck) {
     # need only C:\Windows\System32\msvcp110.dll and C:\Windows\System32\msvcr110.dll
     # from vc redist 2012 update 4:
@@ -563,11 +572,11 @@ if (-not $SkipVisualCppRedistFileCheck) {
         Exit-Script 1
     }
 }
+#endregion
 
 
-# select patched BA2 folder
-# -------------------------
-
+#region select patched BA2 folder
+#--------------------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: select patched BA2 folder"
 
@@ -614,11 +623,11 @@ if (
 Write-CustomInfo $dir.patchedBa2
 
 Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+#endregion
 
 
-# extended validation mode status
-# -------------------------------
-
+#region extended validation mode status
+#--------------------------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: choose extended validation mode"
 
@@ -629,11 +638,11 @@ if ($ExtendedValidationMode) { Write-CustomInfo "Active" }
 else { Write-CustomInfo "Inactive" }
 
 Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+#endregion
 
 
-# determine mode of operation and create tag
-# ------------------------------------------
-
+#region determine mode of operation and create tag
+#-------------------------------------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: determine mode of operation and create tag", ""
 
@@ -774,11 +783,11 @@ if (-not $repackFlags.Custom) {
 }
 
 Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+#endregion
 
 
-# validate repack archives
-# ------------------------
-
+#region validate repack archives
+#-------------------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: validate repack archives"
 
@@ -906,11 +915,11 @@ if ($validateRepacksFailed) {
 
 # replace list of expected repack files with the list of found repack files
 $repackFiles = $foundRepackFiles
+#endregion
 
 
-# validate any existing patched archives
-# --------------------------------------
-
+#region validate any existing patched archives
+#---------------------------------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: validate any existing patched archives"
 
@@ -990,11 +999,11 @@ if (-not $ba2Filenames.Count) {
     Write-CustomSuccess "", "Existing patched archives validated successfully; nothing to do!" -NoJustifyRight
     Exit-Script 0
 }
+#endregion
 
 
-# check free space
-# ----------------
-
+#region check free space
+#-----------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: check free space"
 
@@ -1185,11 +1194,11 @@ Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$(
 if ($checkFreeSpaceFailed) {
     Exit-Script 1
 }
+#endregion
 
 
-# extract repack archives
-# -----------------------
-
+#region extract repack archives
+#------------------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: extract repack archives"
 
@@ -1531,11 +1540,11 @@ if ($extractRepackFailed) {
     }
     Exit-Script 1
 }
+#endregion
 
 
-# remove known bad patched files
-# ------------------------------
-
+#region remove known bad patched files
+#-------------------------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: remove known bad patched files"
 
@@ -1568,11 +1577,11 @@ for ($index = 0; $index -lt $potentiallyBadPatchedFilenames.Count; $index++) {
 }
 
 Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+#endregion
 
 
-# process archives
-# ----------------
-
+#region process archives
+#-----------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: process archives"
 
@@ -2004,9 +2013,11 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
 }
 
 Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+#endregion
 
 
-# clean up
+#region clean up
+#---------------
 Write-Custom ""
 Write-Custom "Cleaning up..." -NoNewline
 if ($repackFlags.Custom) {
@@ -2032,7 +2043,11 @@ else {
     }
     Write-CustomSuccess "[DONE]"
 }
+#endregion
 
+
+#region show result
+#------------------
 Write-Custom ""
 if ($processingFailed) {
     Write-CustomError "Patched archive creation failed." -NoJustifyRight
@@ -2041,3 +2056,4 @@ if ($processingFailed) {
 
 Write-CustomSuccess "Patched archive creation succeeded." -NoJustifyRight
 Exit-Script 0
+#endregion

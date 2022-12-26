@@ -16,9 +16,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
-# parameters
-# ----------
-
+#region parameters
+#-----------------
 param (
     # Prevents the script from clearing the screen when starting up
     [switch] $NoClearScreen,
@@ -63,15 +62,19 @@ param (
     # Don't pause on exit
     [switch] $NoPauseOnExit
 )
+#endregion
 
 
-# constants and variables
-# -----------------------
-
+#region start script timer
+#-------------------------
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
+#endregion
 
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 8, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 5)) -Option Constant
+
+#region constants and variables
+#------------------------------
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 8, 1)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 24, 1)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -140,54 +143,127 @@ $optionalOriginalArchives = @(
     "DLCworkshop03 - Textures.ba2"
 )
 
+$sectionTimer = New-Object System.Diagnostics.Stopwatch
+$archiveTimer = New-Object System.Diagnostics.Stopwatch
+$toolTimer = New-Object System.Diagnostics.Stopwatch
+#endregion
+
+
+#region change location
+#----------------------
+Set-Location -LiteralPath $dir.currentDirectory
+#endregion
+
+
+#region imports
+#--------------
+Write-Host "Loading functions..."
+. "$($dir.tools)\lib\Functions.ps1"
+. "$($dir.tools)\lib\Get-KnownFolderPath.ps1"
+Write-Host "Loading hashes..."
+. "$($dir.tools)\lib\Hashes.ps1"
+Write-Host "Loading WBI..."
+#endregion
+
+
+#region get disk info
+#--------------------
 # Get-Disk and Get-PhysicalDisk don't seem to work on the first try in Windows 11 in virtualbox (and maybe elsewhere)
 # but do seem to work after a second call. as a workaround, call Get-PhysicalDisk once before actually trying to get
-# the drive information
+# disk and volume information
 Get-PhysicalDisk -ErrorAction SilentlyContinue | Out-Null
 
-$driveInfo = Get-PhysicalDisk | Where-Object { $_.FriendlyName -ne "MSFT XVDD" } |
-    ForEach-Object {
-        $physicalDisk = $_
-        Get-Partition -DiskNumber $_.DeviceId |
-            Where-Object { $_.DriveLetter } |
-            Get-Volume |
-            ForEach-Object {
-                [PSCustomObject]@{
-                    DriveLetter     = $_.DriveLetter
-                    MediaType       = $physicalDisk.MediaType
-                    BusType         = $physicalDisk.BusType
-                    SizeFree        = $_.SizeRemaining
-                    SizeFreePercent = if ($_.Size) { $_.SizeRemaining / $_.Size * 100 } else { -1 }
-                    SizeUsed        = $_.Size - $_.SizeRemaining
-                    SizeUsedPercent = if ($_.Size) { ($_.Size - $_.SizeRemaining) / $_.Size * 100 } else { -1 }
-                    SizeTotal       = $_.Size
-                }
+# grab the volumes that have drive letters and create objects with that info, particularly size info, first try
+# Get-Volume, then try Get-PSDrive if that fails. if they both fail, abort, because something is seriously wrong
+try {
+    $driveInfo = Get-Volume -ErrorAction Stop | Where-Object { $_.DriveLetter } | ForEach-Object {
+        [PSCustomObject]@{
+            DriveLetter     = $_.DriveLetter
+            MediaType       = $null
+            BusType         = $null
+            SizeFree        = $_.SizeRemaining
+            SizeFreePercent = if ($_.Size) { $_.SizeRemaining / $_.Size * 100 } else { -1 }
+            SizeUsed        = $_.Size - $_.SizeRemaining
+            SizeUsedPercent = if ($_.Size) { ($_.Size - $_.SizeRemaining) / $_.Size * 100 } else { -1 }
+            SizeTotal       = $_.Size
+        }
+    } | Sort-Object -Property DriveLetter
+}
+catch {
+    Write-CustomLog "Get-Volume failed!" -Prefix "ERROR: "
+    Write-CustomLog $_ -Prefix "ERROR: "
+    Write-CustomLog $_.InvocationInfo.PositionMessage -Prefix "ERROR: "
+    Write-CustomLog ""
+}
+if ($null -eq $driveInfo) {
+    try {
+        $driveInfo = Get-PSDrive -PSProvider FileSystem -ErrorAction Stop | ForEach-Object {
+            [PSCustomObject]@{
+                DriveLetter     = $_.Name
+                MediaType       = $null
+                BusType         = $null
+                SizeFree        = $_.Free
+                SizeFreePercent = $_.Free / ($_.Free + $_.Used) * 100
+                SizeUsed        = $_.Used
+                SizeUsedPercent = $_.Used / ($_.Free + $_.Used) * 100
+                SizeTotal       = $_.Free + $_.Used
             }
-        } | Sort-Object -Property DriveLetter
+        }
+    }
+    catch {
+        Write-CustomLog "Get-PSDrive failed!" -Prefix "ERROR: "
+        Write-CustomLog $_ -Prefix "ERROR: "
+        Write-CustomLog $_.InvocationInfo.PositionMessage -Prefix "ERROR: "
+        Write-CustomLog ""
+
+        $extraErrorText = @(
+            "This script attempts to get disk information from your computer in order to do its job better, but both the primary and backup methods of doing so have failed."
+            ""
+            "Please seek help from the script author."
+        )
+        Write-CustomError "Getting drive information failed" -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+        Exit-Script 1
+    }
+}
+
+# populate the physical disk properties of the drive info array
+
+$diskFriendlyNameBlockList = @(
+    # Microsoft Game Pass virtual disk
+    "MSFT XVDD"
+)
+# get the physical disks in the system that don't have their friendly names on the block list
+Get-PhysicalDisk -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -notin $diskFriendlyNameBlockList } | ForEach-Object {
+    # save a reference to the current physical disk object in the pipeline
+    $physicalDisk = $_
+    # get the partitions associated with the physical disk that have a drive letter
+    Get-Partition -DiskNumber $_.DeviceId -ErrorAction SilentlyContinue | Where-Object { $_.DriveLetter } | ForEach-Object {
+        # save a reference to the current partition object in the pipeline
+        $partition = $_
+        # get the drive info object whose drive letter matches the current partition object
+        $driveInfo | Where-Object { $_.DriveLetter -eq $partition.DriveLetter } | ForEach-Object {
+            # update the disk info
+            $_.MediaType = $physicalDisk.MediaType
+            $_.BusType = $physicalDisk.BusType
+        }
+    }
+}
 
 $driveInfoTableFormat = [object]@(
     @{ Name = "Drive"; Expression = { $_.DriveLetter }; Width = 6; Alignment = "left" },
-    @{ Name = "Type"; Expression = { $_.MediaType }; Width = 12; Alignment = "left" },
-    @{ Name = "Bus"; Expression = { $_.BusType }; Width = 5; Alignment = "left" },
+    @{ Name = "Type"; Expression = { if (-not $_.MediaType) { "Unknown" } else { $_.MediaType } }; Width = 12; Alignment = "left" },
+    @{ Name = "Bus"; Expression = { if (-not $_.BusType) { "Unknown" } else { $_.BusType } }; Width = 8; Alignment = "left" },
     @{ Name = "Free"; Expression = { Write-PrettySize $_.SizeFree }; Width = 9; Alignment = "right" },
     @{ Name = "% Free"; Expression = { if ($_.SizeFreePercent -eq -1) { "Unknown" } else { "$(($_.SizeFreePercent).ToString("f1"))%" } }; Width = 8; Alignment = "right" },
     @{ Name = "Used"; Expression = { Write-PrettySize $_.SizeUsed }; Width = 10; Alignment = "right" },
     @{ Name = "% Used"; Expression = { if ($_.SizeUsedPercent -eq -1) { "Unknown" } else { "$(($_.SizeUsedPercent).ToString("f1"))%" } }; Width = 8; Alignment = "right" },
     @{ Name = "Total"; Expression = { Write-PrettySize $_.SizeTotal }; Width = 10; Alignment = "right" }
 )
-
-Set-Location -LiteralPath $dir.currentDirectory
-$sectionTimer = New-Object System.Diagnostics.Stopwatch
-$archiveTimer = New-Object System.Diagnostics.Stopwatch
-$toolTimer = New-Object System.Diagnostics.Stopwatch
+#endregion
 
 
-# add tools to PATH
-# -----------------
-
-# save the original PATH variable
-$originalPath = $env:PATH
-
+#region add tools to PATH
+#------------------------
 # 7-Zip 64-bit v22.01 (2022-07-15) by Igor Pavlov
 # https://www.7-zip.org/
 $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\7-zip").Path + ";" + $env:PATH
@@ -204,21 +280,11 @@ $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\BSA Browser").Path + ";" +
 # xxhsum v0.8.1 by cyan4973
 # https://cyan4973.github.io/xxHash/
 $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\xxHash").Path + ";" + $env:PATH
+#endregion
 
 
-# imports
-# -------
-
-Write-Host "Loading functions..."
-. "$($dir.tools)\lib\Functions.ps1"
-. "$($dir.tools)\lib\Get-KnownFolderPath.ps1"
-Write-Host "Loading hashes..."
-. "$($dir.tools)\lib\Hashes.ps1"
-
-
-# check pwd
-# ---------
-
+#region check pwd
+#----------------
 # abort if square brackets found in path
 if ($dir.currentDirectory.Contains("[") -or $dir.currentDirectory.Contains("]")) {
     $extraErrorText = @(
@@ -229,45 +295,51 @@ if ($dir.currentDirectory.Contains("[") -or $dir.currentDirectory.Contains("]"))
     Write-CustomError "Path contains square brackets" -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight -BypassLog
     Exit-Script 1 -BypassLog
 }
+#endregion
 
 
-# adjust workingFile path
-# -----------------------
+#region adjust workingFile path
+#------------------------------
+$busTypeWBIDrive = ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType
 # if the working files folder is specified, it takes precedence over USB detection or forcing it to TEMP
 if ($WorkingFilesFolder) {
     $dir.workingFiles = $WorkingFilesFolder
 }
 # archive2 becomes non-deterministic if the data it is putting into an archive comes from a USB drive, so if WBI is being ran
-# from a USB drive, switch $dir.workingFiles to reside in the user's temp directory instead
+# from a drive with an unknown bus type or a USB drive, switch $dir.workingFiles to reside in the user's temp directory instead
 elseif (
-    ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType -eq "USB" -or
+    $null -eq $busTypeWBIDrive -or
+    $busTypeWBIDrive -eq "USB" -or
     $ForceTempWorkingFiles
 ) {
     $dir.workingFiles = Resolve-PathAnyway ([System.IO.Path]::GetTempPath() + "\" + $dir.workingFiles)
 }
+#endregion
 
 
-# determine max threading for drives
-# ----------------------------------
+#region determine max threading for drives
+#-----------------------------------------
 # figure out the max number of threads to use in multi-threading operations involving the respective drives
-# 2 threads for HDDs, 16 threads otherwise
-$maxWBIDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).MediaType -eq "HDD") {
+# 2 threads for HDDs, 16 threads otherwise; if the media type is unknown, go with 2 threads for safety
+$mediaTypeWBIDrive = ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).MediaType
+$maxWBIDriveThreads = if (-not $mediaTypeWBIDrive -or $mediaTypeWBIDrive -eq "HDD") {
     2
 }
 else {
     16
 }
-$maxWorkingFilesDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq (Resolve-PathAnyway $dir.workingFiles).Substring(0, 1) }).MediaType -eq "HDD") {
+$mediaTypeWorkingFilesDrive = ($driveInfo | Where-Object { $_.DriveLetter -eq (Resolve-PathAnyway $dir.workingFiles).Substring(0, 1) }).MediaType
+$maxWorkingFilesDriveThreads = if (-not $mediaTypeWorkingFilesDrive -or $mediaTypeWorkingFilesDrive -eq "HDD") {
     2
 }
 else {
     16
 }
+#endregion
 
 
-# check files
-# -----------
-
+#region check files
+#------------------
 # abort if SHA256 hash of Crc32.cs doesn't match expected value, load otherwise
 if ((Get-FileHash -LiteralPath "$($dir.tools)\lib\Crc32.cs" -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash -ne "53C3DE02CFAD47B2C9D02B2EDEDA0CCD25E38652CD2A1D7AA348F038026D5EAF") {
     Write-CustomError "The contents of `"$($dir.tools)\lib\Crc32.cs`" do not match what's expected. Try re-extracting the WorkBase Improved files again. If this error persists, please contact the author." -Prefix "ERROR: " -NoJustifyRight -BypassLog
@@ -276,11 +348,11 @@ if ((Get-FileHash -LiteralPath "$($dir.tools)\lib\Crc32.cs" -Algorithm SHA256 -E
 else {
     Add-Type -TypeDefinition (Get-Content -LiteralPath "$($dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
 }
+#endregion
 
 
-# late variables
-# --------------
-
+#region late variables
+#---------------------
 # more complicated than simply using $ba2Files, but allows for easier testing
 [string[]] $ba2Filenames = @($originalBa2Hashes.Keys | ForEach-Object { $originalBa2Hashes[$_].FileName }) | Sort-Object -Unique
 
@@ -296,8 +368,11 @@ $msvcr110dllPath = "$((Get-KnownFolderPath -Name System).Path)\msvcr110.dll"
 $msvcr110dllVersion = (Get-Command $msvcr110dllPath -ErrorAction SilentlyContinue).Version
 $msvcr110dllSize = (Get-Item $msvcr110dllPath -ErrorAction SilentlyContinue).Length
 $msvcr110dllHash = (Get-FileHash -LiteralPath $msvcr110dllPath -Algorithm $FileHashAlgorithm -ErrorAction SilentlyContinue).Hash
+#endregion
 
 
+#region testing area
+#-------------------
 # >>>>>>>>>>>>>>>>>>
 # testing area start
 # >>>>>>>>>>>>>>>>>>
@@ -308,11 +383,15 @@ $msvcr110dllHash = (Get-FileHash -LiteralPath $msvcr110dllPath -Algorithm $FileH
 # <<<<<<<<<<<<<<<<
 # testing area end
 # <<<<<<<<<<<<<<<<
+#endregion
 
 
-# begin script
-# ------------
+#--------------#
+# begin script #
+#--------------#
 
+#region initial housekeeping
+#---------------------------
 # clear the current.*.log files
 if (Test-Path -LiteralPath $dir.Logs) {
     Get-ChildItem -LiteralPath $dir.Logs -Filter "current.*.log" | Remove-Item
@@ -321,8 +400,11 @@ if (Test-Path -LiteralPath $dir.Logs) {
 # set the console background to a more appealing color and clear the background so it takes effect
 $Host.UI.RawUI.BackgroundColor = 'black'
 if (-not $NoClearScreen) { Clear-Host }
+#endregion
 
-# write some diagnostic information to the logs
+
+#region write some diagnostic information to the logs
+#----------------------------------------------------
 Write-CustomLog "Run start: $RunStartTime"
 Write-CustomLog "Run start: $RunStartTime" -log tool
 $fileListTableFormat = [object]@(
@@ -342,7 +424,7 @@ Write-CustomLog @(
     "  Command Line Parameters:"
     ((Get-Command -Name $MyInvocation.MyCommand.Path).Parameters.Keys | ForEach-Object {
         [PSCustomObject]@{Parameter = $_; Value = (Get-Variable -Name $_ -ErrorAction SilentlyContinue).Value }
-    } | Format-Table | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
+    } | Format-Table | Out-String) -Split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     ""
     "  Windows Version: $(Get-WindowsVersion)"
     "  PowerShell Version: $($PSVersionTable.PSVersion)"
@@ -354,7 +436,7 @@ Write-CustomLog @(
     "  Drive Threads (WBI Drive): $maxWBIDriveThreads"
     "  Drive Threads (Working Files Drive): $maxWorkingFilesDriveThreads"
     "  Drive Info:"
-    ($driveInfo | Format-Table -Property $driveInfoTableFormat | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
+    ($driveInfo | Format-Table -Property $driveInfoTableFormat | Out-String) -Split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     ""
     "  Number of repack archive hashes: $($repack7zHashes.Keys.Count)"
     "  Number of original BA2 hashes: $($originalBa2Hashes.Keys.Count)"
@@ -378,12 +460,12 @@ Write-CustomLog @(
     "  Files in Repack7z directory: $(if ((Get-ChildItem -LiteralPath $dir.repack7z -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
     (Get-ChildItem -LiteralPath $dir.repack7z -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
         [PSCustomObject]@{ Name = $_.Name; Size = $_.Length.ToString("N0") }
-    } | Format-Table -Property $fileListTableFormat | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
+    } | Format-Table -Property $fileListTableFormat | Out-String) -Split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     ""
     "  Files in OriginalBa2 directory: $(if ((Get-ChildItem -LiteralPath $dir.originalBa2 -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
     (Get-ChildItem -LiteralPath $dir.originalBa2 -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
         [PSCustomObject]@{ Name = $_.Name; Size = $_.Length.ToString("N0") }
-    } | Format-Table -Property $fileListTableFormat | Out-String) -split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
+    } | Format-Table -Property $fileListTableFormat | Out-String) -Split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     "<" * $LineWidth
 )
 
@@ -407,11 +489,11 @@ Write-Custom @(
     "|___| |_| |_| |_| | .__/  |_|     \___/    \_/    \___|  \__,_|"
     "                  |_|                                          "
 ) -JustifyCenter -BypassLog
+#endregion
 
 
-# check to make sure that this is being run with PowerShell 5.1.x
-# ---------------------------------------------------------------
-
+#region check to make sure that this is being run with PowerShell 5.1.x
+#----------------------------------------------------------------------
 if (-not $SkipPowerShellVersionCheck) {
     if ($PSVersionTable.PSVersion.Major -ne 5 -and $PSVersionTable.PSVersion.Minor -ne 1) {
         Write-Custom ""
@@ -422,11 +504,11 @@ if (-not $SkipPowerShellVersionCheck) {
         Exit-Script 1
     }
 }
+#endregion
 
 
-# check location to ensure the script is not located in a problematic directory
-# -----------------------------------------------------------------------------
-
+#region check location to ensure the script is not located in a problematic directory
+#------------------------------------------------------------------------------------
 if (-not $SkipProblematicDirectoryCheck) {
     $problemDirs = @(
         # system folders
@@ -469,11 +551,11 @@ if (-not $SkipProblematicDirectoryCheck) {
         }
     }
 }
+#endregion
 
 
-# check for visual c++ redist files
-# ---------------------------------
-
+#region check for visual c++ redist files
+#----------------------------------------
 if (-not $SkipVisualCppRedistFileCheck) {
     # need only C:\Windows\System32\msvcp110.dll and C:\Windows\System32\msvcr110.dll
     # from vc redist 2012 update 4:
@@ -490,11 +572,11 @@ if (-not $SkipVisualCppRedistFileCheck) {
         Exit-Script 1
     }
 }
+#endregion
 
 
-# select patched BA2 folder
-# -------------------------
-
+#region select patched BA2 folder
+#--------------------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: select patched BA2 folder"
 
@@ -541,11 +623,11 @@ if (
 Write-CustomInfo $dir.patchedBa2
 
 Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+#endregion
 
 
-# extended validation mode status
-# -------------------------------
-
+#region extended validation mode status
+#--------------------------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: choose extended validation mode"
 
@@ -556,11 +638,11 @@ if ($ExtendedValidationMode) { Write-CustomInfo "Active" }
 else { Write-CustomInfo "Inactive" }
 
 Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+#endregion
 
 
-# determine mode of operation and create tag
-# ------------------------------------------
-
+#region determine mode of operation and create tag
+#-------------------------------------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: determine mode of operation and create tag", ""
 
@@ -642,7 +724,9 @@ switch ($ForceOperationMode) {
     }
 }
 
-Write-CustomLog "Raw repack flags:", ($repackFlags.Keys | ForEach-Object { "  $_" }), ""
+Write-CustomLog "Raw repack flags:"
+Write-CustomLog (($repackFlags | Format-Table -AutoSize -HideTableHeaders | Out-String) -Split "`r`n" | Where-Object { $_ }) -Prefix "  "
+Write-CustomLog ""
 
 # if not using Performance, Main, or Quality, don't need to install the Vault Fix
 if (-not $repackFlags.Performance -and -not $repackFlags.Main -and -not $repackFlags.Quality) {
@@ -701,11 +785,11 @@ if (-not $repackFlags.Custom) {
 }
 
 Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+#endregion
 
 
-# validate repack archives
-# ------------------------
-
+#region validate repack archives
+#-------------------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: validate repack archives"
 
@@ -833,11 +917,11 @@ if ($validateRepacksFailed) {
 
 # replace list of expected repack files with the list of found repack files
 $repackFiles = $foundRepackFiles
+#endregion
 
 
-# validate any existing patched archives
-# --------------------------------------
-
+#region validate any existing patched archives
+#---------------------------------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: validate any existing patched archives"
 
@@ -917,11 +1001,11 @@ if (-not $ba2Filenames.Count) {
     Write-CustomSuccess "", "Existing patched archives validated successfully; nothing to do!" -NoJustifyRight
     Exit-Script 0
 }
+#endregion
 
 
-# check free space
-# ----------------
-
+#region check free space
+#-----------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: check free space"
 
@@ -1057,8 +1141,8 @@ else {
 
         # collection of drives that don't have enough free space
         $driveSpaceNeeded = $driveSpaceNeeded.GetEnumerator() | ForEach-Object {
-            $drive = $_.Key
-            $drive = $driveInfo | Where-Object { $_.DriveLetter -eq $drive }
+            $driveLetter = $_.Key
+            $drive = $driveInfo | Where-Object { $_.DriveLetter -eq $driveLetter }
             if ($_.Value -gt $drive.SizeFree) {
                 [PSCustomObject]@{
                     DriveLetter  = $drive.DriveLetter
@@ -1091,7 +1175,7 @@ else {
                 "here is not enough free space available on your computer. Please check the following " +
                 "table to see how much additional space needs to be freed up on each drive."
                 ""
-                ($driveSpaceNeeded | Format-Table -Property $driveSpaceTableFormat | Out-String) -split "`r`n" | Where-Object { $_ }
+                ($driveSpaceNeeded | Format-Table -Property $driveSpaceTableFormat | Out-String) -Split "`r`n" | Where-Object { $_ }
             )
             throw "Insufficient free space"
         }
@@ -1112,11 +1196,11 @@ Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$(
 if ($checkFreeSpaceFailed) {
     Exit-Script 1
 }
+#endregion
 
 
-# extract repack archives
-# -----------------------
-
+#region extract repack archives
+#------------------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: extract repack archives"
 
@@ -1260,7 +1344,7 @@ else {
                         foreach ($line in $archiveTechnicalInformation |
                                 Select-Object -Skip 18 |
                                 Where-Object { $_ -match "^Path.*" -or $_ -match "^CRC.*" }) {
-                            $splitLine = $line -split " = "
+                            $splitLine = $line -Split " = "
                             switch ($splitLine | Select-Object -First 1) {
                                 "Path" {
                                     $currentRecord = @{}
@@ -1458,11 +1542,11 @@ if ($extractRepackFailed) {
     }
     Exit-Script 1
 }
+#endregion
 
 
-# remove known bad patched files
-# ------------------------------
-
+#region remove known bad patched files
+#-------------------------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: remove known bad patched files"
 
@@ -1495,11 +1579,11 @@ for ($index = 0; $index -lt $potentiallyBadPatchedFilenames.Count; $index++) {
 }
 
 Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+#endregion
 
 
-# process archives
-# ----------------
-
+#region process archives
+#-----------------------
 $sectionTimer.Restart()
 Write-CustomLog "Section: process archives"
 
@@ -1931,9 +2015,11 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
 }
 
 Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+#endregion
 
 
-# clean up
+#region clean up
+#---------------
 Write-Custom ""
 Write-Custom "Cleaning up..." -NoNewline
 if ($repackFlags.Custom) {
@@ -1959,7 +2045,11 @@ else {
     }
     Write-CustomSuccess "[DONE]"
 }
+#endregion
 
+
+#region show result
+#------------------
 Write-Custom ""
 if ($processingFailed) {
     Write-CustomError "Patched archive creation failed." -NoJustifyRight
@@ -1968,3 +2058,4 @@ if ($processingFailed) {
 
 Write-CustomSuccess "Patched archive creation succeeded." -NoJustifyRight
 Exit-Script 0
+#endregion

@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.8.1](#v181)
     - [v1.8.0](#v180)
     - [v1.7.0](#v170)
     - [v1.6.3](#v163)
@@ -29,6 +30,17 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.8.1
+------
+- [Installer] Made getting disk information more robust
+- [Installer] Added region/endregion tags to code
+- [Installer] Fixed logging of raw repack flags
+- [Installer] Version bumped to `1.24.1`
+- [Functions] Moved variable to functions because that's where it's used
+- [Functions] Version bumped to `1.28.2`
+
+([TOC](#table-of-contents))
 
 v1.8.0
 ------

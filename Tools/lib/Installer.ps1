@@ -65,13 +65,17 @@ param (
 )
 
 
-# constants and variables
-# -----------------------
+# start script timer
+# ------------------
 
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
+
+# constants and variables
+# -----------------------
+
 Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 8, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 5)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 23, 6)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -140,35 +144,116 @@ $optionalOriginalArchives = @(
     "DLCworkshop03 - Textures.ba2"
 )
 
+$sectionTimer = New-Object System.Diagnostics.Stopwatch
+$archiveTimer = New-Object System.Diagnostics.Stopwatch
+$toolTimer = New-Object System.Diagnostics.Stopwatch
+
+
+# change location
+# ---------------
+
+Set-Location -LiteralPath $dir.currentDirectory
+
+
+# imports
+# -------
+
+Write-Host "Loading functions..."
+. "$($dir.tools)\lib\Functions.ps1"
+. "$($dir.tools)\lib\Get-KnownFolderPath.ps1"
+Write-Host "Loading hashes..."
+. "$($dir.tools)\lib\Hashes.ps1"
+Write-Host "Loading WBI..."
+
+
+# get disk info
+# -------------
+
 # Get-Disk and Get-PhysicalDisk don't seem to work on the first try in Windows 11 in virtualbox (and maybe elsewhere)
 # but do seem to work after a second call. as a workaround, call Get-PhysicalDisk once before actually trying to get
-# the drive information
+# disk and volume information
 Get-PhysicalDisk -ErrorAction SilentlyContinue | Out-Null
 
-$driveInfo = Get-PhysicalDisk | Where-Object { $_.FriendlyName -ne "MSFT XVDD" } |
-    ForEach-Object {
-        $physicalDisk = $_
-        Get-Partition -DiskNumber $_.DeviceId |
-            Where-Object { $_.DriveLetter } |
-            Get-Volume |
-            ForEach-Object {
-                [PSCustomObject]@{
-                    DriveLetter     = $_.DriveLetter
-                    MediaType       = $physicalDisk.MediaType
-                    BusType         = $physicalDisk.BusType
-                    SizeFree        = $_.SizeRemaining
-                    SizeFreePercent = if ($_.Size) { $_.SizeRemaining / $_.Size * 100 } else { -1 }
-                    SizeUsed        = $_.Size - $_.SizeRemaining
-                    SizeUsedPercent = if ($_.Size) { ($_.Size - $_.SizeRemaining) / $_.Size * 100 } else { -1 }
-                    SizeTotal       = $_.Size
-                }
+# grab the volumes that have drive letters and create objects with that info, particularly size info, first try
+# Get-Volume, then try Get-PSDrive if that fails. if they both fail, abort, because something is seriously wrong
+try {
+    $driveInfo = Get-Volume -ErrorAction Stop | Where-Object { $_.DriveLetter } | ForEach-Object {
+        [PSCustomObject]@{
+            DriveLetter     = $_.DriveLetter
+            MediaType       = $null
+            BusType         = $null
+            SizeFree        = $_.SizeRemaining
+            SizeFreePercent = if ($_.Size) { $_.SizeRemaining / $_.Size * 100 } else { -1 }
+            SizeUsed        = $_.Size - $_.SizeRemaining
+            SizeUsedPercent = if ($_.Size) { ($_.Size - $_.SizeRemaining) / $_.Size * 100 } else { -1 }
+            SizeTotal       = $_.Size
+        }
+    } | Sort-Object -Property DriveLetter
+}
+catch {
+    Write-CustomLog "Get-Volume failed!" -Prefix "ERROR: "
+    Write-CustomLog $_ -Prefix "ERROR: "
+    Write-CustomLog $_.InvocationInfo.PositionMessage -Prefix "ERROR: "
+    Write-CustomLog ""
+}
+if ($null -eq $driveInfo) {
+    try {
+        $driveInfo = Get-PSDrive -PSProvider FileSystem -ErrorAction Stop | ForEach-Object {
+            [PSCustomObject]@{
+                DriveLetter     = $_.Name
+                MediaType       = $null
+                BusType         = $null
+                SizeFree        = $_.Free
+                SizeFreePercent = $_.Free / ($_.Free + $_.Used) * 100
+                SizeUsed        = $_.Used
+                SizeUsedPercent = $_.Used / ($_.Free + $_.Used) * 100
+                SizeTotal       = $_.Free + $_.Used
             }
-        } | Sort-Object -Property DriveLetter
+        }
+    }
+    catch {
+        Write-CustomLog "Get-PSDrive failed!" -Prefix "ERROR: "
+        Write-CustomLog $_ -Prefix "ERROR: "
+        Write-CustomLog $_.InvocationInfo.PositionMessage -Prefix "ERROR: "
+        Write-CustomLog ""
+
+        $extraErrorText = @(
+            "This script attempts to get disk information from your computer in order to do its job better, but both the primary and backup methods of doing so have failed."
+            ""
+            "Please seek help from the script author."
+        )
+        Write-CustomError "Getting drive information failed" -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+        Exit-Script 1
+    }
+}
+
+# populate the physical disk properties of the drive info array
+
+$diskFriendlyNameBlockList = @(
+    # Microsoft Game Pass virtual disk
+    "MSFT XVDD"
+)
+# get the physical disks in the system that don't have their friendly names on the block list
+Get-PhysicalDisk -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -notin $diskFriendlyNameBlockList } | ForEach-Object {
+    # save a reference to the current physical disk object in the pipeline
+    $physicalDisk = $_
+    # get the partitions associated with the physical disk that have a drive letter
+    Get-Partition -DiskNumber $_.DeviceId -ErrorAction SilentlyContinue | Where-Object { $_.DriveLetter } | ForEach-Object {
+        # save a reference to the current partition object in the pipeline
+        $partition = $_
+        # get the drive info object whose drive letter matches the current partition object
+        $driveInfo | Where-Object { $_.DriveLetter -eq $partition.DriveLetter } | ForEach-Object {
+            # update the disk info
+            $_.MediaType = $physicalDisk.MediaType
+            $_.BusType = $physicalDisk.BusType
+        }
+    }
+}
 
 $driveInfoTableFormat = [object]@(
     @{ Name = "Drive"; Expression = { $_.DriveLetter }; Width = 6; Alignment = "left" },
-    @{ Name = "Type"; Expression = { $_.MediaType }; Width = 12; Alignment = "left" },
-    @{ Name = "Bus"; Expression = { $_.BusType }; Width = 5; Alignment = "left" },
+    @{ Name = "Type"; Expression = { if (-not $_.MediaType) { "Unknown" } else { $_.MediaType } }; Width = 12; Alignment = "left" },
+    @{ Name = "Bus"; Expression = { if (-not $_.BusType) { "Unknown" } else { $_.BusType } }; Width = 8; Alignment = "left" },
     @{ Name = "Free"; Expression = { Write-PrettySize $_.SizeFree }; Width = 9; Alignment = "right" },
     @{ Name = "% Free"; Expression = { if ($_.SizeFreePercent -eq -1) { "Unknown" } else { "$(($_.SizeFreePercent).ToString("f1"))%" } }; Width = 8; Alignment = "right" },
     @{ Name = "Used"; Expression = { Write-PrettySize $_.SizeUsed }; Width = 10; Alignment = "right" },
@@ -176,17 +261,9 @@ $driveInfoTableFormat = [object]@(
     @{ Name = "Total"; Expression = { Write-PrettySize $_.SizeTotal }; Width = 10; Alignment = "right" }
 )
 
-Set-Location -LiteralPath $dir.currentDirectory
-$sectionTimer = New-Object System.Diagnostics.Stopwatch
-$archiveTimer = New-Object System.Diagnostics.Stopwatch
-$toolTimer = New-Object System.Diagnostics.Stopwatch
-
 
 # add tools to PATH
 # -----------------
-
-# save the original PATH variable
-$originalPath = $env:PATH
 
 # 7-Zip 64-bit v22.01 (2022-07-15) by Igor Pavlov
 # https://www.7-zip.org/
@@ -206,16 +283,6 @@ $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\BSA Browser").Path + ";" +
 $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\xxHash").Path + ";" + $env:PATH
 
 
-# imports
-# -------
-
-Write-Host "Loading functions..."
-. "$($dir.tools)\lib\Functions.ps1"
-. "$($dir.tools)\lib\Get-KnownFolderPath.ps1"
-Write-Host "Loading hashes..."
-. "$($dir.tools)\lib\Hashes.ps1"
-
-
 # check pwd
 # ---------
 
@@ -233,14 +300,17 @@ if ($dir.currentDirectory.Contains("[") -or $dir.currentDirectory.Contains("]"))
 
 # adjust workingFile path
 # -----------------------
+
+$busTypeWBIDrive = ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType
 # if the working files folder is specified, it takes precedence over USB detection or forcing it to TEMP
 if ($WorkingFilesFolder) {
     $dir.workingFiles = $WorkingFilesFolder
 }
 # archive2 becomes non-deterministic if the data it is putting into an archive comes from a USB drive, so if WBI is being ran
-# from a USB drive, switch $dir.workingFiles to reside in the user's temp directory instead
+# from a drive with an unknown bus type or a USB drive, switch $dir.workingFiles to reside in the user's temp directory instead
 elseif (
-    ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType -eq "USB" -or
+    $null -eq $busTypeWBIDrive -or
+    $busTypeWBIDrive -eq "USB" -or
     $ForceTempWorkingFiles
 ) {
     $dir.workingFiles = Resolve-PathAnyway ([System.IO.Path]::GetTempPath() + "\" + $dir.workingFiles)
@@ -249,15 +319,18 @@ elseif (
 
 # determine max threading for drives
 # ----------------------------------
+
 # figure out the max number of threads to use in multi-threading operations involving the respective drives
-# 2 threads for HDDs, 16 threads otherwise
-$maxWBIDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).MediaType -eq "HDD") {
+# 2 threads for HDDs, 16 threads otherwise; if the media type is unknown, go with 2 threads for safety
+$mediaTypeWBIDrive = ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).MediaType
+$maxWBIDriveThreads = if (-not $mediaTypeWBIDrive -or $mediaTypeWBIDrive -eq "HDD") {
     2
 }
 else {
     16
 }
-$maxWorkingFilesDriveThreads = if (($driveInfo | Where-Object { $_.DriveLetter -eq (Resolve-PathAnyway $dir.workingFiles).Substring(0, 1) }).MediaType -eq "HDD") {
+$mediaTypeWorkingFilesDrive = ($driveInfo | Where-Object { $_.DriveLetter -eq (Resolve-PathAnyway $dir.workingFiles).Substring(0, 1) }).MediaType
+$maxWorkingFilesDriveThreads = if (-not $mediaTypeWorkingFilesDrive -or $mediaTypeWorkingFilesDrive -eq "HDD") {
     2
 }
 else {
@@ -1057,8 +1130,8 @@ else {
 
         # collection of drives that don't have enough free space
         $driveSpaceNeeded = $driveSpaceNeeded.GetEnumerator() | ForEach-Object {
-            $drive = $_.Key
-            $drive = $driveInfo | Where-Object { $_.DriveLetter -eq $drive }
+            $driveLetter = $_.Key
+            $drive = $driveInfo | Where-Object { $_.DriveLetter -eq $driveLetter }
             if ($_.Value -gt $drive.SizeFree) {
                 [PSCustomObject]@{
                     DriveLetter  = $drive.DriveLetter

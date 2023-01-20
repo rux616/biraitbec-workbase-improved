@@ -23,7 +23,7 @@ by rux616
     - Logs
 - Copyright and Licenses
 - Credits and Thanks
-- Contact
+- Contact/Support
 
 
 [size=5][b]Overview[/b][/size]
@@ -139,8 +139,22 @@ Currently, the following original BA2 archives are supported:
     - [font=Courier New][color=#b2b2b2]Fallout4 - Textures7.ba2[/color][/font] (file version 1.2.2)
     - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font] (file version 1.2.2)
     - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font] (file version 1.2.2)
-- Luxor's Fallout 4 HD Overhaul 2k (mod version 1.0)
-    - (All archives)
+- Luxor's Fallout 4 HD Overhaul 2k (mod version 1.01)
+    - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]DLCworkshop01 - Textures.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]DLCworkshop02 - Textures.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]DLCworkshop03 - Textures.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures1.ba2[/color][/font] (file version 1.01)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures2.ba2[/color][/font] (file version 1.01)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures3.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures4.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures5.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures6.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures7.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font] (file version 1.0)
+    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font] (file version 1.0)
 - PhyOp's Overhauled Optimized Textures (v1.2a)
     - Custom
         - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font]
@@ -420,10 +434,12 @@ This tool also uses the following source code; each has their own copyrights and
 - Kaethela: For being an excellent guinea pig and helping me track down the issue with USB drives
 
 
-[size=5][b]Contact[/b][/size]
+[size=5][b]Contact/Support[/b][/size]
 If you find a bug or have a question about the mod, please post it on the [url=https://www.nexusmods.com/fallout4/mods/57782]mod page at Nexus Mods[/url], or in the [url=https://github.com/rux616/biraitbec-workbase-improved]GitHub project[/url].
+
+Another method for support is to come to my channel on the [url=https://discord.gg/pF9U5FmD6w]Collective Modding Discord server[/url]. Once you have joined, go to the welcome channel to familiarize yourself with the rules of the server, and once you're finished, come to the "chaotic-cognitions" channel.
 
 If you need to contact me personally, I can be reached through one of the following means:
 - [b]Nexus Mods[/b]: [url=https://www.nexusmods.com/users/124191]rux616[/url] (Send a message via the "CONTACT" button)
 - [b]Email[/b]: rux616-at-pm-dot-me (replace [font=Courier New][color=#b2b2b2]-at-[/color][/font] with [font=Courier New][color=#b2b2b2]@[/color][/font] and [font=Courier New][color=#b2b2b2]-dot-[/color][/font] with [font=Courier New][color=#b2b2b2].[/color][/font])
-- [b]Discord[/b]: rux616#0950 (I tend to hang out on the [url=https://discord.gg/nexusmods]Nexus Mods[/url] and [url=https://discord.gg/wabbajack]Wabbajack[/url] servers, amongst others)
+- [b]Discord[/b]: rux616#0950 (I tend to hang out on the [url=https://discord.gg/nexusmods]Nexus Mods[/url] and [url=https://discord.gg/wabbajack]Wabbajack[/url] servers, and of course the [url=https://discord.gg/pF9U5FmD6w]Collective Modding Discord server[/url] server where I have my support channel as mentioned above.)

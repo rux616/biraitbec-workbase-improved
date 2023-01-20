@@ -25,7 +25,7 @@ Table Of Contents
     - [Logs](#logs)
 - [Copyright and Licenses](#copyright-and-licenses)
 - [Credits and Thanks](#credits-and-thanks)
-- [Contact](#contact)
+- [Contact/Support](#contactsupport)
 
 
 Overview
@@ -158,8 +158,22 @@ Currently, the following original BA2 archives are supported:
     - `Fallout4 - Textures7.ba2` (file version 1.2.2)
     - `Fallout4 - Textures8.ba2` (file version 1.2.2)
     - `Fallout4 - Textures9.ba2` (file version 1.2.2)
-- Luxor's Fallout 4 HD Overhaul 2k (mod version 1.0)
-    - (All archives)
+- Luxor's Fallout 4 HD Overhaul 2k (mod version 1.01)
+    - `DLCCoast - Textures.ba2` (file version 1.0)
+    - `DLCNukaWorld - Textures.ba2` (file version 1.0)
+    - `DLCRobot - Textures.ba2` (file version 1.0)
+    - `DLCworkshop01 - Textures.ba2` (file version 1.0)
+    - `DLCworkshop02 - Textures.ba2` (file version 1.0)
+    - `DLCworkshop03 - Textures.ba2` (file version 1.0)
+    - `Fallout4 - Textures1.ba2` (file version 1.01)
+    - `Fallout4 - Textures2.ba2` (file version 1.01)
+    - `Fallout4 - Textures3.ba2` (file version 1.0)
+    - `Fallout4 - Textures4.ba2` (file version 1.0)
+    - `Fallout4 - Textures5.ba2` (file version 1.0)
+    - `Fallout4 - Textures6.ba2` (file version 1.0)
+    - `Fallout4 - Textures7.ba2` (file version 1.0)
+    - `Fallout4 - Textures8.ba2` (file version 1.0)
+    - `Fallout4 - Textures9.ba2` (file version 1.0)
 - PhyOp's Overhauled Optimized Textures (v1.2a)
     - Custom
         - `DLCCoast - Textures.ba2`
@@ -475,13 +489,15 @@ Credits and Thanks
 ([TOC](#table-of-contents))
 
 
-Contact
-=======
+Contact/Support
+===============
 If you find a bug or have a question about the mod, please post it on the [mod page at Nexus Mods](https://www.nexusmods.com/fallout4/mods/57782), or in the [GitHub project](https://github.com/rux616/biraitbec-workbase-improved).
+
+Another method for support is to come to my channel on the [Collective Modding Discord server](https://discord.gg/pF9U5FmD6w). Once you have joined, go to the welcome channel to familiarize yourself with the rules of the server, and once you're finished, come to the "chaotic-cognitions" channel.
 
 If you need to contact me personally, I can be reached through one of the following means:
 - **Nexus Mods**: [rux616](https://www.nexusmods.com/users/124191) (Send a message via the "CONTACT" button)
 - **Email**: rux616-at-pm-dot-me (replace `-at-` with `@` and `-dot-` with `.`)
-- **Discord**: rux616#0950 (I tend to hang out on the [Nexus Mods](https://discord.gg/nexusmods) and [Wabbajack](https://discord.gg/wabbajack) servers, amongst others)
+- **Discord**: rux616#0950 (I tend to hang out on the [Nexus Mods](https://discord.gg/nexusmods) and [Wabbajack](https://discord.gg/wabbajack) servers, and of course the [Collective Modding Discord server](https://discord.gg/pF9U5FmD6w) server where I have my support channel as mentioned above.)
 
 ([TOC](#table-of-contents))

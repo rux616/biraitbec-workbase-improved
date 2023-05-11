@@ -36,6 +36,7 @@ Changelogs
 v1.9.1
 ------
 - [Hashes] Fixed sizes for Luxor HD v1.3 files
+- [Hashes] Version bumped to `1.15.1`
 
 ([TOC](#table-of-contents))
 

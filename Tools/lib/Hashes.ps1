@@ -23,7 +23,7 @@
 # power set maker: https://www.mathsisfun.com/sets/power-set-maker.html
 # all hashes are created using the XXH128 hashing algorithm: https://github.com/Cyan4973/xxHash
 
-Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 15, 0)) -Option Constant
+Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 15, 1)) -Option Constant
 
 
 # repack hashes

@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.10.0](#v1100)
     - [v1.9.1](#v191)
     - [v1.9.0](#v190)
     - [v1.8.1](#v181)
@@ -33,13 +34,31 @@ Table Of Contents
 Changelogs
 ==========
 
+v1.10.0
+-------
+- [Hashes] Added hashes for The Midnight Performance AIO Full v1.0.1 files
+- [Hashes] Added hashes for The Midnight Performance AIO Lite v1.0.1 files
+- [Hashes] Added hashes for The Ultimate Texture Performance Mod v1.0
+- [Hashes] Added hashes for The Ultimate Texture Performance Mod - Nuka DLC v1.0
+- [Hashes] Added hashes for The Ultimate Texture Performance Mod - FarHarbor DLC v1.0
+- [Hashes] Added hashes for The Ultimate Texture Performance Mod - Automatron DLC v1.0
+- [Hashes] Added hashes for The Ultimate Texture Performance Mod - Contraptions Workshop DLC v1.0
+- [Hashes] Added hashes for The Ultimate Texture Performance Mod - Vault-Tec Workshop DLC v1.0
+- [Hashes] Added hashes for The Ultimate Texture Performance Mod - Wasteland Workshop DLC v1.0
+- [Hashes] Version bumped to `1.16.0`
+- [Installer] Moved code to detect running Powershell version earlier
+- [Installer] Version bumped to `1.25.0`
+- [Readme] Added some verbiage explaining that RX9000 Midnight and Ultimate Texture mods are now supported
+- [CI] Removed code signing portion of CI pipeline
+
+([TOC](#table-of-contents))
+
 v1.9.1
 ------
 - [Hashes] Fixed sizes for Luxor HD v1.3 files
 - [Hashes] Version bumped to `1.15.1`
 
 ([TOC](#table-of-contents))
-
 
 v1.9.0
 ------
@@ -50,7 +69,6 @@ v1.9.0
 - [Readme] Updated text around where to go to get support
 
 ([TOC](#table-of-contents))
-
 
 v1.8.1
 ------
@@ -190,14 +208,12 @@ v1.3.4
 
 ([TOC](#table-of-contents))
 
-
 v1.3.3
 ------
 **Summary:**
 - Fixed a build issue
 
 ([TOC](#table-of-contents))
-
 
 v1.3.2
 ------
@@ -210,7 +226,6 @@ v1.3.2
 
 ([TOC](#table-of-contents))
 
-
 v1.3.1
 ------
 **Summary:**
@@ -221,7 +236,6 @@ v1.3.1
 - Fixed "[CUSTOM - SKIPPED]" being shown even if there were no repack archives to validate
 
 ([TOC](#table-of-contents))
-
 
 v1.3.0
 ------
@@ -234,7 +248,6 @@ v1.3.0
 
 ([TOC](#table-of-contents))
 
-
 v1.2.1
 ------
 **Summary:**
@@ -244,7 +257,6 @@ v1.2.1
 - Loosened the naming requirements for the repack archives - file extension is no longer required
 
 ([TOC](#table-of-contents))
-
 
 v1.2.0
 ------
@@ -291,7 +303,6 @@ v1.2.0
 
 ([TOC](#table-of-contents))
 
-
 v1.1.0
 ------
 **General:**
@@ -337,7 +348,6 @@ v1.1.0
 - Updated 'vanilla' tag for original BA2s
 
 ([TOC](#table-of-contents))
-
 
 v1.0.0
 ------

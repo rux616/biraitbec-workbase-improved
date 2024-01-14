@@ -23,7 +23,7 @@
 # power set maker: https://www.mathsisfun.com/sets/power-set-maker.html
 # all hashes are created using the XXH128 hashing algorithm: https://github.com/Cyan4973/xxHash
 
-Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 15, 1)) -Option Constant
+Set-Variable "HashesVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 16, 0)) -Option Constant
 
 
 # repack hashes
@@ -290,6 +290,60 @@ Add-Hash -VariableName $var -Hash "18291F1AF4C3081A77E21F915E99E798" -Tag $tag -
 Add-Hash -VariableName $var -Hash "6B5D794BAECA388E5B1C73D6A69E25D1" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 7963288
 Add-Hash -VariableName $var -Hash "61B179F02B4A02F9F393D78FBEAA2BD0" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 29133243
 Add-Hash -VariableName $var -Hash "E3D90E87EA280BAB77807D7D50BA40FF" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 101635728
+
+# the midnight performance aio full - https://www.nexusmods.com/fallout4/mods/75268
+$tag = "The Midnight Performance AIO Full v1.0.1"
+Add-Hash -VariableName $var -Hash "7BC611D65CC7924B5E613E6A81BAFF31" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 4633215610
+Add-Hash -VariableName $var -Hash "F1F4E582D81942D2943AF467DF91ECD4" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 3667623991
+Add-Hash -VariableName $var -Hash "A54A467DA9BF6A859E340F00CBFA2A2F" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 2662833779
+Add-Hash -VariableName $var -Hash "CD95ED7F1D79970180001E0C674FD7B5" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 2554868699
+Add-Hash -VariableName $var -Hash "D1B45383E4D5B927686EC880795363B7" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 1915663972
+Add-Hash -VariableName $var -Hash "DB662A5C67FA0FB08E2E4EDC012AE6FA" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1207197324
+Add-Hash -VariableName $var -Hash "4BC93E1C645C7AB88F47F80C86C662D4" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 28798155
+Add-Hash -VariableName $var -Hash "604278649BA05BFE66FCB0635E59EB25" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 33829440
+Add-Hash -VariableName $var -Hash "1E6E02985B6B071DCF6D0454D69A2C82" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 477877745
+
+# the midnight performance aio lite
+$tag = "The Midnight Performance AIO Lite v1.0.1"
+Add-Hash -VariableName $var -Hash "3423AD9E0440E937FAB4F9D8C9331670" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 2981831587
+Add-Hash -VariableName $var -Hash "9C816DCDCC4CC8CB286E1FDD6374F308" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 2862625625
+Add-Hash -VariableName $var -Hash "8F1F7BE9A170D2C7597AD8E61B67F7E5" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 2237825267
+Add-Hash -VariableName $var -Hash "9D0BF981F6E950CCD2538C787D5C5249" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 2031118474
+Add-Hash -VariableName $var -Hash "CE76D2BB4F560F25A1EC9DBD05339AA4" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 1798897291
+Add-Hash -VariableName $var -Hash "0264FDD03963807BF365D71AB37886B5" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 1040678213
+Add-Hash -VariableName $var -Hash "43A6A513B1DD904B91277E9864CB26F0" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 29585035
+Add-Hash -VariableName $var -Hash "FB4AC46AC2FCD8D09AD2BB05CF9EE1D8" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 34558463
+Add-Hash -VariableName $var -Hash "E7E0C92B938FABBFB0FCA33D31C55E06" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 416681173
+
+# the ultimate texture performance mod - https://www.nexusmods.com/fallout4/mods/76132
+$tag = "UTP Base v1.0"
+Add-Hash -VariableName $var -Hash "8C8621B1C6F4CE0DB5795905BB8EF4E2" -Tag $tag -FileName $ba2Files.fallout4Textures1 -FileSize 575518099
+Add-Hash -VariableName $var -Hash "61F598BC9EF207A0F71522AA8160A1E0" -Tag $tag -FileName $ba2Files.fallout4Textures2 -FileSize 654033071
+Add-Hash -VariableName $var -Hash "B450E8BB4E87C3D6654CD37DCB785F92" -Tag $tag -FileName $ba2Files.fallout4Textures3 -FileSize 653106770
+Add-Hash -VariableName $var -Hash "A4E23F8F0F16F9A5C0F785D3F16D28C1" -Tag $tag -FileName $ba2Files.fallout4Textures4 -FileSize 710106407
+Add-Hash -VariableName $var -Hash "C7C9E343A671F0695355BA1520EA9886" -Tag $tag -FileName $ba2Files.fallout4Textures5 -FileSize 913115703
+Add-Hash -VariableName $var -Hash "0912B9CA09D94567FA1E9A065FEF1CEA" -Tag $tag -FileName $ba2Files.fallout4Textures6 -FileSize 348403153
+Add-Hash -VariableName $var -Hash "471C2BD13F029B20B09D460ADCA75A5D" -Tag $tag -FileName $ba2Files.fallout4Textures7 -FileSize 7596936
+Add-Hash -VariableName $var -Hash "6F85BCF548852781D512279B238E0D20" -Tag $tag -FileName $ba2Files.fallout4Textures8 -FileSize 8722969
+Add-Hash -VariableName $var -Hash "38576DAB50F77991159E9252BB7D83AB" -Tag $tag -FileName $ba2Files.fallout4Textures9 -FileSize 57623499
+# the ultimate texture performance mod - wasteland workshop dlc - https://www.nexusmods.com/fallout4/mods/76173
+$tag = "UTP Wasteland Workshop v1.0"
+Add-Hash -VariableName $var -Hash "FC207CB6B522ED7E8C6CD6C65335FAD8" -Tag $tag -FileName $ba2Files.dlcWorkshop1Textures -FileSize 4197317
+# the ultimate texture performance mod - vault-tec workshop dlc - https://www.nexusmods.com/fallout4/mods/76174
+$tag = "UTP Vault-Tec Workshop v1.0"
+Add-Hash -VariableName $var -Hash "7454D60783AA514EA83D788489711497" -Tag $tag -FileName $ba2Files.dlcWorkshop2Textures -FileSize 19796973
+# the ultimate texture performance mod - contraptions workshop dlc - https://www.nexusmods.com/fallout4/mods/76175
+$tag = "UTP Contraptions Workshop v1.0"
+Add-Hash -VariableName $var -Hash "9AECA043CDF91800AB054588E4F22D23" -Tag $tag -FileName $ba2Files.dlcWorkshop3Textures -FileSize 28726296
+# the ultimate texture performance mod - automatron dlc - https://www.nexusmods.com/fallout4/mods/76172
+$tag = "UTP Automatron v1.0"
+Add-Hash -VariableName $var -Hash "1B15002820E37ADC6AD04109ABF04A74" -Tag $tag -FileName $ba2Files.dlcRobotTextures -FileSize 54583877
+# the ultimate texture performance mod - farharbor dlc - https://www.nexusmods.com/fallout4/mods/76171
+$tag = "UTP Far Harbor v1.0"
+Add-Hash -VariableName $var -Hash "3F55725FE19E03F1FE1B276D8978AE5F" -Tag $tag -FileName $ba2Files.dlcCoastTextures -FileSize 362515515
+# the ultimate texture performance mod - nuka dlc - https://www.nexusmods.com/fallout4/mods/76170
+$tag = "UTP Nuka World v1.0"
+Add-Hash -VariableName $var -Hash "B764BC41BC69812A6CE384DE0CB413BC" -Tag $tag -FileName $ba2Files.dlcNukaWorldTextures -FileSize 505060095
 
 
 # old alternate original ba2 hashes

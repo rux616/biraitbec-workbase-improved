@@ -73,8 +73,8 @@ $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 #region constants and variables
 #------------------------------
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 9, 1)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 24, 1)) -Option Constant
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 10, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 25, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -163,6 +163,21 @@ Write-Host "Loading functions..."
 Write-Host "Loading hashes..."
 . "$($dir.tools)\lib\Hashes.ps1"
 Write-Host "Loading WBI..."
+#endregion
+
+
+#region check to make sure that this is being run with PowerShell 5.1.x
+#----------------------------------------------------------------------
+if (-not $SkipPowerShellVersionCheck) {
+    if ($PSVersionTable.PSVersion.Major -ne 5 -and $PSVersionTable.PSVersion.Minor -ne 1) {
+        Write-Custom ""
+        $extraErrorText = @(
+            "This script will not function properly if it is not run with PowerShell version 5.1.x."
+        )
+        Write-CustomError "Invalid PowerShell version." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
+        Exit-Script 1
+    }
+}
 #endregion
 
 
@@ -489,21 +504,6 @@ Write-Custom @(
     "|___| |_| |_| |_| | .__/  |_|     \___/    \_/    \___|  \__,_|"
     "                  |_|                                          "
 ) -JustifyCenter -BypassLog
-#endregion
-
-
-#region check to make sure that this is being run with PowerShell 5.1.x
-#----------------------------------------------------------------------
-if (-not $SkipPowerShellVersionCheck) {
-    if ($PSVersionTable.PSVersion.Major -ne 5 -and $PSVersionTable.PSVersion.Minor -ne 1) {
-        Write-Custom ""
-        $extraErrorText = @(
-            "This script will not function properly if it is not run with PowerShell version 5.1.x."
-        )
-        Write-CustomError "Invalid PowerShell version." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
-        Exit-Script 1
-    }
-}
 #endregion
 
 

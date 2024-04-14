@@ -126,11 +126,11 @@ There are three modes of operation for BiRaitBec WorkBase Improved:
     - Automatic extraction of repack archives: Yes
     - Use vanilla original BA2 archives in conjunction with the repack archives.
 - Hybrid
-    - Original BA2 archives: At least one alternate (Luxor/Luxor 2k/PhyOp/Performout)
+    - Original BA2 archives: At least one alternate (Luxor/Luxor 2k/PhyOp)
     - Automatic extraction of repack archives: Yes
     - Use alternate original BA2 archives in conjunction with the repack archives.
 - Custom
-    - Original BA2 archives: Vanilla or at least one alternate (Luxor/Luxor 2k/PhyOp/Performout)
+    - Original BA2 archives: Vanilla or at least one alternate (Luxor/Luxor 2k/PhyOp)
     - Automatic extraction of repack archives: No
     - Use custom assets
 
@@ -311,66 +311,6 @@ Currently, the following original BA2 archives are supported:
         - `Fallout4 - Textures9.ba2`
     - Light Potato Face Sculpting Fix
         - `Fallout4 - Textures4.ba2`
-- Rikintosh's Performout (v2.0)
-    - `DLCCoast - Textures.ba2` (file version 1.0)
-    - `DLCNukaWorld - Textures.ba2` (file version 1.0)
-    - `DLCRobot - Textures.ba2` (file version 1.0)
-    - `DLCworkshop01 - Textures.ba2` (file version 1.0)
-    - `DLCworkshop02 - Textures.ba2` (file version 1.0)
-    - `DLCworkshop03 - Textures.ba2` (file version 1.0)
-    - `Fallout4 - Textures1.ba2` (file version 2.0)
-    - `Fallout4 - Textures2.ba2` (file version 2.0)
-    - `Fallout4 - Textures3.ba2` (file version 2.0)
-    - `Fallout4 - Textures4.ba2` (file version 2.0)
-    - `Fallout4 - Textures5.ba2` (file version 2.0)
-    - `Fallout4 - Textures6.ba2` (file version 2.0)
-    - `Fallout4 - Textures7.ba2` (file version 2.0)
-    - `Fallout4 - Textures8.ba2` (file version 2.0)
-    - `Fallout4 - Textures9.ba2` (file version 2.0)
-- The Midnight Performance AIO
-    - Full v1.0.1
-        - `Fallout4 - Textures1.ba2`
-        - `Fallout4 - Textures2.ba2`
-        - `Fallout4 - Textures3.ba2`
-        - `Fallout4 - Textures4.ba2`
-        - `Fallout4 - Textures5.ba2`
-        - `Fallout4 - Textures6.ba2`
-        - `Fallout4 - Textures7.ba2`
-        - `Fallout4 - Textures8.ba2`
-        - `Fallout4 - Textures9.ba2`
-    - Lite v1.0.1
-        - `Fallout4 - Textures1.ba2`
-        - `Fallout4 - Textures2.ba2`
-        - `Fallout4 - Textures3.ba2`
-        - `Fallout4 - Textures4.ba2`
-        - `Fallout4 - Textures5.ba2`
-        - `Fallout4 - Textures6.ba2`
-        - `Fallout4 - Textures7.ba2`
-        - `Fallout4 - Textures8.ba2`
-        - `Fallout4 - Textures9.ba2`
-- The Ultimate Texture Performance Mod
-    - Base v1.0
-        - `Fallout4 - Textures1.ba2`
-        - `Fallout4 - Textures2.ba2`
-        - `Fallout4 - Textures3.ba2`
-        - `Fallout4 - Textures4.ba2`
-        - `Fallout4 - Textures5.ba2`
-        - `Fallout4 - Textures6.ba2`
-        - `Fallout4 - Textures7.ba2`
-        - `Fallout4 - Textures8.ba2`
-        - `Fallout4 - Textures9.ba2`
-    - Nuka DLC v1.0
-        - `DLCNukaWorld - Textures.ba2`
-    - FarHarbor DLC v1.0
-        - `DLCCoast - Textures.ba2`
-    - Automatron DLC v1.0
-        - `DLCRobot - Textures.ba2`
-    - Contraptions Workshop DLC v1.0
-        - `DLCworkshop03 - Textures.ba2`
-    - Vault-Tec Workshop DLC v1.0
-        - `DLCworkshop02 - Textures.ba2`
-    - Wasteland Workshop DLC v1.0
-        - `DLCworkshop01 - Textures.ba2`
 
 ([TOC](#table-of-contents))
 
@@ -378,7 +318,7 @@ Common
 ------
 NOTE: The script will automatically attempt to locate and use original BA2 archives from the Fallout 4 Data folder if it doesn't find them in the `OriginalBa2` folder.
 
-Currently supports the BA2s from vanilla, [Luxor's Fallout 4 HD Overhaul](https://www.nexusmods.com/fallout4/mods/52423), [Luxor's Fallout 4 HD Overhaul 2k](https://www.nexusmods.com/fallout4/mods/65720), [PhyOp's Overhauled Optimized Textures](https://www.nexusmods.com/fallout4/mods/27038), [Rickintosh's Performout](https://www.nexusmods.com/fallout4/mods/61750), [RX9000's The Midnight Performance AIO](https://www.nexusmods.com/fallout4/mods/75268), and [RX9000's The Ultimate Texture Performance](https://www.nexusmods.com/fallout4/mods/76132).
+Currently supports the BA2s from vanilla, [Luxor's Fallout 4 HD Overhaul](https://www.nexusmods.com/fallout4/mods/52423), [Luxor's Fallout 4 HD Overhaul 2k](https://www.nexusmods.com/fallout4/mods/65720), and [PhyOp's Overhauled Optimized Textures](https://www.nexusmods.com/fallout4/mods/27038).
 
 - [Optional] Copy the original BA2 archives from the Fallout 4 Data folder to the `OriginalBa2` folder.
 
@@ -402,10 +342,10 @@ Notes:
 
 Hybrid
 ------
-This mode is similar to "Standard" mode in that it's a mostly automatic process, but it allows alternate original BA2 archives (Luxor/Luxor 2k/PhyOp/Performout/Midnight Performance/Ultimate Texture Performance) to be used instead, sacrificing patched BA2 archive validation to do so.
+This mode is similar to "Standard" mode in that it's a mostly automatic process, but it allows alternate original BA2 archives (Luxor/Luxor 2k/PhyOp) to be used instead, sacrificing patched BA2 archive validation to do so.
 
 - Put the repack files you have downloaded into the `Repack7z` folder.
-- Put the alternate original BA2 files (Luxor/Luxor 2k/PhyOp/Performout/Midnight Performance/Ultimate Texture Performance) into the `OriginalBa2` folder.
+- Put the alternate original BA2 files (Luxor/Luxor 2k/PhyOp) into the `OriginalBa2` folder.
 - Double click on "Installer.cmd". (If it just opens up in Notepad or something, right click it and choose "Open" instead.)
 - A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the `PatchedBa2` folder, but you can choose a different folder. **Do not choose the Fallout 4 Data folder.**
 - The script will then proceed to validate and extract the the repack archives, then create (but **NOT** validate) the patched BA2 archives.
@@ -484,8 +424,27 @@ Known Issues
     - Type the command `Installer.cmd` and hit "Enter".
 - The script appears stuck at "Patched BA2 archive folder:".
     - The script has opened up a window to enable you to choose the folder where the patched BA2 archives will go. Sometimes this window gets hidden behind others, so hit the Windows+Tab key combination, look for a window titled "Browse For Folder", then click on it.
+- The script appears to be stuck at some part of the process.
+    - Try scrolling down. Sometimes if you scroll up, the window won't continue to follow the script output.
 - In some cases, there is something called Group Policy that may be applied to a computer. If Group Policy disables PowerShell scripts, this script simply will not work. The Group Policy disabling PowerShell must itself be disabled before this script will work.
-- Don't rename the repack files. This script has some limited flexibility for recognizing file names appended with things like "(1)" or " - Copy" and such, but not much more than that.
+- In rare cases the script might fail with an error about it not being able to get information about your drives.
+    - Open an elevated command prompt.
+        - Open the Windows menu.
+        - Type "command prompt".
+        - Choose "Run as administrator".
+    - Once the elevated command prompt has been opened, type the following commands, hitting the `<enter>` key after each one.
+        - `sc config vss start= demand`
+        - `sc config smphost start= demand`
+        - `sc stop SMPHost`
+        - `sc stop vss`
+        - `sc config winmgmt start= disabled`
+        - `net stop winmgmt`
+        - `Winmgmt /salvagerepository %windir%\System32\wbem`
+        - `Winmgmt /resetrepository %windir%\`
+        - `sc config winmgmt start= auto`
+    - Reboot your computer.
+    - Try the script again.
+- **Don't rename the repack files.** This script has some limited flexibility for recognizing file names appended with things like "(1)" or " - Copy" and such, but not much more than that.
 
 ([TOC](#table-of-contents))
 
@@ -525,8 +484,6 @@ Credits and Thanks
 - ScreamingLake and CyberDanz: For administering the [Community Modding discord server and the updated BRB guide](https://discord.gg/DfFYJtt8p4)
 - luxor8071: For the [Fallout 4 HD Overhaul](https://www.nexusmods.com/fallout4/mods/52423) and [Fallout 4 HD Overhaul 2k](https://www.nexusmods.com/fallout4/mods/65720) mods
 - Phylith: For the [PhyOp - Overhauled Optimized Textures](https://www.nexusmods.com/fallout4/mods/27038) mod
-- Rikintosh: For the [Rickintosh's Performout](https://www.nexusmods.com/fallout4/mods/61750) mod
-- RX9000: For the [Midnight Performance AIO](https://www.nexusmods.com/fallout4/mods/75268), and [Ultimate Texture Performance](https://www.nexusmods.com/fallout4/mods/76132) mods.
 - Lively: For helping me make the error messaging easier to understand
 - Aegis27: For helping me make the error messaging easier to understand
 - Kaethela: For being an excellent guinea pig and helping me track down the issue with USB drives

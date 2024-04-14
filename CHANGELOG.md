@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.11.0](#v1110)
     - [v1.10.0](#v1100)
     - [v1.9.1](#v191)
     - [v1.9.0](#v190)
@@ -33,6 +34,19 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.11.0
+-------
+- [Hashes] Remove hashes for "The Midnight Performance AIO" mod (deleted)
+- [Hashes] Remove hashes for "The Ultimate Texture Performance" mod (deleted)
+- [Hashes] Remove hashes for "Performout" mod (deleted)
+- [Hashes] Version bumped to `1.17.0`
+- [Installer] Adjusted "disk information" error message to refer to the readme
+- [Installer] Version bumped to `1.26.0`
+- [Readme] Added a couple additional "known issues" in the Troubleshooting section
+- [Readme] Purged all mention of Performout, The Midnight Performance, and The Ultimate Texture Performance mods
+
+([TOC](#table-of-contents))
 
 v1.10.0
 -------

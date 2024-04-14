@@ -107,11 +107,11 @@ There are three modes of operation for BiRaitBec WorkBase Improved:
     - Automatic extraction of repack archives: Yes
     - Use vanilla original BA2 archives in conjunction with the repack archives.
 - Hybrid
-    - Original BA2 archives: At least one alternate (Luxor/Luxor 2k/PhyOp/Performout)
+    - Original BA2 archives: At least one alternate (Luxor/Luxor 2k/PhyOp)
     - Automatic extraction of repack archives: Yes
     - Use alternate original BA2 archives in conjunction with the repack archives.
 - Custom
-    - Original BA2 archives: Vanilla or at least one alternate (Luxor/Luxor 2k/PhyOp/Performout)
+    - Original BA2 archives: Vanilla or at least one alternate (Luxor/Luxor 2k/PhyOp)
     - Automatic extraction of repack archives: No
     - Use custom assets
 
@@ -292,27 +292,11 @@ Currently, the following original BA2 archives are supported:
         - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font]
     - Light Potato Face Sculpting Fix
         - [font=Courier New][color=#b2b2b2]Fallout4 - Textures4.ba2[/color][/font]
-- Rikintosh's Performout (v2.0)
-    - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font] (file version 1.0)
-    - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font] (file version 1.0)
-    - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font] (file version 1.0)
-    - [font=Courier New][color=#b2b2b2]DLCworkshop01 - Textures.ba2[/color][/font] (file version 1.0)
-    - [font=Courier New][color=#b2b2b2]DLCworkshop02 - Textures.ba2[/color][/font] (file version 1.0)
-    - [font=Courier New][color=#b2b2b2]DLCworkshop03 - Textures.ba2[/color][/font] (file version 1.0)
-    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures1.ba2[/color][/font] (file version 2.0)
-    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures2.ba2[/color][/font] (file version 2.0)
-    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures3.ba2[/color][/font] (file version 2.0)
-    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures4.ba2[/color][/font] (file version 2.0)
-    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures5.ba2[/color][/font] (file version 2.0)
-    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures6.ba2[/color][/font] (file version 2.0)
-    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures7.ba2[/color][/font] (file version 2.0)
-    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font] (file version 2.0)
-    - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font] (file version 2.0)
 
 [size=4][b][u]Common:[/u][/b][/size]
 NOTE: The script will automatically attempt to locate and use original BA2 archives from the Fallout 4 Data folder if it doesn't find them in the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder.
 
-Currently supports the BA2s from vanilla, [url=https://www.nexusmods.com/fallout4/mods/52423]Luxor's Fallout 4 HD Overhaul[/url], [url=https://www.nexusmods.com/fallout4/mods/65720]Luxor's Fallout 4 HD Overhaul 2k[/url], [url=https://www.nexusmods.com/fallout4/mods/27038]PhyOp's Overhauled Optimized Textures[/url], and [url=https://www.nexusmods.com/fallout4/mods/61750]Rickintosh's Performout[/url].
+Currently supports the BA2s from vanilla, [url=https://www.nexusmods.com/fallout4/mods/52423]Luxor's Fallout 4 HD Overhaul[/url], [url=https://www.nexusmods.com/fallout4/mods/65720]Luxor's Fallout 4 HD Overhaul 2k[/url], and [url=https://www.nexusmods.com/fallout4/mods/27038]PhyOp's Overhauled Optimized Textures[/url].
 
 - [Optional] Copy the original BA2 archives from the Fallout 4 Data folder to the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder.
 
@@ -330,10 +314,10 @@ Notes:
 - If using the [font=Courier New][color=#b2b2b2]Restyle[/color][/font] repack set, the "Author's Choice" options are automatically chosen.
 
 [size=4][b][u]Hybrid:[/u][/b][/size]
-This mode is similar to "Standard" mode in that it's a mostly automatic process, but it allows alternate original BA2 archives (Luxor/Luxor 2k/PhyOp/Performout) to be used instead, sacrificing patched BA2 archive validation to do so.
+This mode is similar to "Standard" mode in that it's a mostly automatic process, but it allows alternate original BA2 archives (Luxor/Luxor 2k/PhyOp) to be used instead, sacrificing patched BA2 archive validation to do so.
 
 - Put the repack files you have downloaded into the [font=Courier New][color=#b2b2b2]Repack7z[/color][/font] folder.
-- Put the alternate original BA2 files (Luxor/Luxor 2k/PhyOp/Performout) into the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder.
+- Put the alternate original BA2 files (Luxor/Luxor 2k/PhyOp) into the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder.
 - Double click on "Installer.cmd". (If it just opens up in Notepad or something, right click it and choose "Open" instead.)
 - A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the [font=Courier New][color=#b2b2b2]PatchedBa2[/color][/font] folder, but you can choose a different folder. [b]Do not choose the Fallout 4 Data folder.[/b]
 - The script will then proceed to validate and extract the the repack archives, then create (but [b]NOT[/b] validate) the patched BA2 archives.
@@ -396,8 +380,27 @@ This script has a lot of built-in checks that will tend to have very clear error
     - Type the command [font=Courier New][color=#b2b2b2]Installer.cmd[/color][/font] and hit "Enter".
 - The script appears stuck at "Patched BA2 archive folder:".
     - The script has opened up a window to enable you to choose the folder where the patched BA2 archives will go. Sometimes this window gets hidden behind others, so hit the Windows+Tab key combination, look for a window titled "Browse For Folder", then click on it.
+- The script appears to be stuck at some part of the process.
+    - Try scrolling down. Sometimes if you scroll up, the window won't continue to follow the script output.
 - In some cases, there is something called Group Policy that may be applied to a computer. If Group Policy disables PowerShell scripts, this script simply will not work. The Group Policy disabling PowerShell must itself be disabled before this script will work.
-- Don't rename the repack files. This script has some limited flexibility for recognizing file names appended with things like "(1)" or " - Copy" and such, but not much more than that.
+- In rare cases the script might fail with an error about it not being able to get information about your drives.
+    - Open an elevated command prompt.
+        - Open the Windows menu.
+        - Type "command prompt".
+        - Choose "Run as administrator".
+    - Once the elevated command prompt has been opened, type the following commands, hitting the [font=Courier New][color=#b2b2b2]<enter>[/color][/font] key after each one.
+        - [font=Courier New][color=#b2b2b2]sc config vss start= demand[/color][/font]
+        - [font=Courier New][color=#b2b2b2]sc config smphost start= demand[/color][/font]
+        - [font=Courier New][color=#b2b2b2]sc stop SMPHost[/color][/font]
+        - [font=Courier New][color=#b2b2b2]sc stop vss[/color][/font]
+        - [font=Courier New][color=#b2b2b2]sc config winmgmt start= disabled[/color][/font]
+        - [font=Courier New][color=#b2b2b2]net stop winmgmt[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Winmgmt /salvagerepository %windir%\System32\wbem[/color][/font]
+        - [font=Courier New][color=#b2b2b2]Winmgmt /resetrepository %windir%\[/color][/font]
+        - [font=Courier New][color=#b2b2b2]sc config winmgmt start= auto[/color][/font]
+    - Reboot your computer.
+    - Try the script again.
+- [b]Don't rename the repack files.[/b] This script has some limited flexibility for recognizing file names appended with things like "(1)" or " - Copy" and such, but not much more than that.
 
 [size=4][b][u]Logs:[/u][/b][/size]
 Logs will be located in the [font=Courier New][color=#b2b2b2]Logs[/color][/font] sub-folder. There will be 2 or 4 files generated per run, depending on how far the process gets: [font=Courier New][color=#b2b2b2]current.install.log[/color][/font] and [font=Courier New][color=#b2b2b2]install_<timestamp>.log[/color][/font], and [font=Courier New][color=#b2b2b2]current.tool.log[/color][/font] and [font=Courier New][color=#b2b2b2]tool_<timestamp>.log[/color][/font], where [font=Courier New][color=#b2b2b2]<timestamp>[/color][/font] is the timestamp of when the process was started, for example [font=Courier New][color=#b2b2b2]20220201T205350Z[/color][/font]. The [font=Courier New][color=#b2b2b2]current.*.log[/color][/font] files will be overwritten every run, while the [font=Courier New][color=#b2b2b2]*_<timestamp>.log[/color][/font] files serve as a more permanent record.
@@ -428,7 +431,6 @@ This tool also uses the following source code; each has their own copyrights and
 - ScreamingLake and CyberDanz: For administering the [url=https://discord.gg/DfFYJtt8p4]Community Modding discord server and the updated BRB guide[/url]
 - luxor8071: For the [url=https://www.nexusmods.com/fallout4/mods/52423]Fallout 4 HD Overhaul[/url] and [url=https://www.nexusmods.com/fallout4/mods/65720]Fallout 4 HD Overhaul 2k[/url] mods
 - Phylith: For the [url=https://www.nexusmods.com/fallout4/mods/27038]PhyOp - Overhauled Optimized Textures[/url] mod
-- Rikintosh: For the [url=https://www.nexusmods.com/fallout4/mods/61750]Rickintosh's Performout[/url] mod
 - Lively: For helping me make the error messaging easier to understand
 - Aegis27: For helping me make the error messaging easier to understand
 - Kaethela: For being an excellent guinea pig and helping me track down the issue with USB drives

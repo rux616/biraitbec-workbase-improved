@@ -13,11 +13,13 @@ jobs:
     name: Publish artifact
     runs-on: windows-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Build archive
         shell: powershell
         run: |
           New-Item -Path .\build -ItemType Directory -ErrorAction Stop | Out-Null
-          7z.exe a -mx9 -spf -t7z .\build\BiRaitBec_WorkBase_Improved_${{ github.ref_name }}.7z `@".\.github\build_manifest"
+          .\Tools\7-Zip\7z.exe a -mx9 -spf -t7z .\build\BiRaitBec_WorkBase_Improved_${{ github.ref_name }}.7z `@".\.github\build_manifest"
       - name: Upload artifact to actions
         uses: actions/upload-artifact@v3
         with:

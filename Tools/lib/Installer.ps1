@@ -73,8 +73,8 @@ $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 #region constants and variables
 #------------------------------
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 10, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 25, 0)) -Option Constant
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 11, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 26, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -234,7 +234,7 @@ if ($null -eq $driveInfo) {
         $extraErrorText = @(
             "This script attempts to get disk information from your computer in order to do its job better, but both the primary and backup methods of doing so have failed."
             ""
-            "Please seek help from the script author."
+            "Please check the readme file in the `"Known Issues`" section for the method to fix this issue. (Search for `"your drives`" to find the entry.) If that doesn't work, please seek help from the script author."
         )
         Write-CustomError "Getting drive information failed" -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
         Exit-Script 1

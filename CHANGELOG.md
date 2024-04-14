@@ -37,7 +37,6 @@ Changelogs
 
 v1.11.0
 -------
-
 - [Hashes] Remove hashes for "The Midnight Performance AIO" mod (deleted)
 - [Hashes] Remove hashes for "The Ultimate Texture Performance" mod (deleted)
 - [Hashes] Remove hashes for "Performout" mod (deleted)

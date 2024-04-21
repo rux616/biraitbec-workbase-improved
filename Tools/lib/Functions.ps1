@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 28, 2))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 29, 0))
 
 $originalPath = $env:PATH
 $writeCustomPrevNoNewLineLength = 0
@@ -348,6 +348,10 @@ function Get-FileHash {
                     $stderr = $stderr | Where-Object { $_.TargetObject -and $_.TargetObject.Trim() } | ForEach-Object { Write-Error $_ }
 
                     foreach ($line in $stdout) {
+                        # if a line begins with a backslash, there are characters that xxHash thinks need to be escaped
+                        if ($line[0] -eq "\") {
+                            $line = $line -replace '\\(.)', '$1'
+                        }
                         # hashing done with the XXH3 algorithm has a slightly different output format compared to the other algorithms
                         if ($_ -eq "XXH3") {
                             # format: "XXH3 (<path>) = <hash>"

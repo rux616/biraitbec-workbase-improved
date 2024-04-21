@@ -73,8 +73,8 @@ $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 #region constants and variables
 #------------------------------
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 11, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 26, 0)) -Option Constant
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 12, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 27, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -423,6 +423,7 @@ if (-not $NoClearScreen) { Clear-Host }
 Write-CustomLog "Run start: $RunStartTime"
 Write-CustomLog "Run start: $RunStartTime" -log tool
 $fileListTableFormat = [object]@(
+    @{ Name = "Type"; Expression = { $_.Type }; Alignment = "left" },
     @{ Name = "Name"; Expression = { $_.Name }; Alignment = "left" },
     @{ Name = "Size"; Expression = { $_.Size }; Alignment = "right" }
 )
@@ -472,14 +473,14 @@ Write-CustomLog @(
     "  Fallout 4 Data directory (Steam method): " + $(if ($dir.fallout4DataSteam) { $dir.fallout4DataSteam } else { "(Not Found)" })
     "  Fallout 4 Data directory (Steam Fallback method): " + $(if ($dir.fallout4DataSteamFallback) { $dir.fallout4DataSteamFallback } else { "(Not Found)" })
     ""
-    "  Files in Repack7z directory: $(if ((Get-ChildItem -LiteralPath $dir.repack7z -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
-    (Get-ChildItem -LiteralPath $dir.repack7z -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
-        [PSCustomObject]@{ Name = $_.Name; Size = $_.Length.ToString("N0") }
+    "  Items in Repack7z directory: $(if ((Get-ChildItem -LiteralPath $dir.repack7z -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
+    (Get-ChildItem -LiteralPath $dir.repack7z -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
+        [PSCustomObject]@{ Type = if ($_.Mode.Contains("d")) { "Folder" } else { "File" }; Name = $_.Name; Size = if ($_.Mode.Contains("d")) { "" } else { $_.Length.ToString("N0") } }
     } | Format-Table -Property $fileListTableFormat | Out-String) -Split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     ""
-    "  Files in OriginalBa2 directory: $(if ((Get-ChildItem -LiteralPath $dir.originalBa2 -File -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
-    (Get-ChildItem -LiteralPath $dir.originalBa2 -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
-        [PSCustomObject]@{ Name = $_.Name; Size = $_.Length.ToString("N0") }
+    "  Items in OriginalBa2 directory: $(if ((Get-ChildItem -LiteralPath $dir.originalBa2 -ErrorAction SilentlyContinue).Count -eq 0) { "(None)" })"
+    (Get-ChildItem -LiteralPath $dir.originalBa2 -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object {
+        [PSCustomObject]@{ Type = if ($_.Mode.Contains("d")) { "Folder" } else { "File" }; Name = $_.Name; Size = if ($_.Mode.Contains("d")) { "" } else { $_.Length.ToString("N0") } }
     } | Format-Table -Property $fileListTableFormat | Out-String) -Split "`r`n" | Where-Object { $_ } | ForEach-Object { "    " + $_ }
     "<" * $LineWidth
 )
@@ -760,7 +761,10 @@ elseif ($repackTag -eq "Unchanged") {
         Write-CustomWarning $message -Prefix "WARNING: " -NoJustifyRight
     }
     else {
-        Write-CustomError $message -Prefix "ERROR: " -NoJustifyRight
+        if ((Get-ChildItem -LiteralPath $dir.repack7z -Directory -ErrorAction SilentlyContinue).Count -gt 0) {
+            $extraErrorText = "Verify that the repack archive folder only contains the repack archives (and the README file) and ensure that said archives have not been extracted."
+        }
+        Write-CustomError $message -Prefix "ERROR: " -ExtraContext $extraErrorText -NoJustifyRight
         Exit-Script 1
     }
 }

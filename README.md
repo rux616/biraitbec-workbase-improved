@@ -466,10 +466,10 @@ All my code in this tool is licensed under the [GPL 3.0](https://www.gnu.org/lic
 Everything else in this mod created by me is [CC-BY-SA](https://creativecommons.org/licenses/by-sa/4.0/legalcode) licensed.
 
 This tool is bundled with the following programs, each having their own copyrights and licenses:
-- [7-Zip 64-bit v22.01 (2022-07-15) by Igor Pavlov](https://www.7-zip.org/)
+- [7-Zip 64-bit v23.01 (2023-06-20) by Igor Pavlov](https://www.7-zip.org/)
 - [Archive2 v1.1.0.4 by Bethesda Game Studios, part of the Fallout 4 Creation Kit](https://bethesda.net/en/game/bethesda-launcher)
-- [BSA Browser v1.14.1 by AlexxEG](https://www.nexusmods.com/skyrimspecialedition/mods/1756)
-- [xxhsum v0.8.1 by Cyan4973](https://cyan4973.github.io/xxHash/)
+- [BSA Browser v1.17.0 by AlexxEG](https://www.nexusmods.com/skyrimspecialedition/mods/1756)
+- [xxhsum v0.8.2 by Cyan4973](https://cyan4973.github.io/xxHash/)
 
 This tool also uses the following source code; each has their own copyrights and licenses:
 - [Crc32 hash sum by Damien Guard](https://github.com/damieng/DamienGKit/blob/178992cb6215104a9312720881d8465d7bf040ba/CSharp/DamienG.Library/Security/Cryptography/Crc32.cs)
@@ -500,6 +500,10 @@ Another method for support is to come to my channel on the [Collective Modding D
 If you need to contact me personally, I can be reached through one of the following means:
 - **Nexus Mods**: [rux616](https://www.nexusmods.com/users/124191) (Send a message via the "CONTACT" button)
 - **Email**: rux616-at-pm-dot-me (replace `-at-` with `@` and `-dot-` with `.`)
-- **Discord**: rux616#0950 (I tend to hang out on the [Nexus Mods](https://discord.gg/nexusmods) and [Wabbajack](https://discord.gg/wabbajack) servers, and of course the [Collective Modding Discord server](https://discord.gg/pF9U5FmD6w) server where I have my support channel as mentioned above.)
+- **Discord**: rux616 (user ID 234489279991119873) - make sure to "@" me
+    - [Lively's Modding Hub](https://discord.gg/livelymods)
+    - [Nexus Mods](https://discord.gg/nexusmods)
+    - [Collective Modding](https://discord.gg/pF9U5FmD6w) ("🔧-chaotic-cognitions" channel)
+    - [Starfield Modding](https://discord.gg/6R4Yq5KjW2)
 
 ([TOC](#table-of-contents))

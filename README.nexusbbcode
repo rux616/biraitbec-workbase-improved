@@ -416,10 +416,10 @@ All my code in this tool is licensed under the [url=https://www.gnu.org/licenses
 Everything else in this mod created by me is [url=https://creativecommons.org/licenses/by-sa/4.0/legalcode]CC-BY-SA[/url] licensed.
 
 This tool is bundled with the following programs, each having their own copyrights and licenses:
-- [url=https://www.7-zip.org/]7-Zip 64-bit v22.01 (2022-07-15) by Igor Pavlov[/url]
+- [url=https://www.7-zip.org/]7-Zip 64-bit v23.01 (2023-06-20) by Igor Pavlov[/url]
 - [url=https://bethesda.net/en/game/bethesda-launcher]Archive2 v1.1.0.4 by Bethesda Game Studios, part of the Fallout 4 Creation Kit[/url]
-- [url=https://www.nexusmods.com/skyrimspecialedition/mods/1756]BSA Browser v1.14.1 by AlexxEG[/url]
-- [url=https://cyan4973.github.io/xxHash/]xxhsum v0.8.1 by Cyan4973[/url]
+- [url=https://www.nexusmods.com/skyrimspecialedition/mods/1756]BSA Browser v1.17.0 by AlexxEG[/url]
+- [url=https://cyan4973.github.io/xxHash/]xxhsum v0.8.2 by Cyan4973[/url]
 
 This tool also uses the following source code; each has their own copyrights and licenses:
 - [url=https://github.com/damieng/DamienGKit/blob/178992cb6215104a9312720881d8465d7bf040ba/CSharp/DamienG.Library/Security/Cryptography/Crc32.cs]Crc32 hash sum by Damien Guard[/url]
@@ -444,4 +444,8 @@ Another method for support is to come to my channel on the [url=https://discord.
 If you need to contact me personally, I can be reached through one of the following means:
 - [b]Nexus Mods[/b]: [url=https://www.nexusmods.com/users/124191]rux616[/url] (Send a message via the "CONTACT" button)
 - [b]Email[/b]: rux616-at-pm-dot-me (replace [font=Courier New][color=#b2b2b2]-at-[/color][/font] with [font=Courier New][color=#b2b2b2]@[/color][/font] and [font=Courier New][color=#b2b2b2]-dot-[/color][/font] with [font=Courier New][color=#b2b2b2].[/color][/font])
-- [b]Discord[/b]: rux616#0950 (I tend to hang out on the [url=https://discord.gg/nexusmods]Nexus Mods[/url] and [url=https://discord.gg/wabbajack]Wabbajack[/url] servers, and of course the [url=https://discord.gg/pF9U5FmD6w]Collective Modding Discord server[/url] server where I have my support channel as mentioned above.)
+- [b]Discord[/b]: rux616 (user ID 234489279991119873) - make sure to "@" me
+    - [url=https://discord.gg/livelymods]Lively's Modding Hub[/url]
+    - [url=https://discord.gg/nexusmods]Nexus Mods[/url]
+    - [url=https://discord.gg/pF9U5FmD6w]Collective Modding[/url] ("🔧-chaotic-cognitions" channel)
+    - [url=https://discord.gg/6R4Yq5KjW2]Starfield Modding[/url]

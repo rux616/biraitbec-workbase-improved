@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.12.0](#v1120)
     - [v1.11.0](#v1110)
     - [v1.10.0](#v1100)
     - [v1.9.1](#v191)
@@ -34,6 +35,21 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.12.0
+-------
+- [Tools] Updated 7-Zip to v23.01 (2023-06-20)
+- [Tools] Updated BSA Browser to v1.17.0
+- [Tools] Updated xxHash to v0.8.2
+- [Functions] Updated Get-FileHash function to support xxHash 0.8.2's behavior of putting a backslash at the beginning of the line if its output has any characters that need to be escaped
+- [Functions] Version bumped to `1.29.0`
+- [Installer] Added check for extracted files inside Repack7z folder
+- [Installer] Version bumped to `1.27.0`
+- [InstallerCmd] Added check that Tools\Installer.ps1 exists before running
+- [Readme] Updated contact section
+- [Readme] Updated "Copyright and Licenses" section to include updated information on the Tools
+
+([TOC](#table-of-contents))
 
 v1.11.0
 -------

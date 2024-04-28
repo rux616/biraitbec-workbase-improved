@@ -189,13 +189,15 @@ if (-not $SkipPowerShellVersionCheck) {
 Get-PhysicalDisk -ErrorAction SilentlyContinue | Out-Null
 
 # grab the volumes that have drive letters and create objects with that info, particularly size info, first try
-# Get-Volume, then try Get-PSDrive if that fails. if they both fail, abort, because something is seriously wrong
+# Get-Volume, then try GetDrives(), and finally try Get-PSDrive. if they all fail, abort, because something is seriously
+# wrong
 try {
     $driveInfo = Get-Volume -ErrorAction Stop | Where-Object { $_.DriveLetter } | ForEach-Object {
         [PSCustomObject]@{
             DriveLetter     = $_.DriveLetter
             MediaType       = $null
             BusType         = $null
+            FileSystem      = $_.FileSystem
             SizeFree        = $_.SizeRemaining
             SizeFreePercent = if ($_.Size) { $_.SizeRemaining / $_.Size * 100 } else { -1 }
             SizeUsed        = $_.Size - $_.SizeRemaining
@@ -212,11 +214,35 @@ catch {
 }
 if ($null -eq $driveInfo) {
     try {
+        $driveInfo = [System.IO.DriveInfo]::GetDrives() | ForEach-Object {
+            [PSCustomObject]@{
+                DriveLetter     = $_.Name.Substring(0, 1)
+                MediaType       = $null
+                BusType         = $null
+                FileSystem      = $_.DriveFormat
+                SizeFree        = $_.AvailableFreeSpace
+                SizeFreePercent = if ($_.TotalSize) { $_.AvailableFreeSpace / $_.TotalSize * 100 } else { -1 }
+                SizeUsed        = $_.TotalSize - $_.AvailableFreeSpace
+                SizeUsedPercent = if ($_.TotalSize) { ($_.TotalSize - $_.AvailableFreeSpace) / $_.TotalSize * 100 } else { -1 }
+                SizeTotal       = $_.TotalSize
+            }
+        } | Sort-Object -Property DriveLetter
+    }
+    catch {
+        Write-CustomLog "[System.IO.DriveInfo]::GetDrives() failed!" -Prefix "ERROR: "
+        Write-CustomLog $_ -Prefix "ERROR: "
+        Write-CustomLog $_.InvocationInfo.PositionMessage -Prefix "ERROR: "
+        Write-CustomLog ""
+    }
+}
+if ($null -eq $driveInfo) {
+    try {
         $driveInfo = Get-PSDrive -PSProvider FileSystem -ErrorAction Stop | ForEach-Object {
             [PSCustomObject]@{
                 DriveLetter     = $_.Name
                 MediaType       = $null
                 BusType         = $null
+                FileSystem      = $null
                 SizeFree        = $_.Free
                 SizeFreePercent = $_.Free / ($_.Free + $_.Used) * 100
                 SizeUsed        = $_.Used
@@ -230,15 +256,18 @@ if ($null -eq $driveInfo) {
         Write-CustomLog $_ -Prefix "ERROR: "
         Write-CustomLog $_.InvocationInfo.PositionMessage -Prefix "ERROR: "
         Write-CustomLog ""
-
-        $extraErrorText = @(
-            "This script attempts to get disk information from your computer in order to do its job better, but both the primary and backup methods of doing so have failed."
-            ""
-            "Please check the readme file in the `"Known Issues`" section for the method to fix this issue. (Search for `"your drives`" to find the entry.) If that doesn't work, please seek help from the script author."
-        )
-        Write-CustomError "Getting drive information failed" -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
-        Exit-Script 1
     }
+}
+if ($null -eq $driveInfo) {
+    $extraErrorText = @(
+        "This script attempts to get disk information from your computer in order to do its job better, but the primary, secondary, and tertiary methods of doing so have all failed."
+        ""
+        "Please check the readme file in the `"Known Issues`" section for a possible method to fix this issue. (Search for `"your drives`" to find the entry.) If that doesn't work, please seek help from the script author."
+    )
+    Write-CustomError "Getting drive information failed" -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+    Exit-Script 1
+    Write-CustomError "Failed to get drive information." -Prefix "ERROR: " -NoJustifyRight
+    Exit-Script 1
 }
 
 # populate the physical disk properties of the drive info array
@@ -268,6 +297,7 @@ $driveInfoTableFormat = [object]@(
     @{ Name = "Drive"; Expression = { $_.DriveLetter }; Width = 6; Alignment = "left" },
     @{ Name = "Type"; Expression = { if (-not $_.MediaType) { "Unknown" } else { $_.MediaType } }; Width = 12; Alignment = "left" },
     @{ Name = "Bus"; Expression = { if (-not $_.BusType) { "Unknown" } else { $_.BusType } }; Width = 8; Alignment = "left" },
+    @{ Name = "File System"; Expression = { if (-not $_.FileSystem) { "Unknown" } else { $_.FileSystem } }; Width = 12; Alignment = "left" },
     @{ Name = "Free"; Expression = { Write-PrettySize $_.SizeFree }; Width = 9; Alignment = "right" },
     @{ Name = "% Free"; Expression = { if ($_.SizeFreePercent -eq -1) { "Unknown" } else { "$(($_.SizeFreePercent).ToString("f1"))%" } }; Width = 8; Alignment = "right" },
     @{ Name = "Used"; Expression = { Write-PrettySize $_.SizeUsed }; Width = 10; Alignment = "right" },
@@ -315,18 +345,22 @@ if ($dir.currentDirectory.Contains("[") -or $dir.currentDirectory.Contains("]"))
 
 #region adjust workingFile path
 #------------------------------
+$fileSystemWBIDrive = ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).FileSystem
 $busTypeWBIDrive = ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType
-# if the working files folder is specified, it takes precedence over USB detection or forcing it to TEMP
+# if the working files folder is specified, it takes precedence over filesystem detection or forcing it to TEMP
 if ($WorkingFilesFolder) {
     $dir.workingFiles = $WorkingFilesFolder
 }
-# archive2 becomes non-deterministic if the data it is putting into an archive comes from a USB drive, so if WBI is being ran
-# from a drive with an unknown bus type or a USB drive, switch $dir.workingFiles to reside in the user's temp directory instead
+# archive2 becomes non-deterministic if the data it is putting into an archive comes from a drive formatted with exFAT
+# (or possibly simply non-NTFS), so if WBI is being ran from a drive formatted with exFAT or if that check is $null,
+# from a drive with an unknown bus type or a USB drive assume the drive is formatted in exFAT and switch
+# $dir.workingFiles to reside in the user's temp directory instead
 elseif (
-    $null -eq $busTypeWBIDrive -or
-    $busTypeWBIDrive -eq "USB" -or
-    $ForceTempWorkingFiles
+    $ForceTempWorkingFiles -or
+    $fileSystemWBIDrive -eq "exFAT" -or
+    ($null -eq $fileSystemWBIDrive -and ($null -eq $busTypeWBIDrive -or $busTypeWBIDrive -eq "USB"))
 ) {
+    # note that this assumes the temp path is on an NTFS-formatted drive
     $dir.workingFiles = Resolve-PathAnyway ([System.IO.Path]::GetTempPath() + "\" + $dir.workingFiles)
 }
 #endregion

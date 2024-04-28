@@ -2018,7 +2018,8 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             $extraErrorText = @(
                 "The exact contents of this patched archive don't match any known archives."
             )
-            $extraLogText = @("(No extra log info.)")
+            $expectedHash = $patchedBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.Tags -contains $repackTag } | ForEach-Object { $_.Key }
+            $extraLogText = @("Expected hash: $expectedHash")
             $multiFactorErrorFlag = $true
             throw "Unrecognized file."
         }

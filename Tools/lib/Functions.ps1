@@ -30,7 +30,7 @@ function Add-Hash {
         [Parameter(Mandatory)] [string] $VariableName,
         [Parameter(Mandatory)] [string] $Hash,
         [Parameter(Mandatory)] [string] $FileName,
-        [Parameter(Mandatory)] [string] $Tag,
+        [Parameter(Mandatory)] [string[]] $Tag,
         [Parameter()] [ValidateSet('FileName', 'Hash')] [string] $KeyType = 'Hash',
         [Parameter()] [long] $FileSize = -1,
         [Parameter()] [string] $Action = $null
@@ -456,7 +456,7 @@ function Get-PathSize {
 
     process {
         foreach ($item in $Path) {
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 Path = $item
                 Size = [long](Get-ChildItem -LiteralPath $item -File -Recurse -ErrorAction SilentlyContinue | Measure-Object -Sum Length).Sum
             }

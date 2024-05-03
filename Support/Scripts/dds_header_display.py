@@ -338,7 +338,7 @@ class DDSPixelFormat:  # size: 32 bytes
         return "\n".join(
             [
                 f"Size: {self.dw_size} bytes",
-                "Flags:",
+                f"Flags: {self.dw_flags:#032b}",
                 indent(str(DDSPixelFormatFlags(self.dw_flags))),
                 f"Four CC: {self.dw_four_cc}",
                 f"RGB Bit Count: {self.dw_rgb_bit_count}",
@@ -377,7 +377,7 @@ class DDSHeader:  # size: 124 bytes
         return "\n".join(
             [
                 f"Size: {self.dw_size} bytes",
-                "Flags:",
+                f"Flags: {self.dw_flags:#032b}",
                 indent(str(DDSHeaderFlags(self.dw_flags))),
                 f"Height: {self.dw_height}",
                 f"Width: {self.dw_width}",
@@ -387,9 +387,9 @@ class DDSHeader:  # size: 124 bytes
                 f"Reserved1: Unused ({self.dw_reserved1.hex(':', 4)})",
                 "Pixel Format:",
                 indent(str(self.dds_pixelformat)),
-                "Caps:",
+                f"Caps: {self.dw_caps:#032b}",
                 indent(str(DDSHeaderCaps(self.dw_caps))),
-                "Caps2:",
+                f"Caps2: {self.dw_caps2:#032b}",
                 indent(str(DDSHeaderCaps2(self.dw_caps2))),
                 f"Caps3: Unused ({self.dw_caps3:#x})",
                 f"Caps4: Unused ({self.dw_caps4:#x})",
@@ -433,10 +433,10 @@ class DDSHeaderDXT10:  # size: 20 bytes
             [
                 f"DXGI Format: {dxgi_format_str}",
                 f"Resource Dimension: {resource_dimension_str}",
-                "Misc Flag:",
+                f"Misc Flag: {self.misc_flag:#032b}",
                 indent(str(DDSHeaderDXT10MiscFlag(self.misc_flag))),
                 f"Array Size: {self.array_size}",
-                "Misc Flags2:",
+                f"Misc Flags2: {self.misc_flags2:#032b}",
                 indent(misc_flags2_str),
             ]
         )

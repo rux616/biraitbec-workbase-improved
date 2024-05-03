@@ -18,43 +18,67 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
-import argparse  # built-in
-import functools  # built-in
-import textwrap  # built-in
+from argparse import ArgumentParser  # built-in
 from enum import IntEnum, IntFlag  # built-in
-from io import BufferedReader  # built-in
+from functools import partial  # built-in
+from io import BufferedIOBase  # built-in
+from textwrap import indent  # built-in
 from typing import Annotated  # built-in
 
 import dataclasses_struct as dcs  # PyPI: dataclasses-struct
 
-indent = functools.partial(textwrap.indent, prefix="    ")
+indent = partial(indent, prefix="    ")
 
 
-def str_flags(class_to_decorate):
+def str_int_flags(cls):
+    """
+    Decorate an IntFlag class to have a `__str__` method that returns the names and values of the
+    flags set, including a bit mask for any invalid flags that are not defined in the class.
+    """
+
     def __str__(self) -> str:
         set_flags: list[str] = []
-        for flag in class_to_decorate:
+        value = self
+        for flag in cls:
             if self & flag:
                 set_flags.append(f"{flag.name} ({flag.value:#x})")
-        if not set_flags:
-            return "(None)"
-        else:
+        for flag in cls:
+            if self & flag:
+                value = value & ~flag
+        if value:
+            set_flags.append(f"Invalid ({value:#b})")
+        if set_flags:
             return "\n".join(set_flags)
+        else:
+            return "(None)"
 
-    class_to_decorate.__str__ = __str__
-    return class_to_decorate
+    cls.__str__ = __str__
+    return cls
 
 
-def str_int_enum(class_to_decorate):
+def str_int_enum(cls):
+    """
+    Decorate an IntEnum class to have a `__str__` method that returns the name and value of the
+    enum.
+    """
+
     def __str__(self) -> str:
         return f"{self.name} ({self.value})"
 
-    class_to_decorate.__str__ = __str__
-    return class_to_decorate
+    cls.__str__ = __str__
+    return cls
 
 
-@str_flags
-class DdsHeaderFlags(IntFlag):  # size: 4 bytes
+@str_int_flags
+class DDSHeaderFlags(IntFlag):  # size: 4 bytes
+    """
+    Flags to indicate which members contain valid data.
+
+    [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header)
+
+    Size: 4 bytes
+    """
+
     DDSD_CAPS: dcs.U32 = 0x1
     DDSD_HEIGHT: dcs.U32 = 0x2
     DDSD_WIDTH: dcs.U32 = 0x4
@@ -65,15 +89,31 @@ class DdsHeaderFlags(IntFlag):  # size: 4 bytes
     DDSD_DEPTH: dcs.U32 = 0x800000
 
 
-@str_flags
-class DdsHeaderCaps(IntFlag):  # size: 4 bytes
+@str_int_flags
+class DDSHeaderCaps(IntFlag):  # size: 4 bytes
+    """
+    Specifies the complexity of the surfaces stored.
+
+    [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header)
+
+    Size: 4 bytes
+    """
+
     DDSCAPS_COMPLEX: dcs.U32 = 0x8
     DDSCAPS_MIPMAP: dcs.U32 = 0x400000
     DDSCAPS_TEXTURE: dcs.U32 = 0x1000
 
 
-@str_flags
-class DdsHeaderCaps2(IntFlag):  # size: 4 bytes
+@str_int_flags
+class DDSHeaderCaps2(IntFlag):  # size: 4 bytes
+    """
+    Additional detail about the surfaces stored.
+
+    [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header)
+
+    Size: 4 bytes
+    """
+
     DDSCAPS2_CUBEMAP: dcs.U32 = 0x200
     DDSCAPS2_CUBEMAP_POSITIVEX: dcs.U32 = 0x400
     DDSCAPS2_CUBEMAP_NEGATIVEX: dcs.U32 = 0x800
@@ -84,8 +124,16 @@ class DdsHeaderCaps2(IntFlag):  # size: 4 bytes
     DDSCAPS2_VOLUME: dcs.U32 = 0x200000
 
 
-@str_flags
-class DdsPixelformatFlags(IntFlag):  # size: 4 bytes
+@str_int_flags
+class DDSPixelFormatFlags(IntFlag):  # size: 4 bytes
+    """
+    Values which indicate what type of data is in the surface.
+
+    [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-pixelformat)
+
+    Size: 4 bytes
+    """
+
     DDPF_ALPHAPIXELS: dcs.U32 = 0x1
     DDPF_ALPHA: dcs.U32 = 0x2
     DDPF_FOURCC: dcs.U32 = 0x4
@@ -95,8 +143,16 @@ class DdsPixelformatFlags(IntFlag):  # size: 4 bytes
 
 
 @str_int_enum
-class DxgiFormat(IntEnum):  # size: 4 bytes
-    "Resource data formats, including fully-typed and typeless formats. A list of modifiers at the bottom of the page more fully describes each format type. [(reference)](https://learn.microsoft.com/en-us/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format)"
+class DXGIFormat(IntEnum):  # size: 4 bytes
+    # class DXGIFormat(RelaxedIntEnum):  # size: 4 bytes
+    """
+    Resource data formats, including fully-typed and typeless formats. A list of modifiers at the
+    bottom of the reference page more fully describes each format type.
+
+    [(reference)](https://learn.microsoft.com/en-us/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format)
+
+    Size: 4 bytes
+    """
 
     DXGI_FORMAT_UNKNOWN: dcs.U32 = 0
     DXGI_FORMAT_R32G32B32A32_TYPELESS: dcs.U32 = 1
@@ -223,21 +279,53 @@ class DxgiFormat(IntEnum):  # size: 4 bytes
 
 
 @str_int_enum
-class DdsHeaderDxt10ResourceDimension(IntEnum):  # size: 4 bytes
-    "Identifies the type of resource. The following values for this member are a subset of the values in the [D3D10_RESOURCE_DIMENSION](https://learn.microsoft.com/en-us/windows/desktop/api/d3d10/ne-d3d10-d3d10_resource_dimension) or [D3D11_RESOURCE_DIMENSION](https://learn.microsoft.com/en-us/windows/desktop/api/d3d11/ne-d3d11-d3d11_resource_dimension) enumeration."
+class DDSHeaderDXT10ResourceDimension(IntEnum):  # size: 4 bytes
+    """
+    Identifies the type of resource. The following values for this member are a subset of the values
+    in the `D3D10_RESOURCE_DIMENSION`[1] or `D3D11_RESOURCE_DIMENSION`[2] enumeration.
+
+    [1] https://learn.microsoft.com/en-us/windows/desktop/api/d3d10/ne-d3d10-d3d10_resource_dimension
+    [2] https://learn.microsoft.com/en-us/windows/desktop/api/d3d11/ne-d3d11-d3d11_resource_dimension
+
+    [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header-dxt10)
+
+    Size: 4 bytes
+    """
 
     DDS_DIMENSION_TEXTURE1D: dcs.U32 = 2
     DDS_DIMENSION_TEXTURE2D: dcs.U32 = 3
     DDS_DIMENSION_TEXTURE3D: dcs.U32 = 4
 
 
-@str_flags
-class DdsHeaderDxt10MiscFlag(IntFlag):  # size: 4 bytes
+@str_int_flags
+class DDSHeaderDXT10MiscFlag(IntFlag):  # size: 4 bytes
+    """
+    Identifies other, less common options for resources. The following value for this member is a
+    subset of the values in the `D3D10_RESOURCE_MISC_FLAG`[1] or `D3D11_RESOURCE_MISC_FLAG`[2]
+    enumeration
+
+    [1] https://learn.microsoft.com/en-us/windows/desktop/api/d3d10/ne-d3d10-d3d10_resource_misc_flag
+    [2] https://learn.microsoft.com/en-us/windows/desktop/api/d3d11/ne-d3d11-d3d11_resource_misc_flag
+
+    [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header-dxt10)
+
+    Size: 4 bytes
+    """
+
     DDS_RESOURCE_MISC_TEXTURECUBE: dcs.U32 = 0x4
 
 
 @str_int_enum
-class DdsHeaderDxt10MiscFlags2(IntEnum):  # size: 4 bytes
+class DDSHeaderDXT10MiscFlags2(IntEnum):  # size: 4 bytes
+    """
+    Contains additional metadata (formerly was reserved). The lower 3 bits indicate the alpha mode
+    of the associated resource. The upper 29 bits are reserved and are typically 0.
+
+    [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header-dxt10)
+
+    Size: 4 bytes
+    """
+
     DDS_ALPHA_MODE_UNKNOWN: dcs.U32 = 0x0
     DDS_ALPHA_MODE_STRAIGHT: dcs.U32 = 0x1
     DDS_ALPHA_MODE_PREMULTIPLIED: dcs.U32 = 0x2
@@ -246,16 +334,19 @@ class DdsHeaderDxt10MiscFlags2(IntEnum):  # size: 4 bytes
 
 
 @dcs.dataclass()
-class DdsPixelformat:
+class DDSPixelFormat:  # size: 32 bytes
     """
-    Surface pixel format. [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-pixelformat)
+    Surface pixel format.
+
+    [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-pixelformat)
 
     Size: 32 bytes
     """
 
-    dw_size: dcs.U32
-    dw_flags: dcs.U32  # DdsPixelformatFlags
-    dw_four_cc: Annotated[bytes, 4]  # one of b"DXT1", b"DXT2", b"DXT3", b"DXT4", b"DXT5", b"DX10"
+    dw_size: dcs.U32  # should be 32
+    dw_flags: dcs.U32  # DDSPixelFormatFlags
+    # should be one of b"DXT1", b"DXT2", b"DXT3", b"DXT4", b"DXT5", b"DX10"
+    dw_four_cc: Annotated[bytes, 4]
     dw_rgb_bit_count: dcs.U32
     dw_r_bit_mask: dcs.U32
     dw_g_bit_mask: dcs.U32
@@ -266,8 +357,8 @@ class DdsPixelformat:
         return "\n".join(
             [
                 f"Size: {self.dw_size} bytes",
-                f"Flags:",
-                indent(f"{DdsPixelformatFlags(self.dw_flags)}"),
+                "Flags:",
+                indent(str(DDSPixelFormatFlags(self.dw_flags))),
                 f"Four CC: {self.dw_four_cc}",
                 f"RGB Bit Count: {self.dw_rgb_bit_count}",
                 f"R Bit Mask: {self.dw_r_bit_mask:#010x}",
@@ -279,24 +370,26 @@ class DdsPixelformat:
 
 
 @dcs.dataclass()
-class DdsHeader:
+class DDSHeader:  # size: 124 bytes
     """
-    Describes a DDS file header. [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header)
+    Describes a DDS header.
+
+    [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header)
 
     Size: 124 bytes
     """
 
-    dw_size: dcs.U32
-    dw_flags: dcs.U32  # DdsHeaderFlags
+    dw_size: dcs.U32  # should be 124
+    dw_flags: dcs.U32  # DDSHeaderFlags
     dw_height: dcs.U32
     dw_width: dcs.U32
     dw_pitch_or_linear_size: dcs.U32
     dw_depth: dcs.U32
     dw_mip_map_count: dcs.U32
     dw_reserved1: Annotated[bytes, 44]  # dcs.U32[11]
-    dds_pixelformat: DdsPixelformat
-    dw_caps: dcs.U32
-    dw_caps2: dcs.U32
+    dds_pixelformat: DDSPixelFormat
+    dw_caps: dcs.U32  # DDSHeaderCaps
+    dw_caps2: dcs.U32  # DDSHeaderCaps2
     dw_caps3: dcs.U32
     dw_caps4: dcs.U32
     dw_reserved2: dcs.U32
@@ -305,20 +398,20 @@ class DdsHeader:
         return "\n".join(
             [
                 f"Size: {self.dw_size} bytes",
-                f"Flags:",
-                indent(f"{DdsHeaderFlags(self.dw_flags)}"),
+                "Flags:",
+                indent(str(DDSHeaderFlags(self.dw_flags))),
                 f"Height: {self.dw_height}",
                 f"Width: {self.dw_width}",
                 f"Pitch or Linear Size: {self.dw_pitch_or_linear_size}",
                 f"Depth: {self.dw_depth}",
                 f"Mip Map Count: {self.dw_mip_map_count}",
-                f"Reserved1: Unused (0x{self.dw_reserved1.hex()})",
-                f"Pixel Format:",
-                indent(f"{self.dds_pixelformat}"),
-                f"Caps:",
-                indent(f"{DdsHeaderCaps(self.dw_caps)}"),
-                f"Caps2:",
-                indent(f"{DdsHeaderCaps2(self.dw_caps2)}"),
+                f"Reserved1: Unused ({self.dw_reserved1.hex(':', 4)})",
+                "Pixel Format:",
+                indent(str(self.dds_pixelformat)),
+                "Caps:",
+                indent(str(DDSHeaderCaps(self.dw_caps))),
+                "Caps2:",
+                indent(str(DDSHeaderCaps2(self.dw_caps2))),
                 f"Caps3: Unused ({self.dw_caps3:#x})",
                 f"Caps4: Unused ({self.dw_caps4:#x})",
                 f"Reserved2: Unused ({self.dw_reserved2:#x})",
@@ -327,64 +420,85 @@ class DdsHeader:
 
 
 @dcs.dataclass()
-class DdsHeaderDxt10:
+class DDSHeaderDXT10:  # size: 20 bytes
     """
-    DDS header extension to handle resource arrays, DXGI pixel formats that don't map to the legacy Microsoft DirectDraw pixel format structures, and additional metadata. [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header-dxt10)
+    DDS header extension to handle resource arrays, DXGI pixel formats that don't map to the legacy
+    Microsoft DirectDraw pixel format structures, and additional metadata.
+
+    [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header-dxt10)
 
     Size: 20 bytes
     """
 
-    dxgi_format: dcs.U32  # DxgiFormat
-    resource_dimension: dcs.U32  # DdsHeaderDxt10ResourceDimension
-    misc_flag: dcs.U32  # DdsHeaderDxt10MiscFlag
+    dxgi_format: dcs.U32  # DXGIFormat
+    resource_dimension: dcs.U32  # DDSHeaderDXT10ResourceDimension
+    misc_flag: dcs.U32  # DDSHeaderDXT10MiscFlag
     array_size: dcs.U32
-    misc_flags2: dcs.U32  # DdsHeaderDxt10MiscFlags2
+    misc_flags2: dcs.U32  # DDSHeaderDXT10MiscFlags2
 
     def __str__(self) -> str:
+        try:
+            dxgi_format_str = str(DXGIFormat(self.dxgi_format))
+        except ValueError:
+            dxgi_format_str = f"Invalid ({self.dxgi_format})"
+        try:
+            resource_dimension_str = str(DDSHeaderDXT10ResourceDimension(self.resource_dimension))
+        except ValueError:
+            resource_dimension_str = f"Invalid ({self.resource_dimension})"
+        try:
+            misc_flags2_str = str(DDSHeaderDXT10MiscFlags2(self.misc_flags2))
+        except ValueError:
+            misc_flags2_str = f"Invalid ({self.misc_flags2})"
         return "\n".join(
             [
-                f"DXGI Format: {DxgiFormat(self.dxgi_format)}",
-                f"Resource Dimension: {DdsHeaderDxt10ResourceDimension(self.resource_dimension)}",
-                f"Misc Flag:",
-                indent(f"{DdsHeaderDxt10MiscFlag(self.misc_flag)}"),
+                f"DXGI Format: {dxgi_format_str}",
+                f"Resource Dimension: {resource_dimension_str}",
+                "Misc Flag:",
+                indent(str(DDSHeaderDXT10MiscFlag(self.misc_flag))),
                 f"Array Size: {self.array_size}",
-                f"Misc Flags2:",
-                indent(f"{DdsHeaderDxt10MiscFlags2(self.misc_flags2)}"),
+                "Misc Flags2:",
+                indent(misc_flags2_str),
             ]
         )
 
 
 @dcs.dataclass()
-class DdsFileHeader:
-    "Layout of the header of a DDS file. [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguide)"
+class DDSFileHeader:  # size: 128 bytes or 148 bytes
+    """
+    Layout of the full header of a DDS file.
 
-    dw_magic: Annotated[bytes, 4]  # b"DDS "
-    dds_header: DdsHeader
-    dds_header_dxt10: DdsHeaderDxt10
+    [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguide)
+
+    Size: 128 bytes or 148 bytes
+    """
+
+    dw_magic: Annotated[bytes, 4]  # should be b"DDS "
+    dds_header: DDSHeader
+    dds_header_dxt10: DDSHeaderDXT10
 
     def __str__(self) -> str:
         to_return: str = [
             f"Magic: {self.dw_magic}",
-            f"Header:",
-            indent(f"{self.dds_header}"),
+            "Header:",
+            indent(str(self.dds_header)),
         ]
         if self.dds_header_dxt10 is not None:
-            to_return.append(f"Header DXT10:")
-            to_return.append(indent(f"{self.dds_header_dxt10}"))
+            to_return.append("Header DXT10:")
+            to_return.append(indent(str(self.dds_header_dxt10)))
         return "\n".join(to_return)
 
     @classmethod
-    def from_stream(cls, input_stream: BufferedReader):
+    def from_stream(cls, input_stream: BufferedIOBase):
         input_stream.seek(0)
         dw_magic = input_stream.read(4)
-        dds_header = DdsHeader.from_packed(input_stream.read(DdsHeader.__dataclass_struct__.size))
-        # check if the header has the DXT10 extension
+        dds_header = DDSHeader.from_packed(input_stream.read(DDSHeader.__dataclass_struct__.size))
+        # check if the header has the DXT10 extension before attempting to read that portion
         if (
-            dds_header.dds_pixelformat.dw_flags & DdsPixelformatFlags.DDPF_FOURCC
+            dds_header.dds_pixelformat.dw_flags & DDSPixelFormatFlags.DDPF_FOURCC
             and dds_header.dds_pixelformat.dw_four_cc == b"DX10"
         ):
-            dds_header_dxt10 = DdsHeaderDxt10.from_packed(
-                input_stream.read(DdsHeaderDxt10.__dataclass_struct__.size)
+            dds_header_dxt10 = DDSHeaderDXT10.from_packed(
+                input_stream.read(DDSHeaderDXT10.__dataclass_struct__.size)
             )
         else:
             dds_header_dxt10 = None
@@ -394,7 +508,7 @@ class DdsFileHeader:
 def main(dds_file: str) -> None:
     try:
         with open(dds_file, "rb") as f:
-            dds_file_header = DdsFileHeader.from_stream(f)
+            dds_file_header = DDSFileHeader.from_stream(f)
     except FileNotFoundError:
         print(f"Error: File '{dds_file}' not found.")
     print(f"DDS File Header ({dds_file}):")
@@ -402,7 +516,7 @@ def main(dds_file: str) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Display the header of a DDS file.")
+    parser = ArgumentParser(description="Display the header of a DDS file.")
     parser.add_argument("filename", help="DDS file.")
     args = parser.parse_args()
 

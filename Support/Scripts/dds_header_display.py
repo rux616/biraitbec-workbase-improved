@@ -437,6 +437,8 @@ class DDSHeaderDXT10:  # size: 20 bytes
     misc_flags2: dcs.U32  # DDSHeaderDXT10MiscFlags2
 
     def __str__(self) -> str:
+        # handle invalid values for the enums so that the program doesn't crash in the event of,
+        # say, a corrupt file
         try:
             dxgi_format_str = str(DXGIFormat(self.dxgi_format))
         except ValueError:
@@ -449,6 +451,7 @@ class DDSHeaderDXT10:  # size: 20 bytes
             misc_flags2_str = str(DDSHeaderDXT10MiscFlags2(self.misc_flags2))
         except ValueError:
             misc_flags2_str = f"Invalid ({self.misc_flags2})"
+
         return "\n".join(
             [
                 f"DXGI Format: {dxgi_format_str}",

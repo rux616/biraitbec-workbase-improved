@@ -75,8 +75,6 @@ class DDSHeaderFlags(IntFlag):  # size: 4 bytes
     Flags to indicate which members contain valid data.
 
     [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header)
-
-    Size: 4 bytes
     """
 
     DDSD_CAPS: dcs.U32 = 0x1
@@ -95,8 +93,6 @@ class DDSHeaderCaps(IntFlag):  # size: 4 bytes
     Specifies the complexity of the surfaces stored.
 
     [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header)
-
-    Size: 4 bytes
     """
 
     DDSCAPS_COMPLEX: dcs.U32 = 0x8
@@ -110,8 +106,6 @@ class DDSHeaderCaps2(IntFlag):  # size: 4 bytes
     Additional detail about the surfaces stored.
 
     [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header)
-
-    Size: 4 bytes
     """
 
     DDSCAPS2_CUBEMAP: dcs.U32 = 0x200
@@ -130,8 +124,6 @@ class DDSPixelFormatFlags(IntFlag):  # size: 4 bytes
     Values which indicate what type of data is in the surface.
 
     [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-pixelformat)
-
-    Size: 4 bytes
     """
 
     DDPF_ALPHAPIXELS: dcs.U32 = 0x1
@@ -144,14 +136,11 @@ class DDSPixelFormatFlags(IntFlag):  # size: 4 bytes
 
 @str_int_enum
 class DXGIFormat(IntEnum):  # size: 4 bytes
-    # class DXGIFormat(RelaxedIntEnum):  # size: 4 bytes
     """
     Resource data formats, including fully-typed and typeless formats. A list of modifiers at the
     bottom of the reference page more fully describes each format type.
 
     [(reference)](https://learn.microsoft.com/en-us/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format)
-
-    Size: 4 bytes
     """
 
     DXGI_FORMAT_UNKNOWN: dcs.U32 = 0
@@ -288,8 +277,6 @@ class DDSHeaderDXT10ResourceDimension(IntEnum):  # size: 4 bytes
     [2] https://learn.microsoft.com/en-us/windows/desktop/api/d3d11/ne-d3d11-d3d11_resource_dimension
 
     [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header-dxt10)
-
-    Size: 4 bytes
     """
 
     DDS_DIMENSION_TEXTURE1D: dcs.U32 = 2
@@ -308,8 +295,6 @@ class DDSHeaderDXT10MiscFlag(IntFlag):  # size: 4 bytes
     [2] https://learn.microsoft.com/en-us/windows/desktop/api/d3d11/ne-d3d11-d3d11_resource_misc_flag
 
     [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header-dxt10)
-
-    Size: 4 bytes
     """
 
     DDS_RESOURCE_MISC_TEXTURECUBE: dcs.U32 = 0x4
@@ -322,8 +307,6 @@ class DDSHeaderDXT10MiscFlags2(IntEnum):  # size: 4 bytes
     of the associated resource. The upper 29 bits are reserved and are typically 0.
 
     [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header-dxt10)
-
-    Size: 4 bytes
     """
 
     DDS_ALPHA_MODE_UNKNOWN: dcs.U32 = 0x0
@@ -339,8 +322,6 @@ class DDSPixelFormat:  # size: 32 bytes
     Surface pixel format.
 
     [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-pixelformat)
-
-    Size: 32 bytes
     """
 
     dw_size: dcs.U32  # should be 32
@@ -375,8 +356,6 @@ class DDSHeader:  # size: 124 bytes
     Describes a DDS header.
 
     [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header)
-
-    Size: 124 bytes
     """
 
     dw_size: dcs.U32  # should be 124
@@ -426,8 +405,6 @@ class DDSHeaderDXT10:  # size: 20 bytes
     Microsoft DirectDraw pixel format structures, and additional metadata.
 
     [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-header-dxt10)
-
-    Size: 20 bytes
     """
 
     dxgi_format: dcs.U32  # DXGIFormat
@@ -471,8 +448,6 @@ class DDSFileHeader:  # size: 128 bytes or 148 bytes
     Layout of the full header of a DDS file.
 
     [(reference)](https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguide)
-
-    Size: 128 bytes or 148 bytes
     """
 
     dw_magic: Annotated[bytes, 4]  # should be b"DDS "

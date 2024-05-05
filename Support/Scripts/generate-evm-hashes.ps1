@@ -32,13 +32,10 @@ Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyy
 $dir = @{}
 $dir.logs = ".\Logs"
 $dir.originalBa2 = ".\OriginalBa2"
-$dir.patchedBa2 = ".\PatchedBa2"
-$dir.repack7z = ".\Repack7z"
 $dir.tools = ".\Tools"
 $dir.workingFiles = ".\WorkingFiles"
 $originalPath = $env:Path
-$env:Path = (Resolve-Path "$($dir.tools)\Archive2").Path + ";" + $env:PATH
-$env:Path = (Resolve-Path "$($dir.tools)\BSA Browser").Path + ";" + $env:PATH
+$env:Path = (Resolve-Path "$($dir.tools)\BSArch").Path + ";" + $env:PATH
 $env:Path = (Resolve-Path "$($dir.tools)\xxHash").Path + ";" + $env:PATH
 
 Add-Type -TypeDefinition (Get-Content "$($dir.tools)\lib\Crc32.cs" -Raw) -Language CSharp
@@ -76,14 +73,14 @@ Get-ChildItem $dir.logs -File -Filter *.ps1 | Remove-Item -Force
 
 foreach ($ba2File in $ba2Files) {
     $keySetTimer.Restart()
+    New-Item $dir.workingFiles -ItemType "directory" -ErrorAction Stop | Out-Null
     "ba2 file $($ba2Files.IndexOf($ba2file) + 1) of $($ba2Files.Count) ($ba2File)"
-    $logFile = "$($dir.logs)\Hashes ($ba2File).ps1"
-    $archive2LogFile = "$($dir.logs)\archive2 ($ba2File).log"
-    $bsabLogFile = "$($dir.logs)\bsab ($ba2File).log"
+    $logFile = "$($dir.logs)\EVM Hashes ($ba2File).ps1"
+    $bsarchLogFile = "$($dir.logs)\bsarch ($ba2File).log"
 
     # header
     @(
-        "# Copyright 2022 Dan Cassidy"
+        "# Copyright 2024 Dan Cassidy"
         ""
         "# This program is free software: you can redistribute it and/or modify"
         "# it under the terms of the GNU General Public License as published by"
@@ -103,27 +100,19 @@ foreach ($ba2File in $ba2Files) {
         ""
     ) | Out-File -LiteralPath $logFile
 
-    # extract (archive2)
-    "  - extract (archive2)"
-    $stdout, $stderr = (archive2.exe "$($dir.originalBa2)\$ba2File" -extract="$($dir.workingFiles)" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
-    "STDOUT" | Out-File -LiteralPath $archive2LogFile -Append
-    $stdout | Out-File -LiteralPath $archive2LogFile -Append
-    "STDERR" | Out-File -LiteralPath $archive2LogFile -Append
-    $stderr | Out-File -LiteralPath $archive2LogFile -Append
-
-    # extract (bsab)
-    "  - extract (bsab)"
-    $stdout, $stderr = (bsab.exe -e -o -f "Textures\Shared\Cubemaps\*" "$($dir.originalBa2)\$ba2File" "$($dir.workingFiles)" 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
-    "STDOUT" | Out-File -LiteralPath $bsabLogFile -Append
-    $stdout | Out-File -LiteralPath $bsabLogFile -Append
-    "STDERR" | Out-File -LiteralPath $bsabLogFile -Append
-    $stderr | Out-File -LiteralPath $bsabLogFile -Append
+    # extract
+    "  - extract"
+    $stdout, $stderr = (bsarch.exe unpack "$($dir.fallout4Data)\$ba2File" "$($dir.workingFiles)" -mt 2>&1).Where({ $_ -is [string] -and $_ -ne "" }, "Split")
+    "STDOUT" | Out-File -LiteralPath $bsarchLogFile -Append
+    $stdout | Out-File -LiteralPath $bsarchLogFile -Append
+    "STDERR" | Out-File -LiteralPath $bsarchLogFile -Append
+    $stderr | Out-File -LiteralPath $bsarchLogFile -Append
 
     # hash
     "  - hash"
     "# $ba2File" | Out-File -LiteralPath $logFile -Append
     "`$originalBa2FileHashes = @{}" | Out-File -LiteralPath $logFile -Append
-    "`$var = `"originalBa2FileHashes`"; `$keyType = `"FileName`"; `$tag = `"Vanilla v1.10.163.0-4460038`"" | Out-File -LiteralPath $logFile -Append
+    "`$var = `"originalBa2FileHashes`"; `$keyType = `"FileName`"; `$tag = `"Vanilla v1.10.980.0-14160910`"" | Out-File -LiteralPath $logFile -Append
     Push-Location $dir.workingFiles
     $relativeFileList = (Get-ChildItem -File -Recurse | Resolve-Path -Relative).Substring(2)
     Pop-Location

@@ -32,7 +32,7 @@ $dir = @{}
 $dir.logs = ".\Logs"
 $dir.patchedBa2 = ".\PatchedBa2"
 $dir.repack7z = ".\Repack7z"
-$dir.repack7zDIsabled = ".\Repack7z.disabled"
+$dir.repack7zDisabled = ".\Repack7z.disabled"
 $dir.tools = ".\Tools"
 $env:PATH = (Resolve-Path "$($dir.tools)\xxHash").Path + ";" + $env:PATH
 
@@ -148,7 +148,7 @@ foreach ($keySet in $allKeyCombinations) {
     # log
     "  - log"
     "# $(($keySet -join " + ").ToLower())" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
-    "`$tag = @(`"$($keySet -join "``", ``"")`") -join `$TagJoiner" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
+    "`$tag = @(`$fo4Version, `$ba2Version (@(`"$($keySet -join "``", ``"")`") -join `$TagJoiner))" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
     foreach ($file in $ba2Files.GetEnumerator()) {
         $fileName = "$($dir.patchedBa2)\$($file.Value)"
         if (-not (Test-Path -LiteralPath $fileName)) {

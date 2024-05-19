@@ -148,7 +148,7 @@ foreach ($keySet in $allKeyCombinations) {
     # log
     "  - log"
     "# $(($keySet -join " + ").ToLower())" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
-    "`$tag = @(`$fo4Version, `$ba2Version (@(`"$($keySet -join "``", ``"")`") -join `$TagJoiner))" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
+    "`$tags = @(`$fo4Version, `$ba2Version (@(`"$($keySet -join "``", ``"")`") -join `$TagJoiner))" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
     foreach ($file in $ba2Files.GetEnumerator()) {
         $fileName = "$($dir.patchedBa2)\$($file.Value)"
         if (-not (Test-Path -LiteralPath $fileName)) {
@@ -157,7 +157,7 @@ foreach ($keySet in $allKeyCombinations) {
         }
         $hash = (Get-FileHash -LiteralPath $fileName -Algorithm XXH128).Hash
         $size = (Get-ChildItem -LiteralPath $fileName).Length
-        "Add-Hash -VariableName `$var -Hash `"$hash`" -Tags `$tag -FileName `$ba2Files.$($file.Key) -FileSize $size" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
+        "Add-Hash -VariableName `$var -Hash `"$hash`" -Tags `$tags -FileName `$ba2Files.$($file.Key) -FileSize $size" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
     }
     "" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
 

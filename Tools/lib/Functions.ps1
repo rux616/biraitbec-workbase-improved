@@ -19,7 +19,9 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 29, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 30, 0))
+
+. "$PSScriptRoot\Classes.ps1"
 
 $originalPath = $env:PATH
 $writeCustomPrevNoNewLineLength = 0
@@ -30,7 +32,7 @@ function Add-Hash {
         [Parameter(Mandatory)] [string] $VariableName,
         [Parameter(Mandatory)] [string] $Hash,
         [Parameter(Mandatory)] [string] $FileName,
-        [Parameter(Mandatory)] [string[]] $Tag,
+        [Parameter(Mandatory)] [string[]] $Tags,
         [Parameter()] [ValidateSet('FileName', 'Hash')] [string] $KeyType = 'Hash',
         [Parameter()] [long] $FileSize = -1,
         [Parameter()] [string] $Action = $null
@@ -41,6 +43,19 @@ function Add-Hash {
         'FileName' { $FileName }
         'Hash' { $Hash }
     }
+
+    # check if any tags are Fallout 4 versions and create a FO4Version object for each
+    [FO4Version[]] $versions = $Tags | Where-Object {
+        $_ -match "^Fallout 4 v\d+\.\d+\.\d+\.\d+\.-\d+$"
+    } | ForEach-Object {
+        $version = $_ -replace "Fallout 4 v", ""
+        $version = $version -split "-"
+        [FO4Version]@{
+            Version      = [System.Version]::Parse($version[0])
+            SteamBuildID = [long]::Parse($version[1])
+        }
+    }
+
     if ($var.ContainsKey($key)) {
         if ($var[$key].FileName -ne $FileName) {
             throw "Assigning file `"$FileName`" to key `"$key`" failed because that key is already in use by file `"$($var[$key].FileName)`"."
@@ -56,15 +71,17 @@ function Add-Hash {
         if ($var[$key].Hash -ne $Hash) {
             throw "Assigning hash `"$Hash`" to key `"$key`" failed because that key is already in use by hash `"$($var[$key].Hash)`"."
         }
-        $var[$key].Tags = $var[$key].Tags + @($Tag) | Sort-Object -Unique
+        $var[$key].Versions = $var[$key].Versions + @($versions) | Sort-Object -Unique
+        $var[$key].Tags = $var[$key].Tags + @($Tags) | Sort-Object -Unique
         $var[$key].Action = $var[$key].Actions + @($Action) | Sort-Object -Unique
     }
     else {
         $var[$key] = @{
             FileName = $FileName
             FileSize = $FileSize
+            Versions = @($versions)
             Hash     = $Hash
-            Tags     = @($Tag)
+            Tags     = @($Tags)
             Actions  = @($Action)
         }
     }

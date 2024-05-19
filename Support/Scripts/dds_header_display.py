@@ -18,6 +18,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
+# --------------------------------------------------------------------------------------------------
+# this script extracts and displays a DDS file header in human-readable form according to the
+# DirectDraw Surface (DDS) programming guide[1]
+#
+# [1] https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguide
+# --------------------------------------------------------------------------------------------------
+
+
 from argparse import ArgumentParser  # built-in
 from enum import IntEnum, IntFlag  # built-in
 from functools import partial  # built-in
@@ -466,7 +474,30 @@ class DDSFileHeader:  # size: 128 bytes or 148 bytes
         return "\n".join(to_return)
 
     @classmethod
-    def from_stream(cls, input_stream: BufferedIOBase):
+    def from_file(cls, filename: str) -> "DDSFileHeader":
+        """Create and populate a `DDSFileHeader` object from a file.
+
+        Args:
+            `filename` (`str`): The file to read from.
+
+        Returns:
+            `DDSFileHeader`: The populated `DDSFileHeader` object.
+        """
+
+        with open(filename, "rb") as f:
+            return cls.from_stream(f)
+
+    @classmethod
+    def from_stream(cls, input_stream: BufferedIOBase) -> "DDSFileHeader":
+        """Create and populate a `DDSFileHeader` object from a stream.
+
+        Args:
+            `input_stream` (`BufferedIOBase`): The input stream to read from.
+
+        Returns:
+            `DDSFileHeader`: The populated `DDSFileHeader` object.
+        """
+
         input_stream.seek(0)
         dw_magic = input_stream.read(4)
         dds_header = DDSHeader.from_packed(input_stream.read(DDSHeader.__dataclass_struct__.size))
@@ -480,17 +511,20 @@ class DDSFileHeader:  # size: 128 bytes or 148 bytes
             )
         else:
             dds_header_dxt10 = None
+
         return cls(dw_magic, dds_header, dds_header_dxt10)
 
 
-def main(dds_file: str) -> None:
+def main(dds_file: str) -> int:
     try:
-        with open(dds_file, "rb") as f:
-            dds_file_header = DDSFileHeader.from_stream(f)
+        dds_file_header = DDSFileHeader.from_file(dds_file)
     except FileNotFoundError:
         print(f"Error: File '{dds_file}' not found.")
+        return 1
+
     print(f"DDS File Header ({dds_file}):")
-    print(indent(f"{dds_file_header}"))
+    print(indent(str(dds_file_header)))
+    return 0
 
 
 if __name__ == "__main__":
@@ -498,4 +532,4 @@ if __name__ == "__main__":
     parser.add_argument("filename", help="DDS file.")
     args = parser.parse_args()
 
-    main(args.filename)
+    exit(main(args.filename))

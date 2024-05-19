@@ -157,7 +157,7 @@ foreach ($keySet in $allKeyCombinations) {
         }
         $hash = (Get-FileHash -LiteralPath $fileName -Algorithm XXH128).Hash
         $size = (Get-ChildItem -LiteralPath $fileName).Length
-        "Add-Hash -VariableName `$var -Hash `"$hash`" -Tag `$tag -FileName `$ba2Files.$($file.Key) -FileSize $size" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
+        "Add-Hash -VariableName `$var -Hash `"$hash`" -Tags `$tag -FileName `$ba2Files.$($file.Key) -FileSize $size" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
     }
     "" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
 

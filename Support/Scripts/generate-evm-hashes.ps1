@@ -112,7 +112,7 @@ foreach ($ba2File in $ba2Files) {
     "  - hash"
     "# $ba2File" | Out-File -LiteralPath $logFile -Append
     "`$originalBa2FileHashes = @{}" | Out-File -LiteralPath $logFile -Append
-    "`$var = `"originalBa2FileHashes`"; `$keyType = `"FileName`"; `$tag = `"Vanilla v1.10.980.0-14160910`"" | Out-File -LiteralPath $logFile -Append
+    "`$var = `"originalBa2FileHashes`"; `$keyType = `"FileName`"; `$tag = `"Fallout 4 v1.10.984.0-14349213`"" | Out-File -LiteralPath $logFile -Append
     Push-Location $dir.workingFiles
     $relativeFileList = (Get-ChildItem -File -Recurse | Resolve-Path -Relative).Substring(2)
     Pop-Location
@@ -120,7 +120,7 @@ foreach ($ba2File in $ba2Files) {
         $fileName = "$($dir.workingFiles)\$_"
         $hash = (Get-FileHash -LiteralPath $fileName -Algorithm XXH128).Hash
         $size = (Get-ChildItem -LiteralPath $fileName).Length
-        "Add-Hash -VariableName `$var -KeyType `$keyType -Hash `"$hash`" -Tag `$tag -FileName `"$_`" -FileSize $size" | Out-File -LiteralPath $logFile -Append
+        "Add-Hash -VariableName `$var -KeyType `$keyType -Hash `"$hash`" -Tags `$tag -FileName `"$_`" -FileSize $size" | Out-File -LiteralPath $logFile -Append
     }
     "Remove-Variable `"var`", `"keyType`", `"tag`"" | Out-File -LiteralPath $logFile -Append
 

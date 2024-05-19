@@ -1,12 +1,12 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {
-		"yaml.schemas": {
-			"https://json.schemastore.org/github-workflow.json": "file:///d%3A/Modding/temp/Fallout%204/BiRaitBec%20WorkBase%20Improved/.github/workflows/build.yaml"
-		}
-	}
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "yaml.schemas": {
+      "https://json.schemastore.org/github-workflow.json": "file:///d%3A/Modding/temp/Fallout%204/BiRaitBec%20WorkBase%20Improved/.github/workflows/build.yaml"
+    }
+  }
 }

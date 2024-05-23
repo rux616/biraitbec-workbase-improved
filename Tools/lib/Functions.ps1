@@ -19,7 +19,9 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 29, 0))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 30, 1))
+
+. "$PSScriptRoot\Classes.ps1"
 
 $originalPath = $env:PATH
 $writeCustomPrevNoNewLineLength = 0
@@ -30,7 +32,7 @@ function Add-Hash {
         [Parameter(Mandatory)] [string] $VariableName,
         [Parameter(Mandatory)] [string] $Hash,
         [Parameter(Mandatory)] [string] $FileName,
-        [Parameter(Mandatory)] [string] $Tag,
+        [Parameter(Mandatory)] [string[]] $Tags,
         [Parameter()] [ValidateSet('FileName', 'Hash')] [string] $KeyType = 'Hash',
         [Parameter()] [long] $FileSize = -1,
         [Parameter()] [string] $Action = $null
@@ -41,6 +43,21 @@ function Add-Hash {
         'FileName' { $FileName }
         'Hash' { $Hash }
     }
+
+    # check if any tags are Fallout 4 versions and create a FO4Version object for each
+    $fo4Versions = @(
+        $Tags | Where-Object {
+            $_ -match "^Fallout 4 v(\d+\.){3}\d+-\d+$"
+        } | ForEach-Object {
+            $version = $_ -replace "Fallout 4 v", ""
+            $version = $version -split "-"
+            [FO4Version]@{
+                Version      = [System.Version]::Parse($version[0])
+                SteamBuildID = [long]::Parse($version[1])
+            }
+        }
+    )
+
     if ($var.ContainsKey($key)) {
         if ($var[$key].FileName -ne $FileName) {
             throw "Assigning file `"$FileName`" to key `"$key`" failed because that key is already in use by file `"$($var[$key].FileName)`"."
@@ -56,18 +73,21 @@ function Add-Hash {
         if ($var[$key].Hash -ne $Hash) {
             throw "Assigning hash `"$Hash`" to key `"$key`" failed because that key is already in use by hash `"$($var[$key].Hash)`"."
         }
-        $var[$key].Tags = $var[$key].Tags + @($Tag) | Sort-Object -Unique
-        $var[$key].Action = $var[$key].Actions + @($Action) | Sort-Object -Unique
     }
     else {
         $var[$key] = @{
             FileName = $FileName
             FileSize = $FileSize
             Hash     = $Hash
-            Tags     = @($Tag)
-            Actions  = @($Action)
+            Versions = [System.Collections.ArrayList]@()
+            Tags     = [System.Collections.ArrayList]@()
         }
     }
+
+    $fo4Versions | Where-Object { $_ -notin $var[$key].Versions } | ForEach-Object { [void] $var[$key].Versions.Add($_) }
+    $var[$key].Versions.Sort()
+    $tags | Where-Object { $_ -notin $var[$key].Tags } | ForEach-Object { [void] $var[$key].Tags.Add($_) }
+    $var[$key].Tags.Sort()
 }
 
 function Exit-Script {
@@ -456,7 +476,7 @@ function Get-PathSize {
 
     process {
         foreach ($item in $Path) {
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 Path = $item
                 Size = [long](Get-ChildItem -LiteralPath $item -File -Recurse -ErrorAction SilentlyContinue | Measure-Object -Sum Length).Sum
             }
@@ -500,29 +520,6 @@ function Get-WindowsVersion {
         "OS Build"
         (Get-ItemPropertyValue -Path $regKey -Name "CurrentBuild") + "." + (Get-ItemPropertyValue -Path $regKey -Name "UBR") + ")"
     ) -join " "
-}
-
-function Invoke-HashActions {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)] [string] $VariableName,
-        [Parameter(Mandatory)] [string] $Hash
-    )
-
-    $var = (Get-Variable -Name $VariableName -ErrorAction Stop).Value
-    if (-not $var.ContainsKey($Hash)) { return } # hash does not exist in variable
-    $var.$Hash.Actions | ForEach-Object {
-        $action = $_ -split "|"
-        switch ($action[0]) {
-            ResetRepackFlags {
-                $repackFlags.Keys | ForEach-Object { $repackFlags.$_ = $false }
-            }
-            SetRepackFlag {
-                $repackFlags.$action[1] = $action[2]
-            }
-            Default {}
-        }
-    }
 }
 
 <#

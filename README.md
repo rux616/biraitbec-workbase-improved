@@ -63,7 +63,10 @@ Features
 Requirements
 ------------
 - Visual C++ 2012 Update 4 [redistributable](https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe)
-- Fallout 4
+- One of the following Fallout 4 versions:
+    - v1.10.163.0
+    - v1.10.980.0
+    - v1.10.984.0
 
 ([TOC](#table-of-contents))
 

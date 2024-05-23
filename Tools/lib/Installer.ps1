@@ -27,7 +27,7 @@ param (
     [string] $PatchedBa2Folder = ".\PatchedBa2",
     # Changes the WorkingFiles folder
     [string] $WorkingFilesFolder,
-    # Forces 'Custom', 'Hybrid', or 'Automatic' mode of operation
+    # Forces 'Custom', 'Hybrid', or 'Standard' mode of operation
     [ValidateSet("Custom", "Hybrid", "Standard")] [string] $ForceOperationMode,
     # Forces WorkingFiles folder to be in the TEMP folder, is overridden by 'WorkingFilesFolder' if both are used
     [switch] $ForceTempWorkingFiles,
@@ -73,8 +73,8 @@ $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 #region constants and variables
 #------------------------------
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 12, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 27, 0)) -Option Constant
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 13, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 28, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -110,7 +110,7 @@ $repackFiles.Quality = @(
     "2a. Quality Addon - Part One-23556-1-0-1565546826.7z"
     "2b. Quality Overhaul - Part Two-23556-1-0-1565980973.7z"
 )
-$repackFiles."Vault Fix" = @(
+$repackFiles.VaultFix = @(
     "Fix Vault-Window-Metal-Institute-40534-1-02-1565670781.7z"
 )
 $repackFiles.Restyle = @(
@@ -189,13 +189,15 @@ if (-not $SkipPowerShellVersionCheck) {
 Get-PhysicalDisk -ErrorAction SilentlyContinue | Out-Null
 
 # grab the volumes that have drive letters and create objects with that info, particularly size info, first try
-# Get-Volume, then try Get-PSDrive if that fails. if they both fail, abort, because something is seriously wrong
+# Get-Volume, then try GetDrives(), and finally try Get-PSDrive. if they all fail, abort, because something is seriously
+# wrong
 try {
     $driveInfo = Get-Volume -ErrorAction Stop | Where-Object { $_.DriveLetter } | ForEach-Object {
         [PSCustomObject]@{
             DriveLetter     = $_.DriveLetter
             MediaType       = $null
             BusType         = $null
+            FileSystem      = $_.FileSystem
             SizeFree        = $_.SizeRemaining
             SizeFreePercent = if ($_.Size) { $_.SizeRemaining / $_.Size * 100 } else { -1 }
             SizeUsed        = $_.Size - $_.SizeRemaining
@@ -212,11 +214,35 @@ catch {
 }
 if ($null -eq $driveInfo) {
     try {
+        $driveInfo = [System.IO.DriveInfo]::GetDrives() | ForEach-Object {
+            [PSCustomObject]@{
+                DriveLetter     = $_.Name.Substring(0, 1)
+                MediaType       = $null
+                BusType         = $null
+                FileSystem      = $_.DriveFormat
+                SizeFree        = $_.AvailableFreeSpace
+                SizeFreePercent = if ($_.TotalSize) { $_.AvailableFreeSpace / $_.TotalSize * 100 } else { -1 }
+                SizeUsed        = $_.TotalSize - $_.AvailableFreeSpace
+                SizeUsedPercent = if ($_.TotalSize) { ($_.TotalSize - $_.AvailableFreeSpace) / $_.TotalSize * 100 } else { -1 }
+                SizeTotal       = $_.TotalSize
+            }
+        } | Sort-Object -Property DriveLetter
+    }
+    catch {
+        Write-CustomLog "[System.IO.DriveInfo]::GetDrives() failed!" -Prefix "ERROR: "
+        Write-CustomLog $_ -Prefix "ERROR: "
+        Write-CustomLog $_.InvocationInfo.PositionMessage -Prefix "ERROR: "
+        Write-CustomLog ""
+    }
+}
+if ($null -eq $driveInfo) {
+    try {
         $driveInfo = Get-PSDrive -PSProvider FileSystem -ErrorAction Stop | ForEach-Object {
             [PSCustomObject]@{
                 DriveLetter     = $_.Name
                 MediaType       = $null
                 BusType         = $null
+                FileSystem      = $null
                 SizeFree        = $_.Free
                 SizeFreePercent = $_.Free / ($_.Free + $_.Used) * 100
                 SizeUsed        = $_.Used
@@ -230,15 +256,18 @@ if ($null -eq $driveInfo) {
         Write-CustomLog $_ -Prefix "ERROR: "
         Write-CustomLog $_.InvocationInfo.PositionMessage -Prefix "ERROR: "
         Write-CustomLog ""
-
-        $extraErrorText = @(
-            "This script attempts to get disk information from your computer in order to do its job better, but both the primary and backup methods of doing so have failed."
-            ""
-            "Please check the readme file in the `"Known Issues`" section for the method to fix this issue. (Search for `"your drives`" to find the entry.) If that doesn't work, please seek help from the script author."
-        )
-        Write-CustomError "Getting drive information failed" -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
-        Exit-Script 1
     }
+}
+if ($null -eq $driveInfo) {
+    $extraErrorText = @(
+        "This script attempts to get disk information from your computer in order to do its job better, but the primary, secondary, and tertiary methods of doing so have all failed."
+        ""
+        "Please check the readme file in the `"Known Issues`" section for a possible method to fix this issue. (Search for `"your drives`" to find the entry.) If that doesn't work, please seek help from the script author."
+    )
+    Write-CustomError "Getting drive information failed" -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+    Exit-Script 1
+    Write-CustomError "Failed to get drive information." -Prefix "ERROR: " -NoJustifyRight
+    Exit-Script 1
 }
 
 # populate the physical disk properties of the drive info array
@@ -268,6 +297,7 @@ $driveInfoTableFormat = [object]@(
     @{ Name = "Drive"; Expression = { $_.DriveLetter }; Width = 6; Alignment = "left" },
     @{ Name = "Type"; Expression = { if (-not $_.MediaType) { "Unknown" } else { $_.MediaType } }; Width = 12; Alignment = "left" },
     @{ Name = "Bus"; Expression = { if (-not $_.BusType) { "Unknown" } else { $_.BusType } }; Width = 8; Alignment = "left" },
+    @{ Name = "File System"; Expression = { if (-not $_.FileSystem) { "Unknown" } else { $_.FileSystem } }; Width = 12; Alignment = "left" },
     @{ Name = "Free"; Expression = { Write-PrettySize $_.SizeFree }; Width = 9; Alignment = "right" },
     @{ Name = "% Free"; Expression = { if ($_.SizeFreePercent -eq -1) { "Unknown" } else { "$(($_.SizeFreePercent).ToString("f1"))%" } }; Width = 8; Alignment = "right" },
     @{ Name = "Used"; Expression = { Write-PrettySize $_.SizeUsed }; Width = 10; Alignment = "right" },
@@ -279,21 +309,16 @@ $driveInfoTableFormat = [object]@(
 
 #region add tools to PATH
 #------------------------
-# 7-Zip 64-bit v22.01 (2022-07-15) by Igor Pavlov
-# https://www.7-zip.org/
+# 7-Zip (https://www.7-zip.org/)
 $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\7-zip").Path + ";" + $env:PATH
 
-# Archive2 v1.1.0.4 by Bethesda Game Studios
-# Part of the Fallout 4 Creation Kit
-# https://bethesda.net/en/game/bethesda-launcher
+# Archive2 (https://store.steampowered.com/app/1946160/Fallout_4_Creation_Kit/)
 $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\Archive2").Path + ";" + $env:PATH
 
-# BSA Browser v1.14.1 by AlexxEG
-# https://www.nexusmods.com/skyrimspecialedition/mods/1756
-$env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\BSA Browser").Path + ";" + $env:PATH
+# BSArch (https://www.nexusmods.com/fallout4/mods/2737)
+$env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\BSArch").Path + ";" + $env:PATH
 
-# xxhsum v0.8.1 by cyan4973
-# https://cyan4973.github.io/xxHash/
+# xxhsum (https://cyan4973.github.io/xxHash/)
 $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\xxHash").Path + ";" + $env:PATH
 #endregion
 
@@ -315,18 +340,22 @@ if ($dir.currentDirectory.Contains("[") -or $dir.currentDirectory.Contains("]"))
 
 #region adjust workingFile path
 #------------------------------
+$fileSystemWBIDrive = ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).FileSystem
 $busTypeWBIDrive = ($driveInfo | Where-Object { $_.DriveLetter -eq $dir.currentDirectory.Substring(0, 1) }).BusType
-# if the working files folder is specified, it takes precedence over USB detection or forcing it to TEMP
+# if the working files folder is specified, it takes precedence over filesystem detection or forcing it to TEMP
 if ($WorkingFilesFolder) {
     $dir.workingFiles = $WorkingFilesFolder
 }
-# archive2 becomes non-deterministic if the data it is putting into an archive comes from a USB drive, so if WBI is being ran
-# from a drive with an unknown bus type or a USB drive, switch $dir.workingFiles to reside in the user's temp directory instead
+# archive2 becomes non-deterministic if the data it is putting into an archive comes from a drive formatted with exFAT
+# (or possibly simply non-NTFS), so if WBI is being ran from a drive formatted with exFAT or if that check is $null,
+# from a drive with an unknown bus type or a USB drive assume the drive is formatted in exFAT and switch
+# $dir.workingFiles to reside in the user's temp directory instead
 elseif (
-    $null -eq $busTypeWBIDrive -or
-    $busTypeWBIDrive -eq "USB" -or
-    $ForceTempWorkingFiles
+    $ForceTempWorkingFiles -or
+    $fileSystemWBIDrive -eq "exFAT" -or
+    ($null -eq $fileSystemWBIDrive -and ($null -eq $busTypeWBIDrive -or $busTypeWBIDrive -eq "USB"))
 ) {
+    # note that this assumes the temp path is on an NTFS-formatted drive
     $dir.workingFiles = Resolve-PathAnyway ([System.IO.Path]::GetTempPath() + "\" + $dir.workingFiles)
 }
 #endregion
@@ -638,6 +667,136 @@ Write-Custom "Extended validation mode:" -NoNewline
 if ($ExtendedValidationMode) { Write-CustomInfo "Active" }
 else { Write-CustomInfo "Inactive" }
 
+if ($ExtendedValidationMode -and $SkipOriginalBa2Validation) {
+    $extraErrorText = @(
+        "Extended validation mode requires original BA2 validation to be enabled."
+        ""
+        "Please enable original BA2 validation and try again."
+    )
+    Write-CustomError "Mutually exclusive options selected." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
+    Exit-Script 1
+}
+
+Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
+#endregion
+
+
+#region validate original BA2 files
+#----------------------------------
+$sectionTimer.Restart()
+Write-CustomLog "Section: validate original BA2 files"
+
+Write-CustomLog ""
+Write-Custom "Validating original BA2 files:" -NoNewline
+
+if ($SkipOriginalBa2Validation) {
+    Write-CustomWarning "      [SKIPPED]"
+}
+else {
+    Write-Custom "" -BypassLog
+
+    [System.Collections.ArrayList] $vanillaOriginalBa2Files = @()
+    [System.Collections.ArrayList] $alternateOriginalBa2Files = @()
+
+    foreach ($file in $ba2Filenames) {
+        try {
+            Write-Custom "  $file" -NoNewLine
+
+            $originalBa2File = Get-OriginalBa2File $file
+
+            # validate original archive
+            Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
+            if (-not (Test-Path -LiteralPath $originalBa2File)) {
+                if ($file -in $optionalOriginalArchives -and $MakeDLCOptional) {
+                    Write-CustomWarning "      [NOT FOUND - OPTIONAL]"
+                    continue
+                }
+                $extraErrorText = @(
+                    "The archive in question cannot be found."
+                    ""
+                    "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
+                    ""
+                    "If you're attempting to use one of the alternate bases, make sure you didn't miss a file when extracting and/or copying the files."
+                )
+                $extraLogText = @("(No extra log info.)")
+                throw "Archive not found."
+            }
+            Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length.ToString("N0")) bytes"
+            if (
+                ($originalBa2Hashes.GetEnumerator() | Where-Object {
+                    $_.Value.FileName -eq $file -and
+                    $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length
+                }).Count -eq 0 -and
+                ($alternateOriginalBa2Hashes.GetEnumerator() | Where-Object {
+                    $_.Value.FileName -eq $file -and
+                    $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length
+                }).Count -eq 0 -and
+                ($oldAlternateOriginalBa2Hashes.GetEnumerator() | Where-Object {
+                    $_.Value.FileName -eq $file -and
+                    $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length
+                }).Count -eq 0
+            ) {
+                $extraErrorText = @(
+                    "The size of this original archive doesn't match any known archives."
+                    ""
+                    "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
+                    ""
+                    "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
+                )
+                $extraLogText = @("Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length.ToString("N0")) bytes")
+                throw "Size mismatch."
+            }
+            $hash = (Get-FileHash -LiteralPath $originalBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
+            Write-CustomLog "      Hash: $hash"
+            if ($originalBa2Hashes[$hash].FileName -eq $file) {
+                $validOriginalText = "[VALID]"
+
+                # store the hashtable entry for later comparison
+                [void] $vanillaOriginalBa2Files.Add($originalBa2Hashes[$hash])
+            }
+            elseif ($alternateOriginalBa2Hashes[$hash].FileName -eq $file) {
+                $validOriginalText = "[VALID - ALTERNATE]"
+
+                # store the hashtable entry for later comparison
+                [void] $alternateOriginalBa2Files.Add($alternateOriginalBa2Hashes[$hash])
+            }
+            elseif ($oldAlternateOriginalBa2Hashes[$hash].FileName -eq $file) {
+                Write-CustomLog "      Tags: $($oldAlternateOriginalBa2Hashes[$hash].Tags -join ", ")"
+                $extraErrorText = @(
+                    "If using alternate original BA2 archives (i.e. PhyOp or Luxor), this script only allows the latest versions."
+                    ""
+                    "Check the readme and update the archive in question to the version that's needed."
+                )
+                $extraLogText = @("(No extra log info.)")
+                throw "Old version of an alternate original archive detected."
+            }
+            else {
+                $extraErrorText = @(
+                    "The exact contents of this archive don't match any known archives."
+                    ""
+                    "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
+                    ""
+                    "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
+                )
+                $extraLogText = @("(No extra log info.)")
+                throw "Unrecognized archive file."
+            }
+            Write-CustomLog "      Tags: $($originalBa2Hashes[$hash].Tags -join ", ")$($alternateOriginalBa2Hashes[$hash].Tags -join ", ")"
+            Write-CustomSuccess "      $validOriginalText"
+        }
+        catch {
+            Write-CustomError "      [FAIL]"
+            Write-CustomError $_ -ExtraContext $extraErrorText -Prefix "      ERROR: " -NoJustifyRight -NoTrimBeforeDisplay
+            Write-CustomLog $_.InvocationInfo.PositionMessage -ExtraContext $extraLogText -Prefix "      ERROR: "
+            $processingFailed = $true
+        }
+    }
+    if ($processingFailed) {
+        Write-CustomError "", "Validation of original BA2 files failed." -NoJustifyRight
+        Exit-Script 1
+    }
+}
+
 Write-CustomLog "", "Section duration: $($sectionTimer.Elapsed.ToString())", "$("-" * 34)"
 #endregion
 
@@ -665,47 +824,20 @@ foreach ($object in $repackFiles.GetEnumerator()) {
 }
 $repackFiles = $existingRepackFiles
 
-# get the list of original archive size mismatches, then take that list and see how many of those mismatches match sizes for alternate original archives
-
-# get enumerator for the original BA2 hashes and pipe it into Where-Object
-$originalBa2SizeMismatches = $originalBa2Hashes.GetEnumerator() | Where-Object {
-    # get file size for a given file and prepare to see if it's not equal
-    $_.Value.FileSize -ne
-    # use the Get-OriginalBa2File function to grab the full path of the file
-    # feed full file path of file to Get-ChildItem, telling it to silently continue if not there (it gets checked later)
-    # get file size of file returned by Get-ChildItem
-    (Get-ChildItem -LiteralPath (Get-OriginalBa2File $_.Value.FileName) -ErrorAction SilentlyContinue).Length
-    # make sure that any objects found are sorted by file name
-} | Sort-Object { $_.Value.FileName }
-
-# take the original ba2 size mismatches and pipe them into ForEach-Object
-$alternateOriginalBa2SizeMatches = $originalBa2SizeMismatches | ForEach-Object {
-    # assign the current object in the pipeline to a variable other than $_
-    $currentMismatch = $_
-    # get an enumerator for the alternate original ba2 hashes and pipe it into Where-Object
-    $alternateOriginalBa2Hashes.GetEnumerator() | Where-Object {
-        # have Where-Object find alternate original BA2s that have matching file names and matching file sizes
-        $_.Value.FileName -eq $currentMismatch.Value.FileName -and
-        $_.Value.FileSize -eq (Get-ChildItem -LiteralPath (Get-OriginalBa2File $_.Value.FileName) -ErrorAction SilentlyContinue).Length
-    }
-}
-
 switch ($ForceOperationMode) {
     "Custom" { $repackFlags.Custom = $true }
     "Hybrid" { $repackFlags.Hybrid = $true }
     "Standard" { <# do nothing #> }
-    Default {
+    default {
         # check to see if the conditions for a custom run are met:
-        #   custom assets exist AND
-        #     one or more original BA2 size doesn't match expected original BA2 size AND
-        #     those same archives original BA2 size matches expected alternate BA2 size
+        #     custom assets exist AND
+        #     one or more original BA2's are alternates
         #   OR
-        #   custom assets exist AND
+        #     custom assets exist AND
         #     no repack flags are set (meaning no repack archives are found)
         if (
             ((Get-ChildItem -LiteralPath $dir.patchedFiles -Filter "*.dds" -Recurse -ErrorAction SilentlyContinue).Count -gt 0 -and
-            $originalBa2SizeMismatches.Count -gt 0 -and
-            $alternateOriginalBa2SizeMatches.Count -gt 0) -or
+            $alternateOriginalBa2Files.Count -gt 0) -or
             ((Get-ChildItem -LiteralPath $dir.patchedFiles -Filter "*.dds" -Recurse -ErrorAction SilentlyContinue).Count -gt 0 -and
             $repackFlags.Keys.Where({ $repackFlags[$_] }).Count -eq 0)
         ) {
@@ -713,12 +845,10 @@ switch ($ForceOperationMode) {
         }
         # check to see if the conditions for a hybrid run are met:
         #   no custom assets exist AND
-        #   one or more original BA2 size doesn't match expected original BA2 size AND
-        #   those same archives original BA2 size matches expected alternate BA2 size
+        #   one or more original BA2's are alternates
         elseif (
             (Get-ChildItem -LiteralPath $dir.patchedFiles -File -Recurse -ErrorAction SilentlyContinue).Count -eq 0 -and
-            $originalBa2SizeMismatches.Count -gt 0 -and
-            $alternateOriginalBa2SizeMatches.Count -gt 0
+            $alternateOriginalBa2Files.Count -gt 0
         ) {
             $repackFlags.Hybrid = $true
         }
@@ -729,9 +859,9 @@ Write-CustomLog "Raw repack flags:"
 Write-CustomLog (($repackFlags | Format-Table -AutoSize -HideTableHeaders | Out-String) -Split "`r`n" | Where-Object { $_ }) -Prefix "  "
 Write-CustomLog ""
 
-# if not using Performance, Main, or Quality, don't need to install the Vault Fix
+# if not using Performance, Main, or Quality, don't need to install Vault Fix
 if (-not $repackFlags.Performance -and -not $repackFlags.Main -and -not $repackFlags.Quality) {
-    $repackFlags."Vault Fix" = $false
+    $repackFlags.VaultFix = $false
 }
 
 # if using custom mode, turn off all the other repack flags
@@ -743,6 +873,34 @@ Write-Custom "Mode of operation:" -NoNewLine
 if ($repackFlags.Custom) { Write-CustomInfo "Custom" }
 elseif ($repackFlags.Hybrid) { Write-CustomInfo "Hybrid" }
 else { Write-CustomInfo "Standard" }
+
+# check to see if all original BA2 archives are from the same version, unless:
+#   no alternate original BA2 archives are found AND
+#   mode of operation is not custom AND
+#   mode of operation is not hybrid AND
+#   original BA2 validation is not skipped
+if ($alternateOriginalBa2Files.Count -eq 0 -and -not $repackFlags.Custom -and -not $repackFlags.Hybrid -and -not $SkipOriginalBa2Validation) {
+    $firstIteration = $true
+    $vanillaOriginalBa2Files | ForEach-Object {
+        if ($firstIteration) {
+            $vanillaBa2Versions = $_.Versions
+            $firstIteration = $false
+        }
+        else {
+            $vanillaBa2Versions = [System.Collections.ArrayList]@($_.Versions | Where-Object { $_ -in $vanillaBa2Versions })
+        }
+    }
+    if ($vanillaBa2Versions.Count -eq 0) {
+        Write-Custom ""
+        $extraErrorText = @(
+            "In order for the 'Standard' mode of operation process to complete successfully, all original BA2 archives must be from the same version of Fallout 4."
+        )
+        Write-CustomError "Original BA2 archives are from differing versions of Fallout 4." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
+        Exit-Script 1
+    }
+    $extendedValidationModeVersion = ($vanillaBa2Versions | Measure-Object -Maximum | Select-Object -ExpandProperty Maximum).ToString()
+}
+
 
 # create tag
 $repackTag = $repackFlags.Keys.Where({ $repackFlags[$_] }) -join $TagJoiner
@@ -774,10 +932,8 @@ Write-CustomLog "", "Repack tag:", $repackTag
 if ($repackFlags.Custom -or $repackFlags.Hybrid) {
     Write-CustomLog @(
         ""
-        "Original BA2 size mismatches: $($originalBa2SizeMismatches.Count)"
-        @($originalBa2SizeMismatches | ForEach-Object { "  $(Get-OriginalBa2File $_.Value.FileName) ($($_.Value.Tags -join ", "))" })
-        "Original BA2 size mismatches that match alternate original BA2 sizes: $($alternateOriginalBa2SizeMatches.Count)"
-        @($alternateOriginalBa2SizeMatches | ForEach-Object { "  $($_.Value.FileName) ($($_.Value.Tags -join ", "))" })
+        "Alternate original BA2s found: $($alternateOriginalBa2Files.Count)"
+        @($alternateOriginalBa2Files | ForEach-Object { "  $(Get-OriginalBa2File $_.FileName) ($($_.Tags -join ", "))" })
     )
 }
 
@@ -1118,12 +1274,22 @@ else {
         # if standard mode, gather the size of the expected patched BA2s from the hashes
         else {
             foreach ($file in $ba2Filenames) {
-                $spaceNeeded.patchedBa2 += (
-                    $patchedBa2Hashes.Values | Where-Object {
-                        $_.Tags -contains $repackTag -and
-                        $_.FileName -eq $file
+                $matchingPatchedBa2Hashes = @(
+                    if ($SkipOriginalBa2Validation) {
+                        $patchedBa2Hashes.Values | Where-Object {
+                            $_.Tags -contains $repackTag -and
+                            $_.FileName -eq $file
+                        }
                     }
-                ).FileSize
+                    else {
+                        $patchedBa2Hashes.Values | Where-Object {
+                            $_.Tags -contains $repackTag -and
+                            $_.FileName -eq $file -and
+                            $_.Versions -contains ($vanillaBa2Versions | Measure-Object -Maximum | Select-Object -ExpandProperty Maximum)
+                        }
+                    }
+                )
+                $spaceNeeded.patchedBa2 += $matchingPatchedBa2Hashes | ForEach-Object { $_.FileSize } | Measure-Object -Maximum | Select-Object -ExpandProperty Maximum
             }
         }
         Write-CustomLog "Expected file size needed: $($spaceNeeded.patchedBa2.ToString("N0"))" -Prefix "    "
@@ -1316,7 +1482,7 @@ else {
                                 "Miscellaneous\Perk Grid Background Replacer\2k Silver White\Textures"
                             )
                         }
-                        "Vault Fix" {
+                        "VaultFix" {
                             $outDir = $dir.temp
                         }
                     }
@@ -1448,7 +1614,7 @@ else {
                         }
                     }
                     # special case: if using vault fix, copy Textures subdirectory
-                    "Vault Fix" {
+                    "VaultFix" {
                         Copy-Item -LiteralPath "$($dir.temp)\Data\Textures" -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
                         if ($ExtendedValidationMode) {
                             $repack7zFileRecords | ForEach-Object { $_.Path = ($_.Path.Split("\") | Select-Object -Skip 1) -join "\" }
@@ -1626,101 +1792,21 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         Write-Custom "    Original BA2: " -NoNewline
         Write-CustomInfo "    $originalBa2File"
 
-        # validate original archive
-        Write-Custom "      Validating original archive..." -NoNewline
-        if ($SkipOriginalBa2Validation) {
-            Write-CustomWarning "      [SKIPPED]"
-        }
-        else {
-            Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
-            if (-not (Test-Path -LiteralPath $originalBa2File)) {
-                if ($file -in $optionalOriginalArchives -and $MakeDLCOptional) {
-                    Write-CustomWarning "      [NOT FOUND - OPTIONAL]"
-                    continue
-                }
-                $extraErrorText = @(
-                    "The archive in question cannot be found."
-                    ""
-                    "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
-                    ""
-                    "If you're attempting to use one of the alternate bases, make sure you didn't miss a file when extracting and/or copying the files."
-                )
-                $extraLogText = @("(No extra log info.)")
-                throw "Archive not found."
-            }
-            Write-CustomLog "      Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length.ToString("N0")) bytes"
-            if (
-                ($originalBa2Hashes.GetEnumerator() | Where-Object {
-                    $_.Value.FileName -eq $file -and
-                    $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length
-                }).Count -eq 0 -and
-                ($alternateOriginalBa2Hashes.GetEnumerator() | Where-Object {
-                    $_.Value.FileName -eq $file -and
-                    $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length
-                }).Count -eq 0 -and
-                ($oldAlternateOriginalBa2Hashes.GetEnumerator() | Where-Object {
-                    $_.Value.FileName -eq $file -and
-                    $_.Value.FileSize -eq (Get-ChildItem -LiteralPath $originalBa2File).Length
-                }).Count -eq 0
-            ) {
-                $extraErrorText = @(
-                    "The size of this original archive doesn't match any known archives."
-                    ""
-                    "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
-                    ""
-                    "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
-                )
-                $extraLogText = @("Size: $((Get-ChildItem -LiteralPath $originalBa2File).Length.ToString("N0")) bytes")
-                throw "Size mismatch."
-            }
-            $hash = (Get-FileHash -LiteralPath $originalBa2File -Algorithm $FileHashAlgorithm -ErrorAction Stop).Hash
-            Write-CustomLog "      Hash: $hash"
-            if ($originalBa2Hashes[$hash].FileName -eq $file) {
-                $validOriginalText = "[VALID]"
-            }
-            elseif (($repackFlags.Custom -or $repackFlags.Hybrid) -and $alternateOriginalBa2Hashes[$hash].FileName -eq $file) {
-                $validOriginalText = "[VALID - ALTERNATE]"
-            }
-            elseif (($repackFlags.Custom -or $repackFlags.Hybrid) -and $oldAlternateOriginalBa2Hashes[$hash].FileName -eq $file) {
-                Write-CustomLog "      Tags: $($oldAlternateOriginalBa2Hashes[$hash].Tags -join ", ")"
-                $extraErrorText = @(
-                    "If using alternate original BA2 archives (i.e. PhyOp or Luxor), this script only allows the latest versions."
-                    ""
-                    "Check the readme and update the archive in question to the version that's needed."
-                )
-                $extraLogText = @("(No extra log info.)")
-                throw "Old version of an alternate original archive detected."
-            }
-            else {
-                $extraErrorText = @(
-                    "The exact contents of this archive don't match any known archives."
-                    ""
-                    "If you're attempting to use the vanilla files as a base, please verify your game files through Steam and try again."
-                    ""
-                    "If you're attempting to use one of the alternate bases, make sure you have the exact files specified in the readme. If you do, next try re-downloading this file from Nexus Mods. If this step continues to fail, re-download again using a different server if you're able to (Nexus Premium required), otherwise just keep trying."
-                )
-                $extraLogText = @("(No extra log info.)")
-                throw "Unrecognized archive file."
-            }
-            Write-CustomLog "      Tags: $($originalBa2Hashes[$hash].Tags -join ", ")$($alternateOriginalBa2Hashes[$hash].Tags -join ", ")"
-            Write-CustomSuccess "      $validOriginalText"
-        }
-
         # create working files directory
         New-Item $dir.workingFiles -ItemType "directory" -ErrorAction Stop | Out-Null
 
         # extract original archive
         Write-Custom "      Extracting original archive..." -NoNewline
         Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
-        Write-CustomLog "archive2.exe `"$originalBa2File`" -extract=`"$($dir.workingFiles)`"" -Log "tool"
+        Write-CustomLog "bsarch.exe unpack `"$originalBa2File`" `"$($dir.workingFiles)`" -mt" -Log "tool"
         $toolTimer.Restart()
-        $stdout, $stderr = (archive2.exe "$originalBa2File" -extract="$($dir.workingFiles)" 2>&1).
+        $stdout, $stderr = (bsarch.exe unpack "$originalBa2File" "$($dir.workingFiles)" -mt 2>&1).
         Where({ $_ -is [string] -and $_ -ne "" }, "Split")
         Write-CustomLog "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
         Write-CustomLog "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
         if ($LASTEXITCODE -ne 0) {
             $extraErrorText = @(
-                "The program used to extract BA2 archives (archive2.exe) has indicated that an error occurred while extracting one of said archives. Unfortunately, archive2.exe doesn't output an error that can be interpreted by this script."
+                "The program used to extract BA2 archives (bsarch.exe) has indicated that an error occurred while extracting one of said archives. Unfortunately, bsarch.exe doesn't output an error that can be interpreted by this script."
             )
             $extraLogText = @(
                 $stderr
@@ -1730,38 +1816,14 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             throw "Extracting `"$originalBa2File`" failed."
         }
         $stdout, $stderr = $null
-
-        # correctly extract cubemaps
-        Write-CustomLog "bsab.exe -e -o -f `"Textures\Shared\Cubemaps\*`" `"$originalBa2File`" `"$($dir.workingFiles)`"" -Log "tool"
-        $toolTimer.Restart()
-        $stdout, $stderr = (bsab.exe -e -o -f "Textures\Shared\Cubemaps\*" "$originalBa2File" "$($dir.workingFiles)" 2>&1).
-        Where({ $_ -is [string] -and $_ -ne "" }, "Split")
-        Write-CustomLog "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-CustomLog "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
-        if ($LASTEXITCODE -ne 0) {
-            # because bsab doesn't use stderr, copy stdout to stderr, but check anyway just in case
-            if ($stderr -eq "") {
-                $stderr = $stdout
-            }
-            $extraErrorText = @(
-                "The program used to extract cube maps from archives (bsab.exe) has indicated that an error occurred while extracting files from one of said archives. Unfortunately, bsab.exe doesn't output an error that can be interpreted by this script."
-            )
-            $extraLogText = @(
-                $stderr
-                "Exit code: $LASTEXITCODE"
-            )
-            $multiFactorErrorFlag = $true
-            throw "Extracting cube maps from `"$originalBa2File`" failed."
-        }
-        $stdout, $stderr = $null
         Write-CustomSuccess "      [DONE]"
 
-        # extract original archive/correctly extract cubemaps extended validation
+        # extract original archive extended validation
         if ($ExtendedValidationMode -and -not ($repackFlags.Custom -or $repackFlags.Hybrid)) {
             Write-Custom "      Validating extracted files..." -NoNewline
             Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
             # load file-specific hashes
-            . "$($dir.tools)\lib\EVM Hashes ($file).ps1"
+            . "$($dir.tools)\lib\EVM\$extendedValidationModeVersion\EVM Hashes ($file).ps1"
             # calculate and compare hashes
             $argList = @{
                 InputObject              = $originalBa2FileHashes.Values
@@ -1984,7 +2046,8 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             $extraErrorText = @(
                 "The exact contents of this patched archive don't match any known archives."
             )
-            $extraLogText = @("(No extra log info.)")
+            $expectedHash = $patchedBa2Hashes.GetEnumerator() | Where-Object { $_.Value.FileName -eq $file -and $_.Value.Tags -contains $repackTag } | ForEach-Object { $_.Key }
+            $extraLogText = @("Expected hash: $expectedHash")
             $multiFactorErrorFlag = $true
             throw "Unrecognized file."
         }

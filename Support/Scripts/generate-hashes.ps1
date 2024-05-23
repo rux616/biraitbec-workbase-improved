@@ -32,7 +32,7 @@ $dir = @{}
 $dir.logs = ".\Logs"
 $dir.patchedBa2 = ".\PatchedBa2"
 $dir.repack7z = ".\Repack7z"
-$dir.repack7zDIsabled = ".\Repack7z.disabled"
+$dir.repack7zDisabled = ".\Repack7z.disabled"
 $dir.tools = ".\Tools"
 $env:PATH = (Resolve-Path "$($dir.tools)\xxHash").Path + ";" + $env:PATH
 
@@ -52,7 +52,7 @@ $repackFiles.Quality = @(
     "2a. Quality Addon - Part One-23556-1-0-1565546826.7z"
     "2b. Quality Overhaul - Part Two-23556-1-0-1565980973.7z"
 )
-$repackFiles."Vault Fix" = @(
+$repackFiles.VaultFix = @(
     "Fix Vault-Window-Metal-Institute-40534-1-02-1565670781.7z"
 )
 $repackFiles.Restyle = @(
@@ -84,29 +84,29 @@ $allKeyCombinations.Add(@("Quality"))
 $allKeyCombinations.Add(@("Restyle"))
 $allKeyCombinations.Add(@("Performance", "Main"))
 $allKeyCombinations.Add(@("Performance", "Quality"))
-$allKeyCombinations.Add(@("Performance", "Vault Fix"))
+$allKeyCombinations.Add(@("Performance", "VaultFix"))
 $allKeyCombinations.Add(@("Performance", "Restyle"))
 $allKeyCombinations.Add(@("Main", "Quality"))
-$allKeyCombinations.Add(@("Main", "Vault Fix"))
+$allKeyCombinations.Add(@("Main", "VaultFix"))
 $allKeyCombinations.Add(@("Main", "Restyle"))
-$allKeyCombinations.Add(@("Quality", "Vault Fix"))
+$allKeyCombinations.Add(@("Quality", "VaultFix"))
 $allKeyCombinations.Add(@("Quality", "Restyle"))
 $allKeyCombinations.Add(@("Performance", "Main", "Quality"))
-$allKeyCombinations.Add(@("Performance", "Main", "Vault Fix"))
+$allKeyCombinations.Add(@("Performance", "Main", "VaultFix"))
 $allKeyCombinations.Add(@("Performance", "Main", "Restyle"))
-$allKeyCombinations.Add(@("Performance", "Quality", "Vault Fix"))
+$allKeyCombinations.Add(@("Performance", "Quality", "VaultFix"))
 $allKeyCombinations.Add(@("Performance", "Quality", "Restyle"))
-$allKeyCombinations.Add(@("Performance", "Vault Fix", "Restyle"))
-$allKeyCombinations.Add(@("Main", "Quality", "Vault Fix"))
+$allKeyCombinations.Add(@("Performance", "VaultFix", "Restyle"))
+$allKeyCombinations.Add(@("Main", "Quality", "VaultFix"))
 $allKeyCombinations.Add(@("Main", "Quality", "Restyle"))
-$allKeyCombinations.Add(@("Main", "Vault Fix", "Restyle"))
-$allKeyCombinations.Add(@("Quality", "Vault Fix", "Restyle"))
-$allKeyCombinations.Add(@("Performance", "Main", "Quality", "Vault Fix"))
+$allKeyCombinations.Add(@("Main", "VaultFix", "Restyle"))
+$allKeyCombinations.Add(@("Quality", "VaultFix", "Restyle"))
+$allKeyCombinations.Add(@("Performance", "Main", "Quality", "VaultFix"))
 $allKeyCombinations.Add(@("Performance", "Main", "Quality", "Restyle"))
-$allKeyCombinations.Add(@("Performance", "Main", "Vault Fix", "Restyle"))
-$allKeyCombinations.Add(@("Performance", "Quality", "Vault Fix", "Restyle"))
-$allKeyCombinations.Add(@("Main", "Quality", "Vault Fix", "Restyle"))
-$allKeyCombinations.Add(@("Performance", "Main", "Quality", "Vault Fix", "Restyle"))
+$allKeyCombinations.Add(@("Performance", "Main", "VaultFix", "Restyle"))
+$allKeyCombinations.Add(@("Performance", "Quality", "VaultFix", "Restyle"))
+$allKeyCombinations.Add(@("Main", "Quality", "VaultFix", "Restyle"))
+$allKeyCombinations.Add(@("Performance", "Main", "Quality", "VaultFix", "Restyle"))
 
 function Remove-TempFolders {
     Get-ChildItem . -Directory -Filter PatchedBa2 | Remove-Item -Force -Recurse
@@ -148,7 +148,7 @@ foreach ($keySet in $allKeyCombinations) {
     # log
     "  - log"
     "# $(($keySet -join " + ").ToLower())" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
-    "`$tag = @(`"$($keySet -join "``", ``"")`") -join `$TagJoiner" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
+    "`$tags = `$fo4Versions + @(`$ba2Version, (@(`"$($keySet -join "``", ``"")`") -join `$TagJoiner))" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
     foreach ($file in $ba2Files.GetEnumerator()) {
         $fileName = "$($dir.patchedBa2)\$($file.Value)"
         if (-not (Test-Path -LiteralPath $fileName)) {
@@ -157,7 +157,7 @@ foreach ($keySet in $allKeyCombinations) {
         }
         $hash = (Get-FileHash -LiteralPath $fileName -Algorithm XXH128).Hash
         $size = (Get-ChildItem -LiteralPath $fileName).Length
-        "Add-Hash -VariableName `$var -Hash `"$hash`" -Tag `$tag -FileName `$ba2Files.$($file.Key) -FileSize $size" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
+        "Add-Hash -VariableName `$var -Hash `"$hash`" -Tags `$tags -FileName `$ba2Files.$($file.Key) -FileSize $size" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
     }
     "" | Out-File -LiteralPath "$($dir.logs)\generate_hashes_$RunStartTime.log" -Append
 

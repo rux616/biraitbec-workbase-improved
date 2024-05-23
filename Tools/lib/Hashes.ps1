@@ -39,8 +39,8 @@ Add-Hash -VariableName $var -Hash "ED4F25B2082905995E9813B09EB17D41" -Tags $tags
 $tags = "Quality"
 Add-Hash -VariableName $var -Hash "AF0CC5FB5A7FE9D8552E7C024427690B" -Tags $tags -FileName $repackFiles.Quality[0] -FileSize 6992674100
 Add-Hash -VariableName $var -Hash "4824ED1AEA87C5BEDBE6BFCB05FC10C4" -Tags $tags -FileName $repackFiles.Quality[1] -FileSize 8734052599
-$tags = "Vault Fix"
-Add-Hash -VariableName $var -Hash "462CCB5F588AB927D1DCDDD8CFB37D9E" -Tags $tags -FileName $repackFiles."Vault Fix"[0] -FileSize 38494714
+$tags = "VaultFix"
+Add-Hash -VariableName $var -Hash "462CCB5F588AB927D1DCDDD8CFB37D9E" -Tags $tags -FileName $repackFiles.VaultFix[0] -FileSize 38494714
 $tags = "Restyle"
 Add-Hash -VariableName $var -Hash "E56C4AEC102852351754E8E0A18F073B" -Tags $tags -FileName $repackFiles.Restyle[0] -FileSize 642218542
 
@@ -611,7 +611,7 @@ Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tags $tags
 Add-Hash -VariableName $var -Hash "41D2EFF28A0023561A4B8676B99EBADC" -Tags $tags -FileName $ba2Files.fallout4Textures9 -FileSize 1061349213
 
 # performance + vault fix
-$tags = $fo4Versions + @($ba2Version, (@("Performance", "Vault Fix") -join $TagJoiner))
+$tags = $fo4Versions + @($ba2Version, (@("Performance", "VaultFix") -join $TagJoiner))
 Add-Hash -VariableName $var -Hash "FCD7619DF35825F20DD69ED65A7029C5" -Tags $tags -FileName $ba2Files.dlcCoastTextures -FileSize 1008136558
 Add-Hash -VariableName $var -Hash "C1C533EA00CC2724326E6F830207740B" -Tags $tags -FileName $ba2Files.dlcNukaWorldTextures -FileSize 1096613402
 Add-Hash -VariableName $var -Hash "0BA5A0D72EC7D03AB7B44515D20B6FCC" -Tags $tags -FileName $ba2Files.dlcRobotTextures -FileSize 164817935
@@ -665,7 +665,7 @@ Add-Hash -VariableName $var -Hash "A5D2485D4569CC1E3364B949416E0F19" -Tags $tags
 Add-Hash -VariableName $var -Hash "288E9D0E6A1A19840B741ED5EC2037E5" -Tags $tags -FileName $ba2Files.fallout4Textures9 -FileSize 1132459819
 
 # main + vault fix
-$tags = $fo4Versions + @($ba2Version, (@("Main", "Vault Fix") -join $TagJoiner))
+$tags = $fo4Versions + @($ba2Version, (@("Main", "VaultFix") -join $TagJoiner))
 Add-Hash -VariableName $var -Hash "72CEC051C29D97A62AD2FE122605A448" -Tags $tags -FileName $ba2Files.dlcCoastTextures -FileSize 2200539678
 Add-Hash -VariableName $var -Hash "E631EC212EB05BD1A8C2E7E3544DA915" -Tags $tags -FileName $ba2Files.dlcNukaWorldTextures -FileSize 2923363368
 Add-Hash -VariableName $var -Hash "AEA8084591FB722B9DA1A5C9B9F1D414" -Tags $tags -FileName $ba2Files.dlcRobotTextures -FileSize 324714827
@@ -701,7 +701,7 @@ Add-Hash -VariableName $var -Hash "A5D2485D4569CC1E3364B949416E0F19" -Tags $tags
 Add-Hash -VariableName $var -Hash "0D7C1845F3654576DF03EFEE1A6B78B8" -Tags $tags -FileName $ba2Files.fallout4Textures9 -FileSize 1123507144
 
 # quality + vault fix
-$tags = $fo4Versions + @($ba2Version, (@("Quality", "Vault Fix") -join $TagJoiner))
+$tags = $fo4Versions + @($ba2Version, (@("Quality", "VaultFix") -join $TagJoiner))
 Add-Hash -VariableName $var -Hash "D48499A3A506B52DF0A7FB49E98AE9A2" -Tags $tags -FileName $ba2Files.dlcCoastTextures -FileSize 1656799217
 Add-Hash -VariableName $var -Hash "E6E48266550EDD66479CC8A721B2B0AE" -Tags $tags -FileName $ba2Files.dlcNukaWorldTextures -FileSize 2764634880
 Add-Hash -VariableName $var -Hash "A72ABEDC244C9B9BF708A28AF780F6B6" -Tags $tags -FileName $ba2Files.dlcRobotTextures -FileSize 232308379
@@ -755,7 +755,7 @@ Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tags $tags
 Add-Hash -VariableName $var -Hash "BC7B54A33AC96F36ACC326FD275BAE61" -Tags $tags -FileName $ba2Files.fallout4Textures9 -FileSize 1314913042
 
 # performance + main + vault fix
-$tags = $fo4Versions + @($ba2Version, (@("Performance", "Main", "Vault Fix") -join $TagJoiner))
+$tags = $fo4Versions + @($ba2Version, (@("Performance", "Main", "VaultFix") -join $TagJoiner))
 Add-Hash -VariableName $var -Hash "FB6B17E96151EEFDA4D1B1411C402814" -Tags $tags -FileName $ba2Files.dlcCoastTextures -FileSize 2141656414
 Add-Hash -VariableName $var -Hash "102B6112894E7C8DB7F5E26682EC86C5" -Tags $tags -FileName $ba2Files.dlcNukaWorldTextures -FileSize 2783892847
 Add-Hash -VariableName $var -Hash "65E320BEBD368FF220915FC7E9E9D40B" -Tags $tags -FileName $ba2Files.dlcRobotTextures -FileSize 302284550
@@ -791,7 +791,7 @@ Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tags $tags
 Add-Hash -VariableName $var -Hash "429E93294DAD3F8F71A507E2A141B292" -Tags $tags -FileName $ba2Files.fallout4Textures9 -FileSize 1305963029
 
 # performance + quality + vault fix
-$tags = $fo4Versions + @($ba2Version, (@("Performance", "Quality", "Vault Fix") -join $TagJoiner))
+$tags = $fo4Versions + @($ba2Version, (@("Performance", "Quality", "VaultFix") -join $TagJoiner))
 Add-Hash -VariableName $var -Hash "DD492A1EE7AE340BC825066A50525146" -Tags $tags -FileName $ba2Files.dlcCoastTextures -FileSize 1516511120
 Add-Hash -VariableName $var -Hash "2D12239EBB3060208326891B6ECE7F1D" -Tags $tags -FileName $ba2Files.dlcNukaWorldTextures -FileSize 1970161435
 Add-Hash -VariableName $var -Hash "8A251FBAEAED2BA5D6CE010A6DA63172" -Tags $tags -FileName $ba2Files.dlcRobotTextures -FileSize 218637247
@@ -827,7 +827,7 @@ Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tags $tags
 Add-Hash -VariableName $var -Hash "41D2EFF28A0023561A4B8676B99EBADC" -Tags $tags -FileName $ba2Files.fallout4Textures9 -FileSize 1061349213
 
 # performance + vault fix + restyle
-$tags = $fo4Versions + @($ba2Version, (@("Performance", "Vault Fix", "Restyle") -join $TagJoiner))
+$tags = $fo4Versions + @($ba2Version, (@("Performance", "VaultFix", "Restyle") -join $TagJoiner))
 Add-Hash -VariableName $var -Hash "FCD7619DF35825F20DD69ED65A7029C5" -Tags $tags -FileName $ba2Files.dlcCoastTextures -FileSize 1008136558
 Add-Hash -VariableName $var -Hash "C1C533EA00CC2724326E6F830207740B" -Tags $tags -FileName $ba2Files.dlcNukaWorldTextures -FileSize 1096613402
 Add-Hash -VariableName $var -Hash "0BA5A0D72EC7D03AB7B44515D20B6FCC" -Tags $tags -FileName $ba2Files.dlcRobotTextures -FileSize 164817935
@@ -845,7 +845,7 @@ Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tags $tags
 Add-Hash -VariableName $var -Hash "B8D3242176D94C1BAE32A187362533CE" -Tags $tags -FileName $ba2Files.fallout4Textures9 -FileSize 1046980722
 
 # main + quality + vault fix
-$tags = $fo4Versions + @($ba2Version, (@("Main", "Quality", "Vault Fix") -join $TagJoiner))
+$tags = $fo4Versions + @($ba2Version, (@("Main", "Quality", "VaultFix") -join $TagJoiner))
 Add-Hash -VariableName $var -Hash "E00CCBA14FEBFFB603FBFD2E803405E2" -Tags $tags -FileName $ba2Files.dlcCoastTextures -FileSize 2121628884
 Add-Hash -VariableName $var -Hash "DFF7994BB0BFCFCFB39EC1954B0C7582" -Tags $tags -FileName $ba2Files.dlcNukaWorldTextures -FileSize 3161950363
 Add-Hash -VariableName $var -Hash "2617439A43583FE7D15E0A6E6C53A3C5" -Tags $tags -FileName $ba2Files.dlcRobotTextures -FileSize 302687730
@@ -881,7 +881,7 @@ Add-Hash -VariableName $var -Hash "A5D2485D4569CC1E3364B949416E0F19" -Tags $tags
 Add-Hash -VariableName $var -Hash "288E9D0E6A1A19840B741ED5EC2037E5" -Tags $tags -FileName $ba2Files.fallout4Textures9 -FileSize 1132459819
 
 # main + vault fix + restyle
-$tags = $fo4Versions + @($ba2Version, (@("Main", "Vault Fix", "Restyle") -join $TagJoiner))
+$tags = $fo4Versions + @($ba2Version, (@("Main", "VaultFix", "Restyle") -join $TagJoiner))
 Add-Hash -VariableName $var -Hash "72CEC051C29D97A62AD2FE122605A448" -Tags $tags -FileName $ba2Files.dlcCoastTextures -FileSize 2200539678
 Add-Hash -VariableName $var -Hash "E631EC212EB05BD1A8C2E7E3544DA915" -Tags $tags -FileName $ba2Files.dlcNukaWorldTextures -FileSize 2923363368
 Add-Hash -VariableName $var -Hash "AEA8084591FB722B9DA1A5C9B9F1D414" -Tags $tags -FileName $ba2Files.dlcRobotTextures -FileSize 324714827
@@ -899,7 +899,7 @@ Add-Hash -VariableName $var -Hash "A5D2485D4569CC1E3364B949416E0F19" -Tags $tags
 Add-Hash -VariableName $var -Hash "0D7C1845F3654576DF03EFEE1A6B78B8" -Tags $tags -FileName $ba2Files.fallout4Textures9 -FileSize 1123507144
 
 # quality + vault fix + restyle
-$tags = $fo4Versions + @($ba2Version, (@("Quality", "Vault Fix", "Restyle") -join $TagJoiner))
+$tags = $fo4Versions + @($ba2Version, (@("Quality", "VaultFix", "Restyle") -join $TagJoiner))
 Add-Hash -VariableName $var -Hash "D48499A3A506B52DF0A7FB49E98AE9A2" -Tags $tags -FileName $ba2Files.dlcCoastTextures -FileSize 1656799217
 Add-Hash -VariableName $var -Hash "E6E48266550EDD66479CC8A721B2B0AE" -Tags $tags -FileName $ba2Files.dlcNukaWorldTextures -FileSize 2764634880
 Add-Hash -VariableName $var -Hash "A72ABEDC244C9B9BF708A28AF780F6B6" -Tags $tags -FileName $ba2Files.dlcRobotTextures -FileSize 232308379
@@ -917,7 +917,7 @@ Add-Hash -VariableName $var -Hash "A5D2485D4569CC1E3364B949416E0F19" -Tags $tags
 Add-Hash -VariableName $var -Hash "748CC72F5A31079987E93F9E230B047D" -Tags $tags -FileName $ba2Files.fallout4Textures9 -FileSize 878895990
 
 # performance + main + quality + vault fix
-$tags = $fo4Versions + @($ba2Version, (@("Performance", "Main", "Quality", "Vault Fix") -join $TagJoiner))
+$tags = $fo4Versions + @($ba2Version, (@("Performance", "Main", "Quality", "VaultFix") -join $TagJoiner))
 Add-Hash -VariableName $var -Hash "990BB5B22EDB3E239C632F329A981C14" -Tags $tags -FileName $ba2Files.dlcCoastTextures -FileSize 2097016436
 Add-Hash -VariableName $var -Hash "883C68BB06570639F2A5C68F38AB00EF" -Tags $tags -FileName $ba2Files.dlcNukaWorldTextures -FileSize 3105490893
 Add-Hash -VariableName $var -Hash "5D092A6410FADD30C671037CA3F745C0" -Tags $tags -FileName $ba2Files.dlcRobotTextures -FileSize 301070795
@@ -953,7 +953,7 @@ Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tags $tags
 Add-Hash -VariableName $var -Hash "BC7B54A33AC96F36ACC326FD275BAE61" -Tags $tags -FileName $ba2Files.fallout4Textures9 -FileSize 1314913042
 
 # performance + main + vault fix + restyle
-$tags = $fo4Versions + @($ba2Version, (@("Performance", "Main", "Vault Fix", "Restyle") -join $TagJoiner))
+$tags = $fo4Versions + @($ba2Version, (@("Performance", "Main", "VaultFix", "Restyle") -join $TagJoiner))
 Add-Hash -VariableName $var -Hash "FB6B17E96151EEFDA4D1B1411C402814" -Tags $tags -FileName $ba2Files.dlcCoastTextures -FileSize 2141656414
 Add-Hash -VariableName $var -Hash "102B6112894E7C8DB7F5E26682EC86C5" -Tags $tags -FileName $ba2Files.dlcNukaWorldTextures -FileSize 2783892847
 Add-Hash -VariableName $var -Hash "65E320BEBD368FF220915FC7E9E9D40B" -Tags $tags -FileName $ba2Files.dlcRobotTextures -FileSize 302284550
@@ -971,7 +971,7 @@ Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tags $tags
 Add-Hash -VariableName $var -Hash "429E93294DAD3F8F71A507E2A141B292" -Tags $tags -FileName $ba2Files.fallout4Textures9 -FileSize 1305963029
 
 # performance + quality + vault fix + restyle
-$tags = $fo4Versions + @($ba2Version, (@("Performance", "Quality", "Vault Fix", "Restyle") -join $TagJoiner))
+$tags = $fo4Versions + @($ba2Version, (@("Performance", "Quality", "VaultFix", "Restyle") -join $TagJoiner))
 Add-Hash -VariableName $var -Hash "DD492A1EE7AE340BC825066A50525146" -Tags $tags -FileName $ba2Files.dlcCoastTextures -FileSize 1516511120
 Add-Hash -VariableName $var -Hash "2D12239EBB3060208326891B6ECE7F1D" -Tags $tags -FileName $ba2Files.dlcNukaWorldTextures -FileSize 1970161435
 Add-Hash -VariableName $var -Hash "8A251FBAEAED2BA5D6CE010A6DA63172" -Tags $tags -FileName $ba2Files.dlcRobotTextures -FileSize 218637247
@@ -989,7 +989,7 @@ Add-Hash -VariableName $var -Hash "2577CE83B7FBD3C5061517B209A23428" -Tags $tags
 Add-Hash -VariableName $var -Hash "41D2EFF28A0023561A4B8676B99EBADC" -Tags $tags -FileName $ba2Files.fallout4Textures9 -FileSize 1061349213
 
 # main + quality + vault fix + restyle
-$tags = $fo4Versions + @($ba2Version, (@("Main", "Quality", "Vault Fix", "Restyle") -join $TagJoiner))
+$tags = $fo4Versions + @($ba2Version, (@("Main", "Quality", "VaultFix", "Restyle") -join $TagJoiner))
 Add-Hash -VariableName $var -Hash "E00CCBA14FEBFFB603FBFD2E803405E2" -Tags $tags -FileName $ba2Files.dlcCoastTextures -FileSize 2121628884
 Add-Hash -VariableName $var -Hash "DFF7994BB0BFCFCFB39EC1954B0C7582" -Tags $tags -FileName $ba2Files.dlcNukaWorldTextures -FileSize 3161950363
 Add-Hash -VariableName $var -Hash "2617439A43583FE7D15E0A6E6C53A3C5" -Tags $tags -FileName $ba2Files.dlcRobotTextures -FileSize 302687730
@@ -1007,7 +1007,7 @@ Add-Hash -VariableName $var -Hash "A5D2485D4569CC1E3364B949416E0F19" -Tags $tags
 Add-Hash -VariableName $var -Hash "288E9D0E6A1A19840B741ED5EC2037E5" -Tags $tags -FileName $ba2Files.fallout4Textures9 -FileSize 1132459819
 
 # performance + main + quality + vault fix + restyle
-$tags = $fo4Versions + @($ba2Version, (@("Performance", "Main", "Quality", "Vault Fix", "Restyle") -join $TagJoiner))
+$tags = $fo4Versions + @($ba2Version, (@("Performance", "Main", "Quality", "VaultFix", "Restyle") -join $TagJoiner))
 Add-Hash -VariableName $var -Hash "990BB5B22EDB3E239C632F329A981C14" -Tags $tags -FileName $ba2Files.dlcCoastTextures -FileSize 2097016436
 Add-Hash -VariableName $var -Hash "883C68BB06570639F2A5C68F38AB00EF" -Tags $tags -FileName $ba2Files.dlcNukaWorldTextures -FileSize 3105490893
 Add-Hash -VariableName $var -Hash "5D092A6410FADD30C671037CA3F745C0" -Tags $tags -FileName $ba2Files.dlcRobotTextures -FileSize 301070795

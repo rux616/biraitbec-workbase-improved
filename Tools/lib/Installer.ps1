@@ -110,7 +110,7 @@ $repackFiles.Quality = @(
     "2a. Quality Addon - Part One-23556-1-0-1565546826.7z"
     "2b. Quality Overhaul - Part Two-23556-1-0-1565980973.7z"
 )
-$repackFiles."Vault Fix" = @(
+$repackFiles.VaultFix = @(
     "Fix Vault-Window-Metal-Institute-40534-1-02-1565670781.7z"
 )
 $repackFiles.Restyle = @(
@@ -763,9 +763,9 @@ Write-CustomLog "Raw repack flags:"
 Write-CustomLog (($repackFlags | Format-Table -AutoSize -HideTableHeaders | Out-String) -Split "`r`n" | Where-Object { $_ }) -Prefix "  "
 Write-CustomLog ""
 
-# if not using Performance, Main, or Quality, don't need to install the Vault Fix
+# if not using Performance, Main, or Quality, don't need to install Vault Fix
 if (-not $repackFlags.Performance -and -not $repackFlags.Main -and -not $repackFlags.Quality) {
-    $repackFlags."Vault Fix" = $false
+    $repackFlags.VaultFix = $false
 }
 
 # if using custom mode, turn off all the other repack flags
@@ -1350,7 +1350,7 @@ else {
                                 "Miscellaneous\Perk Grid Background Replacer\2k Silver White\Textures"
                             )
                         }
-                        "Vault Fix" {
+                        "VaultFix" {
                             $outDir = $dir.temp
                         }
                     }
@@ -1482,7 +1482,7 @@ else {
                         }
                     }
                     # special case: if using vault fix, copy Textures subdirectory
-                    "Vault Fix" {
+                    "VaultFix" {
                         Copy-Item -LiteralPath "$($dir.temp)\Data\Textures" -Destination "$($dir.patchedFiles)" -Force -Recurse -ErrorAction Stop
                         if ($ExtendedValidationMode) {
                             $repack7zFileRecords | ForEach-Object { $_.Path = ($_.Path.Split("\") | Select-Object -Skip 1) -join "\" }

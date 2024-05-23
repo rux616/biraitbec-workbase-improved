@@ -52,7 +52,7 @@ $repackFiles.Quality = @(
     "2a. Quality Addon - Part One-23556-1-0-1565546826.7z"
     "2b. Quality Overhaul - Part Two-23556-1-0-1565980973.7z"
 )
-$repackFiles."Vault Fix" = @(
+$repackFiles.VaultFix = @(
     "Fix Vault-Window-Metal-Institute-40534-1-02-1565670781.7z"
 )
 $repackFiles.Restyle = @(
@@ -84,29 +84,29 @@ $allKeyCombinations.Add(@("Quality"))
 $allKeyCombinations.Add(@("Restyle"))
 $allKeyCombinations.Add(@("Performance", "Main"))
 $allKeyCombinations.Add(@("Performance", "Quality"))
-$allKeyCombinations.Add(@("Performance", "Vault Fix"))
+$allKeyCombinations.Add(@("Performance", "VaultFix"))
 $allKeyCombinations.Add(@("Performance", "Restyle"))
 $allKeyCombinations.Add(@("Main", "Quality"))
-$allKeyCombinations.Add(@("Main", "Vault Fix"))
+$allKeyCombinations.Add(@("Main", "VaultFix"))
 $allKeyCombinations.Add(@("Main", "Restyle"))
-$allKeyCombinations.Add(@("Quality", "Vault Fix"))
+$allKeyCombinations.Add(@("Quality", "VaultFix"))
 $allKeyCombinations.Add(@("Quality", "Restyle"))
 $allKeyCombinations.Add(@("Performance", "Main", "Quality"))
-$allKeyCombinations.Add(@("Performance", "Main", "Vault Fix"))
+$allKeyCombinations.Add(@("Performance", "Main", "VaultFix"))
 $allKeyCombinations.Add(@("Performance", "Main", "Restyle"))
-$allKeyCombinations.Add(@("Performance", "Quality", "Vault Fix"))
+$allKeyCombinations.Add(@("Performance", "Quality", "VaultFix"))
 $allKeyCombinations.Add(@("Performance", "Quality", "Restyle"))
-$allKeyCombinations.Add(@("Performance", "Vault Fix", "Restyle"))
-$allKeyCombinations.Add(@("Main", "Quality", "Vault Fix"))
+$allKeyCombinations.Add(@("Performance", "VaultFix", "Restyle"))
+$allKeyCombinations.Add(@("Main", "Quality", "VaultFix"))
 $allKeyCombinations.Add(@("Main", "Quality", "Restyle"))
-$allKeyCombinations.Add(@("Main", "Vault Fix", "Restyle"))
-$allKeyCombinations.Add(@("Quality", "Vault Fix", "Restyle"))
-$allKeyCombinations.Add(@("Performance", "Main", "Quality", "Vault Fix"))
+$allKeyCombinations.Add(@("Main", "VaultFix", "Restyle"))
+$allKeyCombinations.Add(@("Quality", "VaultFix", "Restyle"))
+$allKeyCombinations.Add(@("Performance", "Main", "Quality", "VaultFix"))
 $allKeyCombinations.Add(@("Performance", "Main", "Quality", "Restyle"))
-$allKeyCombinations.Add(@("Performance", "Main", "Vault Fix", "Restyle"))
-$allKeyCombinations.Add(@("Performance", "Quality", "Vault Fix", "Restyle"))
-$allKeyCombinations.Add(@("Main", "Quality", "Vault Fix", "Restyle"))
-$allKeyCombinations.Add(@("Performance", "Main", "Quality", "Vault Fix", "Restyle"))
+$allKeyCombinations.Add(@("Performance", "Main", "VaultFix", "Restyle"))
+$allKeyCombinations.Add(@("Performance", "Quality", "VaultFix", "Restyle"))
+$allKeyCombinations.Add(@("Main", "Quality", "VaultFix", "Restyle"))
+$allKeyCombinations.Add(@("Performance", "Main", "Quality", "VaultFix", "Restyle"))
 
 function Remove-TempFolders {
     Get-ChildItem . -Directory -Filter PatchedBa2 | Remove-Item -Force -Recurse

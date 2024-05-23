@@ -27,7 +27,7 @@ param (
     [string] $PatchedBa2Folder = ".\PatchedBa2",
     # Changes the WorkingFiles folder
     [string] $WorkingFilesFolder,
-    # Forces 'Custom', 'Hybrid', or 'Automatic' mode of operation
+    # Forces 'Custom', 'Hybrid', or 'Standard' mode of operation
     [ValidateSet("Custom", "Hybrid", "Standard")] [string] $ForceOperationMode,
     # Forces WorkingFiles folder to be in the TEMP folder, is overridden by 'WorkingFilesFolder' if both are used
     [switch] $ForceTempWorkingFiles,

@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.13.0](#v1130)
     - [v1.12.0](#v1120)
     - [v1.11.0](#v1110)
     - [v1.10.0](#v1100)
@@ -35,6 +36,26 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.13.0
+-------
+- [Functions] Changed Add-Hash input parameter "Tag" to "Tags"
+- [Functions] Updated Add-Hash to accept arrays for the Tags input parameter
+- [Functions] Use ArrayLists for tags and versions in Add-Hash now
+- [Functions] Version bumped to `1.30.1`
+- [Tools] Removed BSA Browser
+- [Tools] Added BSArch v0.9c
+- [Installer] Changed drive check to be based on file system instead of USB/not USB (exFAT, or maybe non-NTFS, causes the issue with archive2 acting in a non-deterministic manner)
+- [Installer] Now adds the expected hash to the output when a file doesn't match during post-creation validation
+- [Installer] Hash original BA2 archives early in order to detect version
+- [Installer] Version bumped to `1.28.0`
+- [Hashes] Added hashes for base Fallout 4 archives from v1.10.980.0 (Steam build ID 14160910)
+- [Hashes] Added hashes for base Fallout 4 archives from v1.10.984.0 (Steam build ID 14349213)
+- [Hashes] Added hashes for patched archives from v1.10.980.0 (Steam build ID 14160910)
+- [Hashes] Added hashes for patched archives from v1.10.984.0 (Steam build ID 14349213)
+- [Hashes] Version bumped to `1.18.0`
+
+([TOC](#table-of-contents))
 
 v1.12.0
 -------

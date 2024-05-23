@@ -309,21 +309,16 @@ $driveInfoTableFormat = [object]@(
 
 #region add tools to PATH
 #------------------------
-# 7-Zip 64-bit v22.01 (2022-07-15) by Igor Pavlov
-# https://www.7-zip.org/
+# 7-Zip (https://www.7-zip.org/)
 $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\7-zip").Path + ";" + $env:PATH
 
-# Archive2 v1.1.0.4 by Bethesda Game Studios
-# Part of the Fallout 4 Creation Kit
-# https://bethesda.net/en/game/bethesda-launcher
+# Archive2 (https://store.steampowered.com/app/1946160/Fallout_4_Creation_Kit/)
 $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\Archive2").Path + ";" + $env:PATH
 
-# BSA Browser v1.14.1 by AlexxEG
-# https://www.nexusmods.com/skyrimspecialedition/mods/1756
-$env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\BSA Browser").Path + ";" + $env:PATH
+# BSArch (https://www.nexusmods.com/fallout4/mods/2737)
+$env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\BSArch").Path + ";" + $env:PATH
 
-# xxhsum v0.8.1 by cyan4973
-# https://cyan4973.github.io/xxHash/
+# xxhsum (https://cyan4973.github.io/xxHash/)
 $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\xxHash").Path + ";" + $env:PATH
 #endregion
 
@@ -1746,15 +1741,15 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
         # extract original archive
         Write-Custom "      Extracting original archive..." -NoNewline
         Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
-        Write-CustomLog "archive2.exe `"$originalBa2File`" -extract=`"$($dir.workingFiles)`"" -Log "tool"
+        Write-CustomLog "bsarch.exe unpack `"$originalBa2File`" `"$($dir.workingFiles)`" -mt" -Log "tool"
         $toolTimer.Restart()
-        $stdout, $stderr = (archive2.exe "$originalBa2File" -extract="$($dir.workingFiles)" 2>&1).
+        $stdout, $stderr = (bsarch.exe unpack "$originalBa2File" "$($dir.workingFiles)" -mt 2>&1).
         Where({ $_ -is [string] -and $_ -ne "" }, "Split")
         Write-CustomLog "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
         Write-CustomLog "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
         if ($LASTEXITCODE -ne 0) {
             $extraErrorText = @(
-                "The program used to extract BA2 archives (archive2.exe) has indicated that an error occurred while extracting one of said archives. Unfortunately, archive2.exe doesn't output an error that can be interpreted by this script."
+                "The program used to extract BA2 archives (bsarch.exe) has indicated that an error occurred while extracting one of said archives. Unfortunately, bsarch.exe doesn't output an error that can be interpreted by this script."
             )
             $extraLogText = @(
                 $stderr
@@ -1764,33 +1759,9 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             throw "Extracting `"$originalBa2File`" failed."
         }
         $stdout, $stderr = $null
-
-        # correctly extract cubemaps
-        Write-CustomLog "bsab.exe -e -o -f `"Textures\Shared\Cubemaps\*`" `"$originalBa2File`" `"$($dir.workingFiles)`"" -Log "tool"
-        $toolTimer.Restart()
-        $stdout, $stderr = (bsab.exe -e -o -f "Textures\Shared\Cubemaps\*" "$originalBa2File" "$($dir.workingFiles)" 2>&1).
-        Where({ $_ -is [string] -and $_ -ne "" }, "Split")
-        Write-CustomLog "Elapsed time: $($toolTimer.Elapsed.ToString())" -Log "tool"
-        Write-CustomLog "STDOUT:", $stdout, "", "STDERR:", $stderr, "", "$("-" * $LineWidth)", "" -Log "tool"
-        if ($LASTEXITCODE -ne 0) {
-            # because bsab doesn't use stderr, copy stdout to stderr, but check anyway just in case
-            if ($stderr -eq "") {
-                $stderr = $stdout
-            }
-            $extraErrorText = @(
-                "The program used to extract cube maps from archives (bsab.exe) has indicated that an error occurred while extracting files from one of said archives. Unfortunately, bsab.exe doesn't output an error that can be interpreted by this script."
-            )
-            $extraLogText = @(
-                $stderr
-                "Exit code: $LASTEXITCODE"
-            )
-            $multiFactorErrorFlag = $true
-            throw "Extracting cube maps from `"$originalBa2File`" failed."
-        }
-        $stdout, $stderr = $null
         Write-CustomSuccess "      [DONE]"
 
-        # extract original archive/correctly extract cubemaps extended validation
+        # extract original archive extended validation
         if ($ExtendedValidationMode -and -not ($repackFlags.Custom -or $repackFlags.Hybrid)) {
             Write-Custom "      Validating extracted files..." -NoNewline
             Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog

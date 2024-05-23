@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.14.0](#v1140)
     - [v1.13.0](#v1130)
     - [v1.12.0](#v1120)
     - [v1.11.0](#v1110)
@@ -36,6 +37,14 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.14.0
+-------
+- [Installer] Add ability to check existing patched BA2 files for version mismatches
+- [Installer] Rename some variables to better match their contents
+- [Installer] Version bump to `1.29.0`
+
+([TOC](#table-of-contents))
 
 v1.13.0
 -------

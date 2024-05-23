@@ -53,7 +53,10 @@ This mod is also available at the [url=https://github.com/rux616/biraitbec-workb
 
 [size=4][b][u]Requirements:[/u][/b][/size]
 - Visual C++ 2012 Update 4 [url=https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe]redistributable[/url]
-- Fallout 4
+- One of the following Fallout 4 versions:
+    - v1.10.163.0
+    - v1.10.980.0
+    - v1.10.984.0
 
 [size=4][b][u]Installation:[/u][/b][/size]
 - Extract this archive to somewhere outside of the user folder. (Use [font=Courier New][color=#b2b2b2]C:\WorkBase[/color][/font] for example.)

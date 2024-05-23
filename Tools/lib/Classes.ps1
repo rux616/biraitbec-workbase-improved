@@ -59,12 +59,16 @@ class FO4Version : System.IComparable, System.IEquatable[Object] {
         }
     }
 
-    [string] ToString([bool] $short = $false) {
-        if ($short) {
-            return "$($this.Version)-$($this.SteamBuildID)"
+    [string] ToString() {
+        return "$($this.Version)-$($this.SteamBuildID)"
+    }
+
+    [string] ToString([bool] $long) {
+        if ($long) {
+            return "Version: $($this.Version), Build ID: $($this.SteamBuildID)"
         }
         else {
-            return "Version: $($this.Version), Build ID: $($this.SteamBuildID)"
+            return $this.ToString()
         }
     }
 

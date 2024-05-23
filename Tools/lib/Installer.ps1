@@ -73,8 +73,8 @@ $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 #region constants and variables
 #------------------------------
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 13, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 28, 0)) -Option Constant
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 14, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 29, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -883,14 +883,14 @@ if ($alternateOriginalBa2Files.Count -eq 0 -and -not $repackFlags.Custom -and -n
     $firstIteration = $true
     $vanillaOriginalBa2Files | ForEach-Object {
         if ($firstIteration) {
-            $vanillaBa2Versions = $_.Versions
+            $vanillaOriginalBa2Versions = $_.Versions
             $firstIteration = $false
         }
         else {
-            $vanillaBa2Versions = [System.Collections.ArrayList]@($_.Versions | Where-Object { $_ -in $vanillaBa2Versions })
+            $vanillaOriginalBa2Versions = [System.Collections.ArrayList]@($_.Versions | Where-Object { $_ -in $vanillaOriginalBa2Versions })
         }
     }
-    if ($vanillaBa2Versions.Count -eq 0) {
+    if ($vanillaOriginalBa2Versions.Count -eq 0) {
         Write-Custom ""
         $extraErrorText = @(
             "In order for the 'Standard' mode of operation process to complete successfully, all original BA2 archives must be from the same version of Fallout 4."
@@ -898,9 +898,12 @@ if ($alternateOriginalBa2Files.Count -eq 0 -and -not $repackFlags.Custom -and -n
         Write-CustomError "Original BA2 archives are from differing versions of Fallout 4." -ExtraContext $extraErrorText -Prefix "ERROR: " -NoJustifyRight
         Exit-Script 1
     }
-    $extendedValidationModeVersion = ($vanillaBa2Versions | Measure-Object -Maximum | Select-Object -ExpandProperty Maximum).ToString()
+    $highestVanillaOriginalBa2Version = $vanillaOriginalBa2Versions | Measure-Object -Maximum | Select-Object -ExpandProperty Maximum
 }
-
+# if original BA2 validation is skipped, set the highest version to a dummy value
+elseif ($SkipOriginalBa2Validation) {
+    $highestVanillaOriginalBa2Version = [FO4Version]::New("0.0.0.0", 0)
+}
 
 # create tag
 $repackTag = $repackFlags.Keys.Where({ $repackFlags[$_] }) -join $TagJoiner
@@ -1125,12 +1128,27 @@ if ($existingPatchedArchives.Count -gt 0) {
                     Write-CustomLog "  Hash: $hash"
                     if ($patchedBa2Hashes[$hash].FileName -eq $file) {
                         Write-CustomLog "  Tags: $($patchedBa2Hashes[$hash].Tags -join ", ")"
-                        if ($patchedBa2Hashes[$hash].Tags -contains $repackTag) {
+                        if (
+                            $patchedBa2Hashes[$hash].Tags -contains $repackTag -and
+                            $patchedBa2Hashes[$hash].Versions -contains $highestVanillaOriginalBa2Version
+                        ) {
                             Write-CustomSuccess "  [VALID]"
                             $ba2Filenames = $ba2Filenames.Where({ $_ -ne $file })
                         }
-                        else {
+                        elseif (
+                            $patchedBa2Hashes[$hash].Tags -notcontains $repackTag -and
+                            $patchedBa2Hashes[$hash].Versions -contains $highestVanillaOriginalBa2Version
+                        ) {
                             Write-CustomWarning "  [REPACK SET MISMATCH]"
+                        }
+                        elseif (
+                            $patchedBa2Hashes[$hash].Tags -contains $repackTag -and
+                            $patchedBa2Hashes[$hash].Versions -notcontains $highestVanillaOriginalBa2Version
+                        ) {
+                            Write-CustomWarning "  [FO4 VERSION MISMATCH]"
+                        }
+                        else {
+                            Write-CustomWarning "  [REPACK SET AND FO4 VERSION MISMATCH]"
                         }
                     }
                     else {
@@ -1285,7 +1303,7 @@ else {
                         $patchedBa2Hashes.Values | Where-Object {
                             $_.Tags -contains $repackTag -and
                             $_.FileName -eq $file -and
-                            $_.Versions -contains ($vanillaBa2Versions | Measure-Object -Maximum | Select-Object -ExpandProperty Maximum)
+                            $_.Versions -contains $highestVanillaOriginalBa2Version
                         }
                     }
                 )
@@ -1823,7 +1841,7 @@ for ($index = 0; $index -lt $ba2Filenames.Count; $index++) {
             Write-Custom "      Validating extracted files..." -NoNewline
             Write-Custom "[WORKING...]" -NoNewline -JustifyRight -KeepCursorPosition -BypassLog
             # load file-specific hashes
-            . "$($dir.tools)\lib\EVM\$extendedValidationModeVersion\EVM Hashes ($file).ps1"
+            . "$($dir.tools)\lib\EVM\$highestVanillaOriginalBa2Version\EVM Hashes ($file).ps1"
             # calculate and compare hashes
             $argList = @{
                 InputObject              = $originalBa2FileHashes.Values

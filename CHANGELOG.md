@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.15.0](#v1150)
     - [v1.14.0](#v1140)
     - [v1.13.0](#v1130)
     - [v1.12.0](#v1120)
@@ -38,11 +39,23 @@ Table Of Contents
 Changelogs
 ==========
 
+v1.15.0
+-------
+- [Hashes] Added hashes to allow the "4estGimp - SavrenX HD Textures Performance BA2 Set" mod to be used as an alternate original BA2
+- [Hashes] Version bumped to `1.19.0`
+- [Installer] Adjusted verbiage on a specific error
+- [Installer] Version bumped to `1.30.0`
+- [Readme] Update text referencing alternate original BA2s to also refer to the newly-supported 4estGimp mod
+- [Readme] Added a bunch of warnings that the `PatchedFiles` folder is considered volatile and is not a safe place to store things
+- [Miscellaneous] Support script to hash nexus mods updated to utilize Functions.ps1
+
+([TOC](#table-of-contents))
+
 v1.14.0
 -------
 - [Installer] Add ability to check existing patched BA2 files for version mismatches
 - [Installer] Rename some variables to better match their contents
-- [Installer] Version bump to `1.29.0`
+- [Installer] Version bumped to `1.29.0`
 
 ([TOC](#table-of-contents))
 

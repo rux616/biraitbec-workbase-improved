@@ -17,7 +17,7 @@
         - [User cancels choosing a folder for the Patched BA2 archives](#user-cancels-choosing-a-folder-for-the-patched-ba2-archives)
             - [Error Text](#error-text-3)
             - [Extra Error Text](#extra-error-text-3)
-        - [The Steam "Fallout 4\Data" folder is chosen as the patched BA2 archive output folder](#the-steam-fallout-4data-folder-is-chosen-as-the-patched-ba2-archive-output-folder)
+        - [The Steam "Fallout 4\\Data" folder is chosen as the patched BA2 archive output folder](#the-steam-fallout-4data-folder-is-chosen-as-the-patched-ba2-archive-output-folder)
             - [Error Text](#error-text-4)
             - [Extra Error Text](#extra-error-text-4)
         - [No custom assets exist and no repack archives found](#no-custom-assets-exist-and-no-repack-archives-found)
@@ -86,9 +86,9 @@ When errors are displayed, they have the following format:
 > ERROR: (Extra Error Text)
 
 This text will be displayed on exit if any errors marked with an asterisk (\*) occur:
->  
+> 
 > One or more errors were encountered that could be caused by any one of a variety of factors, including (but not limited to) antivirus interference, failing/unstable hardware, or a lack of free space available on the drive.  
->  
+> 
 > Please try the script again to confirm any issues are repeatable, then report any recurring errors on the Nexus Mods mod page (<https://www.nexusmods.com/fallout4/mods/57782>) or the GitHub project (<https://github.com/rux616/biraitbec-workbase-improved>). When you do so, please also upload the "install.current.log" file in the "`$(($dir.Logs).Split("\")[-1])`" folder to a website like TextUploader.com (<https://textuploader.com/>) or Pastebin (<https://pastebin.com/>), and include the link.
 
 ([Top](#table-of-contents))
@@ -305,7 +305,7 @@ Special case - this only happens when only some parts of a repack set are there 
 > Old version of an alternate original archive detected.
 
 #### Extra Error Text
-> If using alternate original BA2 archives (i.e. PhyOp or Luxor), this script only allows the latest versions.
+> If using alternate original BA2 archives (i.e. 4estGimp, Luxor, or PhyOp), this script only allows the latest versions.
 >
 > Check the readme and update the archive in question to the version that's needed.
 

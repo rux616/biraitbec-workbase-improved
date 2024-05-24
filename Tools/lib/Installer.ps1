@@ -73,8 +73,8 @@ $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 #region constants and variables
 #------------------------------
-Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 14, 0)) -Option Constant
-Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 29, 0)) -Option Constant
+Set-Variable "WBIVersion" -Value $(New-Object System.Version -ArgumentList @(1, 15, 0)) -Option Constant
+Set-Variable "InstallerVersion" -Value $(New-Object System.Version -ArgumentList @(1, 30, 0)) -Option Constant
 
 Set-Variable "FileHashAlgorithm" -Value "XXH128" -Option Constant
 Set-Variable "RunStartTime" -Value "$((Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ"))" -Option Constant
@@ -763,7 +763,7 @@ else {
             elseif ($oldAlternateOriginalBa2Hashes[$hash].FileName -eq $file) {
                 Write-CustomLog "      Tags: $($oldAlternateOriginalBa2Hashes[$hash].Tags -join ", ")"
                 $extraErrorText = @(
-                    "If using alternate original BA2 archives (i.e. PhyOp or Luxor), this script only allows the latest versions."
+                    "If using alternate original BA2 archives (i.e. 4estGimp, Luxor, Luxor 2k, PhyOp), this script only allows the latest versions."
                     ""
                     "Check the readme and update the archive in question to the version that's needed."
                 )

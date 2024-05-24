@@ -11,6 +11,7 @@ by rux616
     - Installation
     - Repack Files
 - Instructions
+    - Introduction
     - Common
     - Standard
     - Hybrid
@@ -49,7 +50,7 @@ This mod is also available at the [url=https://github.com/rux616/biraitbec-workb
 - Verifies the repack archives, original BA2 archives, and patched BA2 archives via XXH128 hash
 - Optionally has an Extended Validation mode where files are validated after every step
 - Fixes known bad patched files
-- Cleans up after itself
+- Cleans up after itself ([b]WARNING:[/b] The [font=Courier New][color=#b2b2b2]PatchedFiles[/color][/font] folder should be considered [b]volatile[/b] regardless of mode and is [b]NOT[/b] a safe place to store files long term)
 
 [size=4][b][u]Requirements:[/u][/b][/size]
 - Visual C++ 2012 Update 4 [url=https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe]redistributable[/url]
@@ -103,6 +104,11 @@ Recommended if using the Performance, Main, or Quality repack sets.
 
 
 [size=5][b]Instructions[/b][/size]
+
+[size=4][b][u]Introduction:[/u][/b][/size]
+
+[b]WARNING:[/b] The [font=Courier New][color=#b2b2b2]PatchedFiles[/color][/font] folder should be considered [b]volatile[/b] regardless of mode and is [b]NOT[/b] a safe place to store files long term.
+
 There are three modes of operation for BiRaitBec WorkBase Improved:
 
 - Standard (recommended)
@@ -110,11 +116,11 @@ There are three modes of operation for BiRaitBec WorkBase Improved:
     - Automatic extraction of repack archives: Yes
     - Use vanilla original BA2 archives in conjunction with the repack archives.
 - Hybrid
-    - Original BA2 archives: At least one alternate (Luxor/Luxor 2k/PhyOp)
+    - Original BA2 archives: At least one alternate (4estGimp/Luxor/Luxor 2k/PhyOp)
     - Automatic extraction of repack archives: Yes
     - Use alternate original BA2 archives in conjunction with the repack archives.
 - Custom
-    - Original BA2 archives: Vanilla or at least one alternate (Luxor/Luxor 2k/PhyOp)
+    - Original BA2 archives: Vanilla or at least one alternate (4estGimp/Luxor/Luxor 2k/PhyOp)
     - Automatic extraction of repack archives: No
     - Use custom assets
 
@@ -122,11 +128,22 @@ In all modes, the installer will first look at the [font=Courier New][color=#b2b
 
 If any non-vanilla original BA2 archives are found, the script will automatically switch to Hybrid mode if no texture files are present in the [font=Courier New][color=#b2b2b2]PatchedFiles[/color][/font] folder. If texture files [u]are[/u] found in the [font=Courier New][color=#b2b2b2]PatchedFiles[/color][/font] folder, the script will switch to Custom mode.
 
+[b]WARNING:[/b] The [font=Courier New][color=#b2b2b2]PatchedFiles[/color][/font] folder should be considered [b]volatile[/b] regardless of mode and is [b]NOT[/b] a safe place to store files long term.
+
 Currently, the following original BA2 archives are supported:
 
-- Vanilla (game version 1.10.163.0, steam build ID 4460038)
+Vanilla:
+- Game version 1.10.163.0, Steam build ID 4460038
     - (All archives)
-- Luxor's Fallout 4 HD Overhaul (mod version 1.3)
+- Game version 1.10.890.0, Steam build ID 14160910
+    - (All archives)
+- Game version 1.10.894.0, Steam build ID 14349213
+    - (All archives)
+
+Alternates:
+- [url=https://www.nexusmods.com/fallout4/mods/72917]4estGimp - SavrenX HD Textures Performance BA2 Set[/url] (v0.95)
+    - (All archives)
+- [url=https://www.nexusmods.com/fallout4/mods/52423]Luxor's Fallout 4 HD Overhaul[/url] (mod version 1.3)
     - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font] (file version 1.3)
     - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font] (file version 1.2.1)
     - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font] (file version 1.2)
@@ -142,7 +159,7 @@ Currently, the following original BA2 archives are supported:
     - [font=Courier New][color=#b2b2b2]Fallout4 - Textures7.ba2[/color][/font] (file version 1.2.2)
     - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font] (file version 1.2.2)
     - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font] (file version 1.2.2)
-- Luxor's Fallout 4 HD Overhaul 2k (mod version 1.01)
+- [url=https://www.nexusmods.com/fallout4/mods/65720]Luxor's Fallout 4 HD Overhaul 2k[/url] (mod version 1.01)
     - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font] (file version 1.0)
     - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font] (file version 1.0)
     - [font=Courier New][color=#b2b2b2]DLCRobot - Textures.ba2[/color][/font] (file version 1.0)
@@ -158,7 +175,7 @@ Currently, the following original BA2 archives are supported:
     - [font=Courier New][color=#b2b2b2]Fallout4 - Textures7.ba2[/color][/font] (file version 1.0)
     - [font=Courier New][color=#b2b2b2]Fallout4 - Textures8.ba2[/color][/font] (file version 1.0)
     - [font=Courier New][color=#b2b2b2]Fallout4 - Textures9.ba2[/color][/font] (file version 1.0)
-- PhyOp's Overhauled Optimized Textures (v1.2a)
+- [url=https://www.nexusmods.com/fallout4/mods/27038]PhyOp's Overhauled Optimized Textures[/url] (v1.2a)
     - Custom
         - [font=Courier New][color=#b2b2b2]DLCCoast - Textures.ba2[/color][/font]
         - [font=Courier New][color=#b2b2b2]DLCNukaWorld - Textures.ba2[/color][/font]
@@ -299,7 +316,7 @@ Currently, the following original BA2 archives are supported:
 [size=4][b][u]Common:[/u][/b][/size]
 NOTE: The script will automatically attempt to locate and use original BA2 archives from the Fallout 4 Data folder if it doesn't find them in the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder.
 
-Currently supports the BA2s from vanilla, [url=https://www.nexusmods.com/fallout4/mods/52423]Luxor's Fallout 4 HD Overhaul[/url], [url=https://www.nexusmods.com/fallout4/mods/65720]Luxor's Fallout 4 HD Overhaul 2k[/url], and [url=https://www.nexusmods.com/fallout4/mods/27038]PhyOp's Overhauled Optimized Textures[/url].
+Currently supports the BA2s from vanilla, [url=https://www.nexusmods.com/fallout4/mods/72917]4estGimp - SavrenX HD Textures Performance BA2 Set[/url], [url=https://www.nexusmods.com/fallout4/mods/52423]Luxor's Fallout 4 HD Overhaul[/url], [url=https://www.nexusmods.com/fallout4/mods/65720]Luxor's Fallout 4 HD Overhaul 2k[/url], and [url=https://www.nexusmods.com/fallout4/mods/27038]PhyOp's Overhauled Optimized Textures[/url].
 
 - [Optional] Copy the original BA2 archives from the Fallout 4 Data folder to the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder.
 
@@ -317,10 +334,10 @@ Notes:
 - If using the [font=Courier New][color=#b2b2b2]Restyle[/color][/font] repack set, the "Author's Choice" options are automatically chosen.
 
 [size=4][b][u]Hybrid:[/u][/b][/size]
-This mode is similar to "Standard" mode in that it's a mostly automatic process, but it allows alternate original BA2 archives (Luxor/Luxor 2k/PhyOp) to be used instead, sacrificing patched BA2 archive validation to do so.
+This mode is similar to "Standard" mode in that it's a mostly automatic process, but it allows alternate original BA2 archives (4estGimp/Luxor/Luxor 2k/PhyOp) to be used instead, sacrificing patched BA2 archive validation to do so.
 
 - Put the repack files you have downloaded into the [font=Courier New][color=#b2b2b2]Repack7z[/color][/font] folder.
-- Put the alternate original BA2 files (Luxor/Luxor 2k/PhyOp) into the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder.
+- Put the alternate original BA2 files (4estGimp/Luxor/Luxor 2k/PhyOp) into the [font=Courier New][color=#b2b2b2]OriginalBa2[/color][/font] folder.
 - Double click on "Installer.cmd". (If it just opens up in Notepad or something, right click it and choose "Open" instead.)
 - A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the [font=Courier New][color=#b2b2b2]PatchedBa2[/color][/font] folder, but you can choose a different folder. [b]Do not choose the Fallout 4 Data folder.[/b]
 - The script will then proceed to validate and extract the the repack archives, then create (but [b]NOT[/b] validate) the patched BA2 archives.
@@ -334,6 +351,7 @@ Notes:
 This process is basically the traditional BRB install process as has been described in the guide and is done the same way.
 
 - Extract all the repack files to the [font=Courier New][color=#b2b2b2]PatchedFiles[/color][/font] folder (creating it first, if necessary).
+    - [b]WARNING:[/b] The [font=Courier New][color=#b2b2b2]PatchedFiles[/color][/font] folder should be considered [b]volatile[/b] regardless of mode and is [b]NOT[/b] a safe place to store files long term.
 - Double click on "Installer.cmd". (If it just opens up in Notepad or something, right click it and choose "Open" instead.)
 - A dialog box will pop up asking you to choose an output folder for the patched BA2 archives. By default it goes to the [font=Courier New][color=#b2b2b2]PatchedBa2[/color][/font] folder, but you can choose a different folder. [b]Do not choose the Fallout 4 Data folder.[/b]
 - The script will then proceed to validate the original BA2 archives and create the patched BA2 archives.
@@ -347,7 +365,6 @@ These (and only these) parameters are supported.
 
 - [font=Courier New][color=#b2b2b2]ExtendedValidationMode[/color][/font]: Activates Extended Validation mode
 - [font=Courier New][color=#b2b2b2]MakeDLCOptional[/color][/font]: Make it so that the DLC archives are optional instead of required to have a successful run
-- [font=Courier New][color=#b2b2b2]SkipOriginalBa2Validation[/color][/font]: Skip validation of original BA2 archives
 
 [size=4][b][u]Unsupported Command Line Parameters:[/u][/b][/size]
 Most of these were added for my own convenience while testing or for debugging purposes. I take no responsibility if your computer implodes when using them.
@@ -361,6 +378,7 @@ Most of these were added for my own convenience while testing or for debugging p
 - [font=Courier New][color=#b2b2b2]SkipPowerShellVersionCheck[/color][/font]: Skip checking that this script is being run by a supported version of PowerShell
 - [font=Courier New][color=#b2b2b2]SkipProblematicDirectoryCheck[/color][/font]: Skip checking that this script is not being run from a problematic directory
 - [font=Courier New][color=#b2b2b2]SkipVisualCppRedistFileCheck[/color][/font]: Skip checking the Visual C++ Redistributable file versions
+- [font=Courier New][color=#b2b2b2]SkipOriginalBa2Validation[/color][/font]: Skip validation of original BA2 archives
 - [font=Courier New][color=#b2b2b2]SkipChoosingPatchedBa2Dir[/color][/font]: Don't display the dialog box to choose the patched BA2 folder and instead choose the default ([font=Courier New][color=#b2b2b2].\PatchedBa2[/color][/font])
 - [font=Courier New][color=#b2b2b2]SkipRepackValidation[/color][/font]: Skip the validation of the repack archives
 - [font=Courier New][color=#b2b2b2]SkipFreeSpaceCheck[/color][/font]: Skip the free space check on the various drives
@@ -421,7 +439,7 @@ Everything else in this mod created by me is [url=https://creativecommons.org/li
 This tool is bundled with the following programs, each having their own copyrights and licenses:
 - [url=https://www.7-zip.org/]7-Zip 64-bit v23.01 (2023-06-20) by Igor Pavlov[/url]
 - [url=https://bethesda.net/en/game/bethesda-launcher]Archive2 v1.1.0.4 by Bethesda Game Studios, part of the Fallout 4 Creation Kit[/url]
-- [url=https://www.nexusmods.com/skyrimspecialedition/mods/1756]BSA Browser v1.17.0 by AlexxEG[/url]
+- [url=https://github.com/TES5Edit/TES5Edit]BSArch v0.9c as included with xEdit v4.1.5f by zilav, ElminsterAU, Sheson[/url]
 - [url=https://cyan4973.github.io/xxHash/]xxhsum v0.8.2 by Cyan4973[/url]
 
 This tool also uses the following source code; each has their own copyrights and licenses:
@@ -432,17 +450,20 @@ This tool also uses the following source code; each has their own copyrights and
 [size=5][b]Credits and Thanks[/b][/size]
 - BiRaitBec: For the original WorkBase file and [url=https://www.nexusmods.com/fallout4/mods/23556]guide[/url]
 - ScreamingLake and CyberDanz: For administering the [url=https://discord.gg/DfFYJtt8p4]Community Modding discord server and the updated BRB guide[/url]
+- 4estGimp: For the [url=https://www.nexusmods.com/fallout4/mods/72917]4estGimp - SavrenX HD Textures Performance BA2 Set[/url] mod
 - luxor8071: For the [url=https://www.nexusmods.com/fallout4/mods/52423]Fallout 4 HD Overhaul[/url] and [url=https://www.nexusmods.com/fallout4/mods/65720]Fallout 4 HD Overhaul 2k[/url] mods
 - Phylith: For the [url=https://www.nexusmods.com/fallout4/mods/27038]PhyOp - Overhauled Optimized Textures[/url] mod
+- zilav, ElminsterAU, Sheson: For [url=https://github.com/TES5Edit/TES5Edit]BSArch[/url]
 - Lively: For helping me make the error messaging easier to understand
 - Aegis27: For helping me make the error messaging easier to understand
 - Kaethela: For being an excellent guinea pig and helping me track down the issue with USB drives
+- ChosenKiwi: For helping me track down the issue with ExFat file systems
 
 
 [size=5][b]Contact/Support[/b][/size]
 If you find a bug or have a question about the mod, please post it on the [url=https://www.nexusmods.com/fallout4/mods/57782]mod page at Nexus Mods[/url], or in the [url=https://github.com/rux616/biraitbec-workbase-improved]GitHub project[/url].
 
-Another method for support is to come to my channel on the [url=https://discord.gg/pF9U5FmD6w]Collective Modding Discord server[/url]. Once you have joined, go to the welcome channel to familiarize yourself with the rules of the server, and once you're finished, come to the "chaotic-cognitions" channel.
+Another method for support is to come to my channel on the [url=https://discord.gg/pF9U5FmD6w]Collective Modding Discord server[/url]. Once you have joined, go to the welcome channel to familiarize yourself with the rules of the server, and once you're finished, come to the "🔧-chaotic-cognitions" channel.
 
 If you need to contact me personally, I can be reached through one of the following means:
 - [b]Nexus Mods[/b]: [url=https://www.nexusmods.com/users/124191]rux616[/url] (Send a message via the "CONTACT" button)

@@ -59,6 +59,7 @@ begin {
     $dir.logs = "$($dir.scriptDirectory)\..\..\Logs"
     $dir.temp = "$($dir.scriptDirectory)\..\..\Temp"
     $dir.tools = "$($dir.scriptDirectory)\..\..\Tools"
+    $dir.lib = "$($dir.tools)\lib"
     $dir
 
     $apiBase = "https://api.nexusmods.com/v1"
@@ -69,9 +70,12 @@ begin {
     Invoke-RestMethod -Uri $apiValidate -Headers @{ apikey = $NexusAPIKey } -ErrorVariable "ValidateRestError" | Out-Null
     if ($ValidateRestError) { exit 1 }
 
-    # xxhsum v0.8.1 by cyan4973
+    # xxhsum by cyan4973
     # https://cyan4973.github.io/xxHash/
     $env:PATH = (Resolve-Path -LiteralPath "$($dir.tools)\xxHash").Path + ";" + $env:PATH
+
+    # source functions
+    . "$($dir.lib)\Functions.ps1"
 }
 
 process {
@@ -110,7 +114,7 @@ process {
         }
         $hash = (Get-FileHash -Algorithm MD5 -Path $file).Hash
         Add-Member -InputObject $modObject -MemberType NoteProperty -Name "MD5" -Value $hash.ToLower()
-        $hash = (xxhsum.exe -H128 $file).Substring(0, 32)
+        $hash = (Get-FileHash -Algorithm XXH128 -Path $file).Hash
         Add-Member -InputObject $modObject -MemberType NoteProperty -Name "XXH128" -Value $hash.ToLower()
         try {
             $response = Invoke-RestMethod -Uri "${apiModsBase}/md5_search/$($modObject.MD5).json" -Headers @{ apikey = $NexusAPIKey }

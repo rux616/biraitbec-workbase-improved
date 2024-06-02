@@ -1,21 +1,29 @@
 {
   "version": "2.0.0",
+  "options": {
+    "shell": {
+      "executable": "pwsh.exe",
+      "args": ["-ExecutionPolicy", "Bypass", "-Command"]
+    }
+  },
   "tasks": [
     {
-      "label": "Render Markdown to Nexus BBCode",
+      "label": "Build",
+      "type": "shell",
+      "command": "echo",
+      "args": ["Build complete!"],
       "group": {
         "kind": "build",
         "isDefault": true
       },
+      "dependsOrder": "sequence",
+      "dependsOn": ["Render Markdown to Nexus BBCode"]
+    },
+    {
+      "label": "Render Markdown to Nexus BBCode",
       "type": "shell",
-      "command": "bash",
-      "args": [
-        "-c",
-        "Support/Scripts/markdown-to-nexusbbcode.sh README.md; if [[ $? -eq 0 ]] ; then echo SUCCESS ; else echo FAILURE ; fi ;"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      }
+      "command": "./support/common/scripts/markdown-to-nexusbbcode.ps1",
+      "args": ["./support/docs/README.md"]
     }
   ]
 }

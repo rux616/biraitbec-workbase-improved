@@ -1,4 +1,4 @@
-[submodule "support/common"]
-	path = support/common
+[submodule "Support/common"]
+	path = Support/common
 	url = https://github.com/rux616/modding-build-release-scripts
 	branch = main

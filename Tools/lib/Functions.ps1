@@ -19,7 +19,7 @@
 # functions
 # ---------
 
-Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 30, 1))
+Set-Variable "FunctionsVersion" -Value $(New-Object "System.Version" -ArgumentList @(1, 30, 2))
 
 . "$PSScriptRoot\Classes.ps1"
 
@@ -497,9 +497,9 @@ function Get-OriginalBa2File {
     $toReturn = "$FolderOriginal\$FileName"
     $folderList = @(
         $FolderOriginal
-        $FolderRegistry
         $FolderSteam
         $FolderSteamFallback
+        $FolderRegistry
     )
     foreach ($folder in $folderList) {
         if (Test-Path -LiteralPath "$folder\$FileName") {

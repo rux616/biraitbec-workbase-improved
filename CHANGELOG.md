@@ -6,6 +6,7 @@ Table Of Contents
 - [BiRaitBec WorkBase Improved](#biraitbec-workbase-improved)
     - [Table Of Contents](#table-of-contents)
 - [Changelogs](#changelogs)
+    - [v1.15.1](#v1151)
     - [v1.15.0](#v1150)
     - [v1.14.0](#v1140)
     - [v1.13.0](#v1130)
@@ -38,6 +39,14 @@ Table Of Contents
 
 Changelogs
 ==========
+
+v1.15.1
+-------
+- [Functions] Updated `Get-OriginalBa2File` function to look in Steam libraries for Fallout 4 first, _then_ check the registry
+- [Functions] Version bumped to `1.30.2`
+- [Readme - OriginalBa2] Updated file listing
+
+([TOC](#table-of-contents))
 
 v1.15.0
 -------

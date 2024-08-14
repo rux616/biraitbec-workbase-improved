@@ -86,9 +86,9 @@ When errors are displayed, they have the following format:
 > ERROR: (Extra Error Text)
 
 This text will be displayed on exit if any errors marked with an asterisk (\*) occur:
-> 
+>
 > One or more errors were encountered that could be caused by any one of a variety of factors, including (but not limited to) antivirus interference, failing/unstable hardware, or a lack of free space available on the drive.  
-> 
+>
 > Please try the script again to confirm any issues are repeatable, then report any recurring errors on the Nexus Mods mod page (<https://www.nexusmods.com/fallout4/mods/57782>) or the GitHub project (<https://github.com/rux616/biraitbec-workbase-improved>). When you do so, please also upload the "install.current.log" file in the "`$(($dir.Logs).Split("\")[-1])`" folder to a website like TextUploader.com (<https://textuploader.com/>) or Pastebin (<https://pastebin.com/>), and include the link.
 
 ([Top](#table-of-contents))

@@ -73,39 +73,26 @@ class FO4Version : System.IComparable, System.IEquatable[Object] {
     }
 
     [int] CompareTo([object] $obj) {
-        if ($obj -isnot [FO4Version]) {
-            throw "Object must be of type FO4Version"
-        }
+        if ($null -eq $obj) { return 1 }
+        if ($obj -isnot [FO4Version]) { throw "Object must be of type $($this.GetType().Name)" }
 
         $other = [FO4Version] $obj
 
-        if ($this.Version -gt $other.Version) {
-            return 1
+        $version_comparison = $this.Version.CompareTo($other.Version)
+        if ($version_comparison -eq 0) {
+            return $this.SteamBuildID.CompareTo($other.SteamBuildID)
         }
-        elseif ($this.Version -eq $other.Version) {
-            if ($this.SteamBuildID -gt $other.SteamBuildID) {
-                return 1
-            }
-            elseif ($this.SteamBuildID -lt $other.SteamBuildID) {
-                return -1
-            }
-            elseif ($this.SteamBuildID -eq $other.SteamBuildID) {
-                return 0
-            }
+        else {
+            return $version_comparison
         }
-        elseif ($this.Version -lt $other.Version) {
-            return -1
-        }
-        return $null
     }
 
     [bool] Equals([object] $obj) {
-        if ($obj -isnot [FO4Version]) {
-            return $false
-        }
+        if ($null -eq $obj) { return $false }
+        if ($obj -isnot [FO4Version]) { return $false }
 
         $other = [FO4Version] $obj
 
-        return $this.Version -eq $other.Version -and $this.SteamBuildID -eq $other.SteamBuildID
+        return $this.Version.Equals($other.Version) -and $this.SteamBuildID.Equals($other.SteamBuildID)
     }
 }

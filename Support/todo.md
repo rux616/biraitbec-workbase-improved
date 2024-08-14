@@ -7,3 +7,5 @@
 - [X] ~~don't remove patchedfiles directory~~ cancelled
     - [X] give numerous warnings in README about PatchedFiles folder being volatile and not a safe place to store things
 - [X] add hashes for 4estgimp savren hd textures performance ba2 set
+- [ ] add version check with command line switch to ignore it
+- [X] update README in OriginalBa2 folder

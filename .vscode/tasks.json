@@ -23,7 +23,7 @@
       "label": "Render Markdown to Nexus BBCode",
       "type": "shell",
       "command": "./support/common/scripts/markdown-to-nexusbbcode.ps1",
-      "args": ["./support/docs/README.md"]
+      "args": ["./README.md"]
     }
   ]
 }
